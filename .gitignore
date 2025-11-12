@@ -40,7 +40,7 @@ output-metadata.json
 *.hprof
 
 # Google / Firebase
-google-services.json
+app/google-services.json
 firebase-debug.log
 
 # macOS / Windows
