@@ -1,16 +1,21 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Smartair" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.Smartair" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorPrimary">@color/colour_blue</item>
+        <item name="colorPrimaryVariant">@color/colour_white</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        <item name="colorSecondary">@color/colour_lightBlue</item>
+        <item name="colorSecondaryVariant">@color/colour_indigo</item>
+        <!-- Backgrounds and surfaces -->
+        <item name="android:colorBackground">@color/colour_white</item>
+        <item name="colorSurface">@color/colour_white</item>
+        <item name="colorOnBackground">@color/colour_black</item>
+        <item name="colorOnSurface">@color/colour_black</item>
+        <!-- Optional: toolbar or navigation -->
+        <item name="android:statusBarColor">@color/colour_indigo</item>
+        <item name="android:navigationBarColor">@color/colour_indigo</item>
     </style>
+
+
 </resources>
