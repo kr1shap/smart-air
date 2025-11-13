@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/triage"
+        android:icon="@drawable/triage"
+        android:title="Triage" />
+    <item
+        android:id="@+id/medicine"
+        android:icon="@drawable/medicine_24"
+        android:title="Medicine" />
+    <item
+        android:id="@+id/home"
+        android:icon="@drawable/home"
+        android:title="Home" />
+    <item
+        android:id="@+id/checkin"
+        android:icon="@drawable/checkin"
+        android:title="Check-In" />
+    <item
+        android:id="@+id/history"
+        android:icon="@drawable/history"
+        android:title="History" />
+
+</menu>
