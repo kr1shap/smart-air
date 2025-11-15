@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">Smart Air</string>
+    <string name="app_name_copyright">SmartAir©2025</string>
+    <string name="sign_in"><u>Sign in Instead.</u></string>
+    <string name="log_in"><u>New? Sign up Instead.</u></string>
+    <string name="email_placeholder">Enter your email…</string>
+    <string name="email_user_placeholder">Enter your email/username…</string>
+    <string name="password_placeholder">Enter your password…</string>
+    <string name="access_placeholder">Enter your access code…</string>
+    <string name="Email">Email</string>
+    <string name="Email_User">Email/Username</string>
+    <string name="Username">Username</string>
+    <string name="Access_code">Access Code</string>
+    <string name="Password">Password</string>
+    <string name="smart_air">Smart Air</string>
+    <string name="parent">Parent</string>
+    <string name="provider">Provider</string>
+    <string name="child">Child</string>
+    <string name="login">Login</string>
+    <string name="signup">Signup</string>
+    <string name="username_placeholder">Enter your username...</string>
+    <string name="dummyDomain">@smartAir.com</string>
+
+    "
 </resources>
