@@ -8,17 +8,19 @@ public class User {
     private String username;
     private String role; // "parent", "provider", "child"
     private List<String> parentUid; // provider and child linkage
+    private List<String> childrenUid; //for parents
     private long createdAt;
 
     //constructor
     public User() {}
     public User(String uid, String email, String username, String role,
-                List<String> parentUid) {
+                List<String> parentUid, List<String> childrenUid) {
         this.uid = uid;
         this.email = email;
         this.username = username;
         this.role = role;
         this.parentUid = parentUid;
+        this.childrenUid = childrenUid;
         this.createdAt = System.currentTimeMillis();
     }
 
@@ -37,6 +39,9 @@ public class User {
 
     public List<String> getParentUid() { return parentUid; }
     public void setParentUid(List<String> parentUid) { this.parentUid = parentUid; }
+
+    public List<String> getChildrenUid() { return childrenUid; }
+    public void setChildrenUid(List<String> childrenUid) { this.childrenUid = childrenUid; }
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }

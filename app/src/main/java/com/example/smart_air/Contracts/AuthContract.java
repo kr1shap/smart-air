@@ -54,4 +54,9 @@ public interface AuthContract {
         void onSuccess(User user);
         void onFailure(String error);
     }
+
+    interface GeneralCallback {
+        void onSuccess();
+        void onFailure(String error);
+    }
 }

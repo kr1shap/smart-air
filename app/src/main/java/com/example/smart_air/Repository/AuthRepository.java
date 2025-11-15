@@ -1,7 +1,9 @@
 package com.example.smart_air.Repository;
 
+import android.media.MediaRouter;
 import android.util.Log;
 
+import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
@@ -9,6 +11,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,14 +36,15 @@ public class AuthRepository {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
-
+                        //TODO: Ensure we dont need line below (assert)
                         assert firebaseUser != null; //assert that not null, b/c task successful
                         User user = new User(
                                 firebaseUser.getUid(), //UID created - save to firestore
                                 email, //email
                                 null, //no username for parent
                                 "parent",
-                                null //no parent uid needed
+                                null ,//no parent uid needed
+                                List.of() //empty list
                         );
 
                         saveUserToFirestore(user, callback);
@@ -66,7 +70,8 @@ public class AuthRepository {
                                         email,
                                         null,
                                         "provider",
-                                        List.of(parentUid)
+                                        List.of(parentUid),
+                                        List.of() //null for them
                                 );
 
                                 saveUserToFirestore(user, new AuthCallback() {
@@ -112,7 +117,8 @@ public class AuthRepository {
                                         dummyEmail,
                                         username,
                                         "child",
-                                        Arrays.asList(parentUid)
+                                        List.of(parentUid), //link to parent
+                                        List.of() //last field of children one null
                                 );
 
                                 //Call save function (helper)
@@ -120,8 +126,22 @@ public class AuthRepository {
                                     @Override
                                     public void onSuccess(User savedUser) {
                                         // Mark invite as used
-                                        markInviteAsUsed(accessCode);
-                                        callback.onSuccess(savedUser); //use callback passed in
+                                        addChildToParent(parentUid, auth.getCurrentUser().getUid(), new AuthContract.GeneralCallback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                // Mark invite as used
+                                                markInviteAsUsed(accessCode);
+                                                callback.onSuccess(savedUser);
+                                            }
+
+                                            @Override
+                                            public void onFailure(String error) {
+                                                // Even if adding to parent fails, child account was created
+                                                // Still mark invite as used and continue
+                                                markInviteAsUsed(accessCode);
+                                                callback.onSuccess(savedUser);
+                                            }
+                                        });
                                     }
                                     @Override
                                     public void onFailure(String error) {
@@ -136,6 +156,15 @@ public class AuthRepository {
                 callback.onFailure("Invalid or expired access code"); //error with code
             }
         });
+    }
+
+    // Helper method to add child UID to parent document
+    private void addChildToParent(String parentUid, String childUid, AuthContract.GeneralCallback callback) {
+        db.collection("users")
+                .document(parentUid)
+                .update("childrenUid", FieldValue.arrayUnion(childUid))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
 
@@ -198,6 +227,7 @@ public class AuthRepository {
         userData.put("username", user.getUsername());
         userData.put("role", user.getRole());
         userData.put("parentUid", user.getParentUid());
+        userData.put("childrenUid", user.getChildrenUid());
         userData.put("createdAt", user.getCreatedAt());
 
         db.collection("users").document(user.getUid())

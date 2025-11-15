@@ -6,7 +6,7 @@ import com.example.smart_air.modelClasses.User;
 
 public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     private AuthContract.SignUpContract.View view; //is the UI handling
-    private AuthRepository repo;
+    private final AuthRepository repo;
 
     public SignUpPresenter(AuthContract.SignUpContract.View view) {
         this.view = view;
