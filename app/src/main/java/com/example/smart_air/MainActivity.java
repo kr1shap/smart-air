@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.home);
         TextView textView3 = findViewById(R.id.textView3);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
@@ -48,17 +49,24 @@ public class MainActivity extends AppCompatActivity {
 
             if (id == R.id.home) {
                 textView3.setText("Home clicked!");
+                return true;
             } else if (id == R.id.triage) {
                 textView3.setText("Triage clicked!");
+                return true;
             } else if (id == R.id.history) {
                 textView3.setText("History clicked!");
+                return true;
             } else if (id == R.id.medicine) {
                 textView3.setText("Meidicine clicked!");
+                return true;
             } else if (id == R.id.checkin) {
-                textView3.setText("Checkin clicked!");
+                Intent intent = new Intent(MainActivity.this, CheckInPageActivity.class);
+                startActivity(intent);
+                return true;
             }
-
-            return true;
+            else {
+                return false;
+            }
         });
 
 

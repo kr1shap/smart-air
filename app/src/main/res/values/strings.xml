@@ -21,6 +21,10 @@
     <string name="username_placeholder">Enter your username...</string>
     <string name="dummyDomain">@smartAir.com</string>
     <string name="forgot_password">Forgot password?</string>
+    <string-array name="role_options">
+        <item>Parent</item>
+        <item>Child</item>
+    </string-array>
 
     "
 </resources>
