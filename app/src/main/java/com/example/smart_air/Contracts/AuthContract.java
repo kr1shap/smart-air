@@ -41,10 +41,14 @@ public interface AuthContract {
             void hideEmailField();
             void showUsernameField();
             void hideUsernameField();
+            void showForgotPassword();
+            void hideForgotPassword();
+            void showSuccess(String s);
         }
 
         interface Presenter {
             void signIn(String emailOrUsername, String password, String role); //sign in fxn
+            void sendPasswordReset(String email);
             void onRoleSelected(String role);
             void onDestroy();
         }

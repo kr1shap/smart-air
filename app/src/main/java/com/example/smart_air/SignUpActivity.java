@@ -2,6 +2,8 @@ package com.example.smart_air;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -65,6 +67,20 @@ public class SignUpActivity extends AppCompatActivity implements AuthContract.Si
 
             presenter.signUp(email, password, username, accessCode, selectedRole);
         });
+
+        //InputFilter to prevent spaces
+        InputFilter spaceFilter = (source, start, end, dest, dstart, dend) -> {
+            for (int i = start; i < end; i++) {
+                if (Character.isWhitespace(source.charAt(i))) {
+                    return "";
+                }
+            }
+            return null;
+        };
+
+        // apply InputFilter
+        userTextView.setFilters(new InputFilter[] { spaceFilter });
+        emailTextView.setFilters(new InputFilter[] { spaceFilter });
 
         hideLoading();
         //TODO: uncomment after finishing

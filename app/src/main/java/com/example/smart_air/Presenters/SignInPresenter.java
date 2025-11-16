@@ -6,7 +6,7 @@ import com.example.smart_air.modelClasses.User;
 
 public class SignInPresenter implements AuthContract.SignInContract.Presenter {
     private AuthContract.SignInContract.View view;
-    private AuthRepository repo;
+    private final AuthRepository repo;
 
     public SignInPresenter(AuthContract.SignInContract.View view) {
         this.view = view;
@@ -34,18 +34,47 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
 
     }
 
-    //TODO: probably remove this
+    @Override
+    public void sendPasswordReset(String email) {
+        if (email == null || email.trim().isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            view.showError("Please enter a valid email address");
+            return;
+        }
+
+        view.showLoading();
+
+        repo.sendPasswordResetEmail(email, new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                if (view != null) {
+                    view.hideLoading();
+                    view.showSuccess("Password reset email sent! Check your inbox.");
+                }
+            }
+
+            @Override
+            public void onFailure(String error) {
+                if (view != null) {
+                    view.hideLoading();
+                    view.showError("Failed to send reset email: " + error);
+                }
+            }
+        });
+    }
+
     @Override
     public void onRoleSelected(String role) {
         switch (role) {
             case "parentProv":
                 view.showEmailField();
                 view.hideUsernameField();
+                view.showForgotPassword();
                 break;
 
             case "child":
                 view.hideEmailField();
                 view.showUsernameField();
+                view.hideForgotPassword();
                 break;
         }
     }

@@ -262,6 +262,12 @@ public class AuthRepository {
     }
 
 
+    //password reset email
+    public void sendPasswordResetEmail(String email, AuthContract.GeneralCallback callback) {
+        auth.sendPasswordResetEmail(email)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
 
     //callback for code validation
     private interface AccessCodeCallback {

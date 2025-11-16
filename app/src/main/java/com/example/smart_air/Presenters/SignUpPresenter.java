@@ -23,7 +23,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
                 "(?=.*[A-Z])" +         // at least 1 uppercase
                 "(?=.*[@#$%^&+=!])" +   // at least 1 special char
                 "(?=\\S+$).{8,}$";      // no whitespace, min 8 chars
-
         return password.matches(regex);
     }
 

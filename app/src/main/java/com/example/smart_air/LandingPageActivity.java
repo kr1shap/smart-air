@@ -6,12 +6,17 @@ import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.smart_air.Repository.AuthRepository;
+
 // This Activity will correspond to your landing page XML layout.
 public class LandingPageActivity extends AppCompatActivity {
 
+    AuthRepository repo;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //init repo
+        repo = new AuthRepository();
         // link java file to xml layout
         setContentView(R.layout.activity_landing);
         // ref to get started
@@ -26,12 +31,12 @@ public class LandingPageActivity extends AppCompatActivity {
             }
         });
 
-        // 4. Implement your auth logic here before setting the listener if needed
-        // For example, if user is already logged in, you might redirect them instantly:
-        // if (isUserLoggedIn()) {
-        //     Intent homeIntent = new Intent(LandingPageActivity.this, HomeActivity.class);
-        //     startActivity(homeIntent);
-        //     finish();
-        // }
+        // instant redirect user to page if already logged in
+        //TODO: replace main with correct landing page
+         if (repo.getCurrentUser() != null) {
+             Intent homeIntent = new Intent(LandingPageActivity.this, MainActivity.class);
+             startActivity(homeIntent);
+             finish();
+         }
     }
 }

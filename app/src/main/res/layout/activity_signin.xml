@@ -117,6 +117,17 @@
                 android:autofillHints="password"
                 android:hint="@string/password_placeholder"
                 android:inputType="textPassword" />
+
+            <TextView
+                android:id="@+id/forgotPassword"
+                android:textAlignment="gravity"
+                android:gravity="right"
+                android:fontFamily="@font/dm_sans_medium"
+                android:textColor="@color/colour_indigo"
+                android:layout_marginHorizontal="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/forgot_password" />
         </LinearLayout>
 
 

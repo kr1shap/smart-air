@@ -2,22 +2,29 @@ package com.example.smart_air;
 
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.smart_air.Presenters.SignUpPresenter;
 import com.google.gson.Gson;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.Presenters.SignInPresenter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class SignInActivity extends AppCompatActivity implements AuthContract.SignInContract.View {
     private SignInPresenter presenter;
@@ -27,6 +34,8 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
     List<Button> buttons; //button list
     private String selectedRole;
     private ProgressBar progressBar;
+
+    private TextView forgotPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,8 +54,10 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
         // Initialize text views, button submit
         emailTextView = findViewById(R.id.loginEmail);
         passwordTextView = findViewById(R.id.loginPassword);
-        userTextView = findViewById(R.id.loginEmail);
+        userTextView = findViewById(R.id.loginUsername);
         submit = findViewById(R.id.signInButton);
+        //text view
+        forgotPassword = findViewById(R.id.forgotPassword);
 
         //Buttons
         buttons = Arrays.asList(parentProvBtn, childBtn);
@@ -70,6 +81,7 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
         updateSelection(parentProvBtn);
         //TODO: uncomment after finishing
         //nav to signup
+        forgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
         findViewById(R.id.signUpStatement).setOnClickListener(v -> {
             startActivity(new Intent(this, SignUpActivity.class));
             finish();
@@ -93,6 +105,24 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
                 b.setBackgroundTintList(getColorStateList(R.color.role_default_bg));
             }
         }
+    }
+
+    private void showForgotPasswordDialog() {
+
+        View view = getLayoutInflater().inflate(R.layout.forgot_password, null);
+
+        EditText emailInput = view.findViewById(R.id.resetWithEmail);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(view)
+                .setPositiveButton("Send Reset Email", (d, w) -> {
+                    presenter.sendPasswordReset(emailInput.getText().toString());
+                })
+                .setNegativeButton("Cancel", (d, w) -> d.dismiss())
+                .create();
+
+        dialog.show();
+        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.WHITE));
     }
 
     @Override
@@ -135,6 +165,18 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
 
     @Override
     public void hideUsernameField() { userLayout.setVisibility(View.GONE); }
+
+    @Override
+    public void showForgotPassword() { forgotPassword.setVisibility(View.VISIBLE); }
+
+    @Override
+    public void hideForgotPassword() { forgotPassword.setVisibility(View.GONE); }
+
+
+    @Override
+    public void showSuccess(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+    }
 
     @Override
     protected void onDestroy() {
