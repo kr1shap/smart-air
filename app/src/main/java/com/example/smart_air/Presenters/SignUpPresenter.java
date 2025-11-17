@@ -1,5 +1,7 @@
 package com.example.smart_air.Presenters;
 
+import android.util.Patterns;
+
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.User;
@@ -26,6 +28,11 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         return password.matches(regex);
     }
 
+
+    private boolean isValidEmail(String email) {
+        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+
     @Override
     public void signUp(String email, String password, String username,
                        String accessCode, String role) {
@@ -41,10 +48,15 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
             return;
         }
         //Parent and provider-specific validation
-        if(!role.equals("child") && (email == null || email.trim().isEmpty())) {
+        if(!role.equals("child") && (email == null || email.trim().isEmpty()) ) {
             view.showError("Email is required");
             return;
+        } else if (!isValidEmail(email)) {
+            view.showError("Invalid email format");
+            return;
         }
+
+        //Password validation
 
         if (!validatePassword(password) || password.length() < 6) {
             view.showError("Password must be at least 6 characters, 1 digit, 1 uppercase, 1 lowercase, and 1 special character.");
