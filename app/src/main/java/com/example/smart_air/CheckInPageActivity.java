@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 public class CheckInPageActivity extends Activity {
     String userRole = "";
     String correspondingUid;
+    String currentTriggers = "Tap to Select";
     String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running"};
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
@@ -54,12 +55,10 @@ public class CheckInPageActivity extends Activity {
         fixingCoughingUI();
 
         // setting up multiselect option
-        boolean [] selectedTriggers = new boolean[triggers.length];
-        selectedTriggers = setUpTriggers(selectedTriggers);
+        boolean [] selectedTriggers = setUpTriggers(currentTriggers);
 
         // clicking save button and adding to firestore
         MaterialButton save = findViewById(R.id.buttonSave);
-        boolean[] finalSelectedTriggers = selectedTriggers;
         save.setOnClickListener(v-> {
             RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
             RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
@@ -68,7 +67,7 @@ public class CheckInPageActivity extends Activity {
             int activityValue = (int)seekBar.getProgress();
             Slider slider = findViewById(R.id.sliderCough);                         // coughing/wheezing
             int coughingValue = (int)slider.getValue();
-            repo.saveUserData(this, userRole, triggers, finalSelectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue);
+            repo.saveUserData(this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue);
         });
 
 
@@ -129,17 +128,9 @@ public class CheckInPageActivity extends Activity {
             radioNight.check(R.id.radioNo);
         }
 
-//        boolean [] selectedTriggers = new boolean[triggers.length];
-//        for(int i = 0; i < triggers.length; i++){
-//            if(selection.contains(triggers[i])){
-//                selectedTriggers[i] = true;
-//            }
-//            else{
-//                selectedTriggers[i] = false;
-//            }
-//        }
-//        setUpTriggers(selectedTriggers);
-
+        currentTriggers = String.join(", ", selection);
+        TextView multiSelectTriggers = findViewById(R.id.multiSelect);
+        multiSelectTriggers.setText(currentTriggers);
         setCardCurrent();
 
     }
@@ -155,12 +146,26 @@ public class CheckInPageActivity extends Activity {
         coughWheezeCard.setVisibility(View.VISIBLE);
         triggersCard.setVisibility(View.VISIBLE);
 
+        // set default values
+        SeekBar seekbar = findViewById(R.id.seekBar);
+        seekbar.setProgress(Math.toIntExact(5));
+
+        Slider slider = findViewById(R.id.sliderCough);
+        slider.setValue(0);
+
+        RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
+        radioNight.clearCheck();
+
+        TextView multiSelectTriggers = findViewById(R.id.multiSelect);
+        currentTriggers = "Tap to Select";
+        multiSelectTriggers.setText(currentTriggers);
+
         setCardCurrent();
 
 
     }
 
-    public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> triggers) {
+    public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection) {
         CardView nightWakingCard = findViewById(R.id.nightCard);
         CardView activityLimitsCard = findViewById(R.id.activity);
         CardView coughWheezeCard = findViewById(R.id.coughing);
@@ -185,6 +190,10 @@ public class CheckInPageActivity extends Activity {
             radioNight.check(R.id.radioNo);
         }
 
+        currentTriggers = String.join(", ", selection);
+        TextView multiSelectTriggers = findViewById(R.id.multiSelect);
+        multiSelectTriggers.setText(currentTriggers);
+
 
         setCardOther();
 
@@ -196,12 +205,10 @@ public class CheckInPageActivity extends Activity {
         CardView coughWheezeCard = findViewById(R.id.coughing);
         CardView triggersCard = findViewById(R.id.triggers);
 
-        nightWakingCard.setVisibility(View.VISIBLE);
-        activityLimitsCard.setVisibility(View.VISIBLE);
-        coughWheezeCard.setVisibility(View.VISIBLE);
-        triggersCard.setVisibility(View.VISIBLE);
-
-        setCardOther();
+        nightWakingCard.setVisibility(View.INVISIBLE);
+        activityLimitsCard.setVisibility(View.INVISIBLE);
+        coughWheezeCard.setVisibility(View.INVISIBLE);
+        triggersCard.setVisibility(View.INVISIBLE);
 
     }
 
@@ -228,6 +235,9 @@ public class CheckInPageActivity extends Activity {
 
         MaterialButton save = findViewById(R.id.buttonSave);
         save.setEnabled(true);
+
+        TextView multiSelectView = findViewById(R.id.multiSelect);
+        multiSelectView.setEnabled(true);
 
         updateUIBasedOnRole(userRole);
     }
@@ -263,6 +273,9 @@ public class CheckInPageActivity extends Activity {
 
         MaterialButton save = findViewById(R.id.buttonSave);
         save.setEnabled(false);
+
+        TextView multiSelectView = findViewById(R.id.multiSelect);
+        multiSelectView.setEnabled(false);
 
         if(userRole.equals("child")){
             updateUIBasedOnRole("parent");
@@ -386,8 +399,9 @@ public class CheckInPageActivity extends Activity {
 
     }
 
-    private boolean [] setUpTriggers(boolean [] selectedTriggers){
+    private boolean [] setUpTriggers(String currentTriggers){
         TextView multiSelectTriggers = findViewById(R.id.multiSelect);
+        boolean [] selectedTriggers = new boolean[triggers.length];
         multiSelectTriggers.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
                     .setTitle("Select Symptoms")
@@ -403,7 +417,7 @@ public class CheckInPageActivity extends Activity {
                             selected.setLength(selected.length() - 2); // remove trailing comma
                             multiSelectTriggers.setText(selected.toString());
                         } else {
-                            multiSelectTriggers.setText("Tap to select");
+                            multiSelectTriggers.setText(currentTriggers);
                         }
                     })
                     .setNegativeButton("Cancel", null)
