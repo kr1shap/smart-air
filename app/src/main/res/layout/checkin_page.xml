@@ -419,6 +419,7 @@
                 app:layout_constraintTop_toBottomOf="@id/textView81"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:singleSelection="false"
                 android:layout_marginTop="12dp"/>
 
             <FrameLayout

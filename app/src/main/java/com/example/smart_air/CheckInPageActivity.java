@@ -20,11 +20,12 @@ import com.google.android.material.slider.Slider;
 
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
 public class CheckInPageActivity extends Activity {
-    String userRole = "child";
+    String userRole = "";
     String correspondingUid;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
@@ -33,8 +34,7 @@ public class CheckInPageActivity extends Activity {
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
-
-        updateUIBasedOnRole(userRole);
+        repo.getUserInput(this);
 
 
         // fixing bottom navigation
@@ -100,26 +100,85 @@ public class CheckInPageActivity extends Activity {
                 buttonChild.setBackgroundColor(getColor(R.color.role_default_bg));
                 buttonParent.setBackgroundColor(getColor(R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    setCardViewVisibility(View.INVISIBLE);
+                    setCardOther();
                 }
                 else if(userRole.equals("parent")){
-                    setCardViewVisibility(View.VISIBLE);
+                    repo.getUserInput(this);
                 }
             }
             else if (checkedId == R.id.buttonChild && isChecked){
                 buttonParent.setBackgroundColor(getColor(R.color.role_default_bg));
                 buttonChild.setBackgroundColor(getColor(R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    setCardViewVisibility(View.VISIBLE);
+                    repo.getUserInput(this);
 
                 }
                 else if(userRole.equals("parent")){
-                    setCardViewVisibility(View.INVISIBLE);
+                    setCardOther();
                 }
             }
         });
 
 
+    }
+
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> triggers) {
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setVisibility(View.VISIBLE);
+        activityLimitsCard.setVisibility(View.VISIBLE);
+        coughWheezeCard.setVisibility(View.VISIBLE);
+        triggersCard.setVisibility(View.VISIBLE);
+
+        SeekBar seekbar = findViewById(R.id.seekBar);
+        seekbar.setProgress(Math.toIntExact(activityLimits));
+
+        Slider slider = findViewById(R.id.sliderCough);
+        slider.setValue((float) coughingWheezing);
+
+        RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
+        RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
+        RadioButton radioNo = findViewById(R.id.radioNo);    // night waking
+        if(nightWaking == true){
+            radioNight.check(R.id.radioYes);
+        }
+        else{
+            radioNight.check(R.id.radioNo);
+        }
+
+
+    }
+
+    public void updateInfoInputWithoutValues() {
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setVisibility(View.VISIBLE);
+        activityLimitsCard.setVisibility(View.VISIBLE);
+        coughWheezeCard.setVisibility(View.VISIBLE);
+        triggersCard.setVisibility(View.VISIBLE);
+
+
+    }
+
+    /**
+     * making cards appear for other based on toggle
+     */
+    public void setCardOther(){
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setVisibility(View.INVISIBLE);
+        activityLimitsCard.setVisibility(View.INVISIBLE);
+        coughWheezeCard.setVisibility(View.INVISIBLE);
+        triggersCard.setVisibility(View.INVISIBLE);
     }
 
     /**
@@ -158,8 +217,9 @@ public class CheckInPageActivity extends Activity {
      * @param correspondingUid, stores it's corresponding child or user
      */
     public void userInfoLoaded(String role, String correspondingUid){
-        this.userRole = role;
+        userRole = role;
         this.correspondingUid = correspondingUid;
+        updateUIBasedOnRole(role);
     }
 
     /**
@@ -232,21 +292,6 @@ public class CheckInPageActivity extends Activity {
             activityPrompt.setText("How limited was your child's activity level today?");
             coughingPrompt.setText("How often was your child coughing or wheezing today?");
         }
-    }
 
-    /**
-     * making cards appear based on toggle
-     * @param visible if card should if be seen or not
-     */
-    public void setCardViewVisibility(int visible){
-        CardView nightWakingCard = findViewById(R.id.nightCard);
-        CardView activityLimitsCard = findViewById(R.id.activity);
-        CardView coughWheezeCard = findViewById(R.id.coughing);
-        CardView triggersCard = findViewById(R.id.triggers);
-
-        nightWakingCard.setVisibility(visible);
-        activityLimitsCard.setVisibility(visible);
-        coughWheezeCard.setVisibility(visible);
-        triggersCard.setVisibility(visible);
     }
 }

@@ -7,6 +7,7 @@ import com.example.smart_air.CheckInPageActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
@@ -59,8 +60,12 @@ public class CheckInRepository {
                     }
 
                     activity.userInfoLoaded(role, correspondingUid);
-
+                })
+                .addOnFailureListener(e -> {
+                    activity.noUserFound();
                 });
+
+
     }
 
     public void saveUserData(Context context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue) {
@@ -134,6 +139,37 @@ public class CheckInRepository {
                     // failure
                 });
 
+    }
+
+    public void getUserInput(CheckInPageActivity activity){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            activity.updateInfoInputWithoutValues();
+        }
+        String uid = user.getUid();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDocId = sdf.format(new Date());
+
+        DocumentReference dailyEntry = db.collection("dailyCheckins")
+                .document(uid)
+                .collection("entries")
+                .document(todayDocId);
+
+        dailyEntry.get().addOnSuccessListener(document ->{
+            if (!(document.exists())) {
+                activity.updateInfoInputWithoutValues();
+                return;
+            }
+
+            Boolean nightWaking = document.getBoolean("nightWaking");
+            Long activityLimits = document.getLong("activityLimits");
+            Long coughingWheezing = document.getLong("coughingWheezing");
+            List<String> triggers = (List<String>) document.get("triggers");
+
+            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers);
+        });
     }
 }
 
