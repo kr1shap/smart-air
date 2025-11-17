@@ -274,5 +274,4 @@ public class AuthRepository {
         void onResult(String parentUid); // if invalid or exp -> null
     }
 
-
 }

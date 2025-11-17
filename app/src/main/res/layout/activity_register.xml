@@ -8,6 +8,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="10dp"
+        android:layout_marginHorizontal="2dp"
         android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -47,7 +48,7 @@
             android:orientation="horizontal"
             android:gravity="center"
             android:layout_marginTop="30dp"
-            android:layout_marginHorizontal="15dp">
+            android:layout_marginHorizontal="13dp">
 
             <Button
                 android:id="@+id/parent"
@@ -129,6 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
+                android:textColor="@color/colour_indigo"
                 android:fontFamily="@font/dm_sans_regular"
                 android:text="*Must be minimum length 8 with 1 digit, 1 lower &amp; upper case, 1 special character [@#$%^&amp;+=!]" />
 
