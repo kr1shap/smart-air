@@ -226,6 +226,9 @@ public class CheckInPageActivity extends Activity {
         radioYes.setEnabled(true);
         radioNo.setEnabled(true);
 
+        MaterialButton save = findViewById(R.id.buttonSave);
+        save.setEnabled(true);
+
         updateUIBasedOnRole(userRole);
     }
     /**
@@ -257,6 +260,9 @@ public class CheckInPageActivity extends Activity {
         radioNight.setEnabled(false);
         radioYes.setEnabled(false);
         radioNo.setEnabled(false);
+
+        MaterialButton save = findViewById(R.id.buttonSave);
+        save.setEnabled(false);
 
         if(userRole.equals("child")){
             updateUIBasedOnRole("parent");
