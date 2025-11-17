@@ -20,6 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Smart Air   "
+            android:fontFamily="@font/dm_sans_bold"
             android:textStyle="bold"
             android:textColor="@android:color/white"
             android:textSize="20sp"
@@ -27,8 +28,8 @@
 
         <ImageView
             android:id="@+id/logo"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="35dp"
+            android:layout_height="40dp"
             android:src="@drawable/transparentlog"
             android:layout_gravity="center"
             android:contentDescription="Logo" />
@@ -72,11 +73,39 @@
         tools:layout_editor_absoluteX="184dp"
         tools:layout_editor_absoluteY="375dp" />
 
+
+
+    <LinearLayout
+        style="@style/TextFieldGroup">
+
+        <TextView
+            style="@style/TextFieldLabel"
+            android:text="Your Label" />
+
+        <EditText
+            android:id="@+id/yourFieldId"
+            style="@style/RoundedTextField"
+            android:hint="Your hint"
+            android:inputType="text" />
+    </LinearLayout>
+
+
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" >
+        android:layout_weight="1">
+
+        <Button
+            android:id="@+id/signout"
+            style="@style/SmartAir.Button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sign out button! (should actually work!)"
+            tools:layout_editor_absoluteX="152dp"
+            tools:layout_editor_absoluteY="245dp" />
     </FrameLayout>
+
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
