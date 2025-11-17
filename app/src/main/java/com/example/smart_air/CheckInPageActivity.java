@@ -5,12 +5,14 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import com.example.smart_air.Repository.CheckInRepository;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -27,6 +29,7 @@ import javax.annotation.Nullable;
 public class CheckInPageActivity extends Activity {
     String userRole = "";
     String correspondingUid;
+    String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running"};
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -51,33 +54,12 @@ public class CheckInPageActivity extends Activity {
         fixingCoughingUI();
 
         // setting up multiselect option
-        TextView multiSelectTriggers = findViewById(R.id.multiSelect);          // setting up triggers
-        String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running"};
         boolean [] selectedTriggers = new boolean[triggers.length];
-        multiSelectTriggers.setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Select Symptoms")
-                    .setMultiChoiceItems(triggers, selectedTriggers, (dialog, which, isChecked) -> {
-                        selectedTriggers[which] = isChecked;
-                    })
-                    .setPositiveButton("OK", (dialog, which) -> {
-                        StringBuilder selected = new StringBuilder();
-                        for (int i = 0; i < triggers.length; i++) {
-                            if (selectedTriggers[i]) selected.append(triggers[i]).append(", ");
-                        }
-                        if (selected.length() > 0) {
-                            selected.setLength(selected.length() - 2); // remove trailing comma
-                            multiSelectTriggers.setText(selected.toString());
-                        } else {
-                            multiSelectTriggers.setText("Tap to select");
-                        }
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
+        selectedTriggers = setUpTriggers(selectedTriggers);
 
         // clicking save button and adding to firestore
         MaterialButton save = findViewById(R.id.buttonSave);
+        boolean[] finalSelectedTriggers = selectedTriggers;
         save.setOnClickListener(v-> {
             RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
             RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
@@ -86,7 +68,7 @@ public class CheckInPageActivity extends Activity {
             int activityValue = (int)seekBar.getProgress();
             Slider slider = findViewById(R.id.sliderCough);                         // coughing/wheezing
             int coughingValue = (int)slider.getValue();
-            repo.saveUserData(this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue);
+            repo.saveUserData(this, userRole, triggers, finalSelectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue);
         });
 
 
@@ -100,7 +82,7 @@ public class CheckInPageActivity extends Activity {
                 buttonChild.setBackgroundColor(getColor(R.color.role_default_bg));
                 buttonParent.setBackgroundColor(getColor(R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    setCardOther();
+                    repo.getUserInputOther(this,correspondingUid);
                 }
                 else if(userRole.equals("parent")){
                     repo.getUserInput(this);
@@ -114,7 +96,7 @@ public class CheckInPageActivity extends Activity {
 
                 }
                 else if(userRole.equals("parent")){
-                    setCardOther();
+                    repo.getUserInputOther(this,correspondingUid);
                 }
             }
         });
@@ -122,7 +104,7 @@ public class CheckInPageActivity extends Activity {
 
     }
 
-    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> triggers) {
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection) {
         CardView nightWakingCard = findViewById(R.id.nightCard);
         CardView activityLimitsCard = findViewById(R.id.activity);
         CardView coughWheezeCard = findViewById(R.id.coughing);
@@ -140,8 +122,6 @@ public class CheckInPageActivity extends Activity {
         slider.setValue((float) coughingWheezing);
 
         RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
-        RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
-        RadioButton radioNo = findViewById(R.id.radioNo);    // night waking
         if(nightWaking == true){
             radioNight.check(R.id.radioYes);
         }
@@ -149,6 +129,18 @@ public class CheckInPageActivity extends Activity {
             radioNight.check(R.id.radioNo);
         }
 
+//        boolean [] selectedTriggers = new boolean[triggers.length];
+//        for(int i = 0; i < triggers.length; i++){
+//            if(selection.contains(triggers[i])){
+//                selectedTriggers[i] = true;
+//            }
+//            else{
+//                selectedTriggers[i] = false;
+//            }
+//        }
+//        setUpTriggers(selectedTriggers);
+
+        setCardCurrent();
 
     }
 
@@ -163,9 +155,79 @@ public class CheckInPageActivity extends Activity {
         coughWheezeCard.setVisibility(View.VISIBLE);
         triggersCard.setVisibility(View.VISIBLE);
 
+        setCardCurrent();
+
 
     }
 
+    public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> triggers) {
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setVisibility(View.VISIBLE);
+        activityLimitsCard.setVisibility(View.VISIBLE);
+        coughWheezeCard.setVisibility(View.VISIBLE);
+        triggersCard.setVisibility(View.VISIBLE);
+
+        SeekBar seekbar = findViewById(R.id.seekBar);
+        seekbar.setProgress(Math.toIntExact(activityLimits));
+
+        Slider slider = findViewById(R.id.sliderCough);
+        slider.setValue((float) coughingWheezing);
+
+        RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
+        if(nightWaking == true){
+            radioNight.check(R.id.radioYes);
+        }
+        else{
+            radioNight.check(R.id.radioNo);
+        }
+
+
+        setCardOther();
+
+    }
+
+    public void updateInfoInputOtherWithoutValues() {
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setVisibility(View.VISIBLE);
+        activityLimitsCard.setVisibility(View.VISIBLE);
+        coughWheezeCard.setVisibility(View.VISIBLE);
+        triggersCard.setVisibility(View.VISIBLE);
+
+        setCardOther();
+
+    }
+
+    public void setCardCurrent(){
+        CardView nightWakingCard = findViewById(R.id.nightCard);
+        CardView activityLimitsCard = findViewById(R.id.activity);
+        CardView coughWheezeCard = findViewById(R.id.coughing);
+        CardView triggersCard = findViewById(R.id.triggers);
+
+        nightWakingCard.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+        activityLimitsCard.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+        coughWheezeCard.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+        triggersCard.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+        SeekBar seekbar = findViewById(R.id.seekBar);
+        seekbar.setEnabled(true);
+        Slider slider = findViewById(R.id.sliderCough);
+        slider.setEnabled(true);
+        RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
+        RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
+        RadioButton radioNo = findViewById(R.id.radioNo);    // night waking
+        radioNight.setEnabled(true);
+        radioYes.setEnabled(true);
+        radioNo.setEnabled(true);
+
+        updateUIBasedOnRole(userRole);
+    }
     /**
      * making cards appear for other based on toggle
      */
@@ -175,10 +237,33 @@ public class CheckInPageActivity extends Activity {
         CardView coughWheezeCard = findViewById(R.id.coughing);
         CardView triggersCard = findViewById(R.id.triggers);
 
-        nightWakingCard.setVisibility(View.INVISIBLE);
-        activityLimitsCard.setVisibility(View.INVISIBLE);
-        coughWheezeCard.setVisibility(View.INVISIBLE);
-        triggersCard.setVisibility(View.INVISIBLE);
+        nightWakingCard.setVisibility(View.VISIBLE);
+        activityLimitsCard.setVisibility(View.VISIBLE);
+        coughWheezeCard.setVisibility(View.VISIBLE);
+        triggersCard.setVisibility(View.VISIBLE);
+
+        nightWakingCard.setBackgroundColor(ContextCompat.getColor(this, R.color.colour_grey));
+        activityLimitsCard.setBackgroundColor(ContextCompat.getColor(this, R.color.colour_grey));
+        coughWheezeCard.setBackgroundColor(ContextCompat.getColor(this, R.color.colour_grey));
+        triggersCard.setBackgroundColor(ContextCompat.getColor(this, R.color.colour_grey));
+
+        SeekBar seekbar = findViewById(R.id.seekBar);
+        seekbar.setEnabled(false);
+        Slider slider = findViewById(R.id.sliderCough);
+        slider.setEnabled(false);
+        RadioGroup radioNight = findViewById(R.id.radioNight); // night waking
+        RadioButton radioYes = findViewById(R.id.radioYes);    // night waking
+        RadioButton radioNo = findViewById(R.id.radioNo);    // night waking
+        radioNight.setEnabled(false);
+        radioYes.setEnabled(false);
+        radioNo.setEnabled(false);
+
+        if(userRole.equals("child")){
+            updateUIBasedOnRole("parent");
+        }
+        else{
+            updateUIBasedOnRole("child");
+        }
     }
 
     /**
@@ -293,5 +378,32 @@ public class CheckInPageActivity extends Activity {
             coughingPrompt.setText("How often was your child coughing or wheezing today?");
         }
 
+    }
+
+    private boolean [] setUpTriggers(boolean [] selectedTriggers){
+        TextView multiSelectTriggers = findViewById(R.id.multiSelect);
+        multiSelectTriggers.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Select Symptoms")
+                    .setMultiChoiceItems(triggers, selectedTriggers, (dialog, which, isChecked) -> {
+                        selectedTriggers[which] = isChecked;
+                    })
+                    .setPositiveButton("OK", (dialog, which) -> {
+                        StringBuilder selected = new StringBuilder();
+                        for (int i = 0; i < triggers.length; i++) {
+                            if (selectedTriggers[i]) selected.append(triggers[i]).append(", ");
+                        }
+                        if (selected.length() > 0) {
+                            selected.setLength(selected.length() - 2); // remove trailing comma
+                            multiSelectTriggers.setText(selected.toString());
+                        } else {
+                            multiSelectTriggers.setText("Tap to select");
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        return selectedTriggers;
     }
 }

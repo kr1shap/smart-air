@@ -59,6 +59,9 @@ public class CheckInRepository {
                         }
                     }
 
+                    if (correspondingUid == null){
+                        activity.noUserFound();
+                    }
                     activity.userInfoLoaded(role, correspondingUid);
                 })
                 .addOnFailureListener(e -> {
@@ -169,6 +172,36 @@ public class CheckInRepository {
             List<String> triggers = (List<String>) document.get("triggers");
 
             activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers);
+        });
+    }
+
+    public void getUserInputOther(CheckInPageActivity activity, String otherUid){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            activity.updateInfoInputOtherWithoutValues();
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDocId = sdf.format(new Date());
+
+        DocumentReference dailyEntry = db.collection("dailyCheckins")
+                .document(otherUid)
+                .collection("entries")
+                .document(todayDocId);
+
+        dailyEntry.get().addOnSuccessListener(document ->{
+            if (!(document.exists())) {
+                activity.updateInfoInputOtherWithoutValues();
+                return;
+            }
+
+            Boolean nightWaking = document.getBoolean("nightWaking");
+            Long activityLimits = document.getLong("activityLimits");
+            Long coughingWheezing = document.getLong("coughingWheezing");
+            List<String> triggers = (List<String>) document.get("triggers");
+
+            activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers);
         });
     }
 }

@@ -84,14 +84,14 @@
                 android:id="@+id/buttonParent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Parent"
+                android:text="Parent ENTRY"
                 app:cornerRadius="20dp"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonChild"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Child"
+                android:text="Child ENTRY"
                 app:cornerRadius="20dp"/>
         </com.google.android.material.button.MaterialButtonToggleGroup>
 

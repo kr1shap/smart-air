@@ -7,6 +7,7 @@
     <color name="colour_indigo">#2B2D42</color>
     <color name="colour_white">#F9FCFF</color>
     <color name="colour_lightBlue">#C1DBE3</color>
+    <color name="colour_grey">#F5F5F5</color>
 
     <color name="role_selected_bg">#204ba8</color>
     <color name="role_default_bg">#007CBE</color>
