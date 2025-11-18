@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.FirebaseInitalizer;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
 import com.google.firebase.Timestamp;
@@ -14,6 +15,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -130,17 +132,42 @@ public class AuthRepository {
                                         addChildToParent(parentUid, auth.getCurrentUser().getUid(), new AuthContract.GeneralCallback() {
                                             @Override
                                             public void onSuccess() {
-                                                // Mark invite as used
-                                                markInviteAsUsed(accessCode);
-                                                callback.onSuccess(savedUser);
+                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
+                                                    @Override
+                                                    public void onSuccess() {
+                                                        // invite as used
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(String error) {
+                                                        // child user created but child collection failed
+                                                        // still, mark invite as used and continue
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+                                                });
+
                                             }
 
                                             @Override
                                             public void onFailure(String error) {
-                                                // Even if adding to parent fails, child account was created
-                                                // Still mark invite as used and continue
-                                                markInviteAsUsed(accessCode);
-                                                callback.onSuccess(savedUser);
+                                                // even if adding to parent fails, child account was created
+                                                // still, attempt to add to children collection
+                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
+                                                    @Override
+                                                    public void onSuccess() {
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(String childError) {
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+                                                });
                                             }
                                         });
                                     }
@@ -158,6 +185,42 @@ public class AuthRepository {
             }
         });
     }
+
+    //Helper method to add a new child object to children db
+    private void addChildCollection(String parentUid, String childUid, AuthContract.GeneralCallback callback) {
+        Map<String, Boolean> sharing = new HashMap<>();
+        sharing.put("rescue", true);
+        sharing.put("controller_as", true);
+        sharing.put("symptoms", true);
+        sharing.put("triggers",true);
+        sharing.put("pef",true);
+        sharing.put("triage",true);
+        sharing.put("charts",true);
+
+        // Create the object
+        Child child = new Child(
+                childUid,           // childUid
+                parentUid,          // parentUid
+                new Date(),        // make it current date, parent will modify
+                null,              // extraNotes
+                0,                // personalBest
+                sharing           // sharing
+        );
+
+        db.collection("children")
+                .document(child.getChildUid())   // doc id
+                .set(child)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firestore", "Child added using model!");
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Failed to add child", e);
+                    callback.onFailure(e.getMessage());
+                });
+
+    }
+
 
     // Helper method to add child UID to parent document
     private void addChildToParent(String parentUid, String childUid, AuthContract.GeneralCallback callback) {
