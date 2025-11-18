@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
@@ -52,7 +53,6 @@ public class CheckInFragment extends Fragment {
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
-        //repo.getUserInput(this,userRole,correspondingUid);
 
         // setting date
         TextView textView3 = view.findViewById(R.id.textView3);
@@ -388,9 +388,15 @@ public class CheckInFragment extends Fragment {
     /**
      * a method called when an error occurs, goes back the main activity
      */
-    public void noUserFound(){
-        //Intent intent = new Intent(this, MainActivity.class);
-        //startActivity(intent);
+    public void noUserFound() {
+        FragmentManager fm = requireActivity().getSupportFragmentManager();
+        Fragment fragment = fm.findFragmentById(R.id.fragment_container);
+
+        if (fragment instanceof CheckInFragment) {
+            fm.beginTransaction()
+                    .remove(fragment)
+                    .commit();
+        }
     }
 
     /**

@@ -50,15 +50,24 @@ public class CheckInRepository {
                         if (list != null && !list.isEmpty()) {
                             correspondingUid = list.get(0);
                         }
+                        else{
+                            activity.noUserFound();
+                            return;
+                        }
                     } else if ("child".equals(role)) {
                         List<String> list = (List<String>) document.get("parentUid");
                         if (list != null && !list.isEmpty()) {
                             correspondingUid = list.get(0);
                         }
+                        else{
+                            activity.noUserFound();
+                            return;
+                        }
                     }
 
                     if (correspondingUid == null){
                         activity.noUserFound();
+                        return;
                     }
                     activity.userInfoLoaded(role, correspondingUid);
                 })
