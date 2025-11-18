@@ -42,9 +42,13 @@ dependencies {
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.google.android.material:material:1.11.0'
+    //TODO: Cleanup if possible
+    implementation libs.material.v1120
+    implementation libs.gson
+    implementation libs.material.v1110
+    implementation libs.viewpager2
+    implementation libs.cardview
+    implementation libs.material.v190
 
     implementation platform('com.google.firebase:firebase-bom:34.5.0')
     implementation libs.firebase.analytics

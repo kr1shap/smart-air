@@ -38,8 +38,8 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
                        String accessCode, String role) {
 
         //Check child-specific validation
-        if(role.equals("child") && (username == null || username.trim().isEmpty())) {
-            view.showError("Username is required");
+        if(role.equals("child") && (username == null || username.trim().isEmpty() || username.trim().length() < 3)) {
+            view.showError("Username is required and of minimum length 3");
             return;
         }
         //Check provider and child specific validation
@@ -51,7 +51,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         if(!role.equals("child") && (email == null || email.trim().isEmpty()) ) {
             view.showError("Email is required");
             return;
-        } else if (!isValidEmail(email)) {
+        } else if (!role.equals("child") && !isValidEmail(email)) {
             view.showError("Invalid email format");
             return;
         }
