@@ -360,7 +360,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- Title -->
+            <!-- title -->
             <TextView
                 android:id="@+id/textView80"
                 style="@style/SmartAir.Text.title"
@@ -373,7 +373,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Icon -->
+            <!-- icon -->
             <ImageView
                 android:id="@+id/triggerIcon"
                 android:layout_width="22dp"
@@ -441,7 +441,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- Title -->
+            <!-- title -->
             <TextView
                 android:id="@+id/textView90"
                 style="@style/SmartAir.Text.title"
@@ -454,7 +454,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Icon -->
+            <!-- icon -->
             <ImageView
                 android:id="@+id/PEFIcon"
                 android:layout_width="22dp"
