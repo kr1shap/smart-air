@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import com.example.smart_air.Contracts.AuthContract.AuthCallback;
 
@@ -40,7 +41,7 @@ public class AuthRepository {
                         assert firebaseUser != null; //assert that not null, b/c task successful
                         User user = new User(
                                 firebaseUser.getUid(), //UID created - save to firestore
-                                email, //email
+                                email.toLowerCase(), //email (lowercase as auth makes all lowercase)
                                 null, //no username for parent
                                 "parent",
                                 null ,//no parent uid needed
@@ -67,7 +68,7 @@ public class AuthRepository {
                                 // create user to save
                                 User user = new User(
                                         auth.getCurrentUser().getUid(),
-                                        email,
+                                        email.toLowerCase(),
                                         null,
                                         "provider",
                                         List.of(parentUid),
@@ -105,7 +106,7 @@ public class AuthRepository {
         checkAccessCode(accessCode, "child", parentUid -> {
             if (parentUid != null) {
                 //dummy email for child
-                String dummyEmail = username + "_child@smartAir.com";
+                String dummyEmail = username.toLowerCase() + "_child@smartair.com";
 
                 auth.createUserWithEmailAndPassword(dummyEmail, password)
                         .addOnCompleteListener(authTask -> {
@@ -183,7 +184,7 @@ public class AuthRepository {
 
     //Signin - CHILD
     public void signInChild(String username, String password, AuthCallback callback) {
-        String dummyEmail = username.toLowerCase() + "_child@smartAir.com";
+        String dummyEmail = username.toLowerCase() + "_child@smartair.com";
         signIn(dummyEmail, password, callback);
     }
 
