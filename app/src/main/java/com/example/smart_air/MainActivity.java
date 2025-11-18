@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.home);
-        //TextView textView3 = findViewById(R.id.textView3);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
             int id = page.getItemId();
@@ -42,13 +41,13 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                //
+                // add fragment for dashboard
             } else if (id == R.id.triage) {
-                //
+                // add fragment for triage
             } else if (id == R.id.history) {
-                //
+                // add fragment for history
             } else if (id == R.id.medicine) {
-                //
+                // add fragment for medicine
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {

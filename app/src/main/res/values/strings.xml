@@ -25,6 +25,8 @@
         <item>Parent</item>
         <item>Child</item>
     </string-array>
+    <string name="child_email">_child@smartair.com</string>
+    <string name="onboarding_illustration">Onboarding illustration</string>
 
     "
 </resources>
