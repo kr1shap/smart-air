@@ -2,17 +2,15 @@
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.constraintlayout.widget.ConstraintLayout
     android:id="@+id/checkin_page"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".CheckInPageActivity">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/textView2"
@@ -419,6 +417,75 @@
                 android:id="@+id/content_frame"
                 android:layout_width="0dp"
                 android:layout_height="0dp"></FrameLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:id="@+id/PEF"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/triggers"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/textView90"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     PEF"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Icon -->
+            <ImageView
+                android:id="@+id/PEFIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/pef"
+                android:contentDescription="Logo"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/textView91"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="What would you say is your child's PEF for today? "
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView90"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <EditText
+                android:id="@+id/editTextNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="number"
+                android:text="400"
+                app:layout_constraintTop_toBottomOf="@id/textView91"
+                tools:layout_editor_absoluteY="0dp" />
+
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

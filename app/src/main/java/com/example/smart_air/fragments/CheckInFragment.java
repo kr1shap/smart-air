@@ -1,13 +1,11 @@
 package com.example.smart_air.fragments;
 
-import static androidx.core.app.NotificationCompat.getColor;
-
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
@@ -18,11 +16,8 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.smart_air.CheckInPageActivity;
-import com.example.smart_air.MainActivity;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.slider.Slider;
@@ -56,7 +51,7 @@ public class CheckInFragment extends Fragment {
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
-        repo.getUserInput(this);
+        repo.getUserInput(this,userRole);
 
 
         // fixing bottom navigation
@@ -85,7 +80,18 @@ public class CheckInFragment extends Fragment {
             int activityValue = (int)seekBar.getProgress();
             Slider slider = view.findViewById(R.id.sliderCough);                         // coughing/wheezing
             int coughingValue = (int)slider.getValue();
-            repo.saveUserData(this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue);
+            int pef = 0;
+            if(userRole.equals("parent")){
+                EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
+                String myNumberEditTextString = myNumberEditText.getText().toString();
+                if(myNumberEditTextString.equals("")){
+                    pef = 400;
+                }
+                else{
+                    pef = Integer.parseInt(myNumberEditTextString);
+                }
+            }
+            repo.saveUserData(this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef);
         });
 
 
@@ -99,31 +105,35 @@ public class CheckInFragment extends Fragment {
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    repo.getUserInputOther(this,correspondingUid);
+                    repo.getUserInputOther(this,correspondingUid,userRole);
                 }
                 else if(userRole.equals("parent")){
-                    repo.getUserInput(this);
+                    repo.getUserInput(this,userRole);
                 }
             }
             else if (checkedId == R.id.buttonChild && isChecked){
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    repo.getUserInput(this);
+                    repo.getUserInput(this,userRole);
 
                 }
                 else if(userRole.equals("parent")){
-                    repo.getUserInputOther(this,correspondingUid);
+                    repo.getUserInputOther(this,correspondingUid,userRole);
                 }
             }
         });
     }
 
-    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection) {
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+
+        if(userRole.equals("parent")){PEFCard.setVisibility(View.VISIBLE);}
+        else{PEFCard.setVisibility(View.INVISIBLE);}
 
         nightWakingCard.setVisibility(View.VISIBLE);
         activityLimitsCard.setVisibility(View.VISIBLE);
@@ -147,6 +157,12 @@ public class CheckInFragment extends Fragment {
         currentTriggers = String.join(", ", selection);
         TextView multiSelectTriggers = view.findViewById(R.id.multiSelect);
         multiSelectTriggers.setText(currentTriggers);
+
+        if(userRole.equals("parent")){
+            EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
+            myNumberEditText.setText(pef.toString());
+        }
+
         setCardCurrent();
 
     }
@@ -156,6 +172,10 @@ public class CheckInFragment extends Fragment {
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+
+        if(userRole.equals("parent")){PEFCard.setVisibility(View.VISIBLE);}
+        else{PEFCard.setVisibility(View.INVISIBLE);}
 
         nightWakingCard.setVisibility(View.VISIBLE);
         activityLimitsCard.setVisibility(View.VISIBLE);
@@ -181,11 +201,15 @@ public class CheckInFragment extends Fragment {
 
     }
 
-    public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection) {
+    public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+
+        if(userRole.equals("parent")){PEFCard.setVisibility(View.VISIBLE);}
+        else{PEFCard.setVisibility(View.INVISIBLE);}
 
         nightWakingCard.setVisibility(View.VISIBLE);
         activityLimitsCard.setVisibility(View.VISIBLE);
@@ -210,6 +234,11 @@ public class CheckInFragment extends Fragment {
         TextView multiSelectTriggers = view.findViewById(R.id.multiSelect);
         multiSelectTriggers.setText(currentTriggers);
 
+        if(userRole.equals("child")){
+            EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
+            myNumberEditText.setText(pef.toString());
+        }
+
 
         setCardOther();
 
@@ -220,6 +249,8 @@ public class CheckInFragment extends Fragment {
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+        PEFCard.setVisibility(View.INVISIBLE);
 
         nightWakingCard.setVisibility(View.INVISIBLE);
         activityLimitsCard.setVisibility(View.INVISIBLE);
@@ -244,11 +275,16 @@ public class CheckInFragment extends Fragment {
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+
+        if(userRole.equals("parent")){PEFCard.setVisibility(View.VISIBLE);}
+        else{PEFCard.setVisibility(View.INVISIBLE);}
 
         nightWakingCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
         activityLimitsCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
         coughWheezeCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
         triggersCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
+        PEFCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
         SeekBar seekbar = view.findViewById(R.id.seekBar);
         seekbar.setEnabled(true);
         Slider slider = view.findViewById(R.id.sliderCough);
@@ -279,6 +315,11 @@ public class CheckInFragment extends Fragment {
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
         CardView triggersCard = view.findViewById(R.id.triggers);
+        CardView PEFCard = view.findViewById(R.id.PEF);
+
+        if(userRole.equals("parent")){PEFCard.setVisibility(View.VISIBLE);}
+        else{PEFCard.setVisibility(View.INVISIBLE);}
+
 
         nightWakingCard.setVisibility(View.VISIBLE);
         activityLimitsCard.setVisibility(View.VISIBLE);
@@ -289,6 +330,7 @@ public class CheckInFragment extends Fragment {
         activityLimitsCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colour_grey));
         coughWheezeCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colour_grey));
         triggersCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colour_grey));
+        PEFCard.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colour_grey));
 
         SeekBar seekbar = view.findViewById(R.id.seekBar);
         seekbar.setEnabled(false);
@@ -359,46 +401,6 @@ public class CheckInFragment extends Fragment {
         updateUIBasedOnRole(role);
     }
 
-//    /**
-//     * Fixes the navigation bar and gets it working
-//     * @param currentPage, an R.id  on what the current page is
-//     */
-//    private void navigationBar(int currentPage){
-//        // getting bottom navigation
-//        BottomNavigationView bottomNavigationView = view.findViewById(R.id.bottom_navigation);
-//        bottomNavigationView.setSelectedItemId(R.id.checkin);
-//
-//        // setting bottom navigation controls
-//        bottomNavigationView.setOnItemSelectedListener(page -> {
-//            int id = page.getItemId();
-//
-//            if (id == R.id.home) {
-//                Intent intent = new Intent(this, MainActivity.class);
-//                startActivity(intent);
-//                return true;
-//            } else if (id == R.id.triage) {
-//                Intent intent = new Intent(this, MainActivity.class);
-//                startActivity(intent);
-//                return true;
-//            } else if (id == R.id.history) {
-//                Intent intent = new Intent(this, MainActivity.class);
-//                startActivity(intent);
-//                return true;
-//            } else if (id == R.id.medicine) {
-//                Intent intent = new Intent(this, MainActivity.class);
-//                startActivity(intent);
-//                return true;
-//            } else if (id == R.id.checkin){
-//                Intent intent = new Intent(this, CheckInPageActivity.class);
-//                startActivity(intent);
-//                return true;
-//            }
-//            else {
-//                return false;
-//            }
-//        });
-//    }
-
     /**
      * changes the text prompts based on type of user
      * @param userRole is the current type of user
@@ -407,6 +409,7 @@ public class CheckInFragment extends Fragment {
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);  // which form
         MaterialButton buttonParent = view.findViewById(R.id.buttonParent);          // which form
         MaterialButton buttonChild = view.findViewById(R.id.buttonChild);            // which form
+        CardView PEFCard = view.findViewById(R.id.PEF);
 
         // fix ui based on role
         TextView nightPrompt = view.findViewById(R.id.textView5);
@@ -419,6 +422,7 @@ public class CheckInFragment extends Fragment {
             nightPrompt.setText("Did you experience any night walking last night?");
             activityPrompt.setText("How limited was your activity level today?");
             coughingPrompt.setText("How often we’re you coughing or wheezing today?");
+            PEFCard.setVisibility(View.INVISIBLE);
 
         }
         else if(userRole.equals("parent")){
@@ -428,6 +432,7 @@ public class CheckInFragment extends Fragment {
             nightPrompt.setText("Did your child experience any night walking last night?");
             activityPrompt.setText("How limited was your child's activity level today?");
             coughingPrompt.setText("How often was your child coughing or wheezing today?");
+            PEFCard.setVisibility(View.VISIBLE);
         }
 
         TextView noInformation = view.findViewById(R.id.textView7);

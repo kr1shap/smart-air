@@ -1,14 +1,11 @@
 package com.example.smart_air.Repository;
 
-import android.content.Context;
 import android.util.Log;
 
-import com.example.smart_air.CheckInPageActivity;
 import com.example.smart_air.fragments.CheckInFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
@@ -72,7 +69,7 @@ public class CheckInRepository {
 
     }
 
-    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue) {
+    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef) {
         // getting user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
@@ -97,6 +94,9 @@ public class CheckInRepository {
         data.put("coughingWheezing", coughingValue);
         data.put("triggers", selected);
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
+        if(pef != 0 && userRole.equals("parent")){
+            data.put("pef",pef);
+        }
 
 
         DocumentReference userInfo = db.collection("dailyCheckins").document(uid); // getting the uid
@@ -144,7 +144,7 @@ public class CheckInRepository {
 
     }
 
-    public void getUserInput(CheckInFragment activity){
+    public void getUserInput(CheckInFragment activity, String userRole){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
@@ -170,12 +170,16 @@ public class CheckInRepository {
             Long activityLimits = document.getLong("activityLimits");
             Long coughingWheezing = document.getLong("coughingWheezing");
             List<String> triggers = (List<String>) document.get("triggers");
+            Long pef = 0L;
+            if(userRole.equals("parent")){
+                pef = document.getLong("pef");
+            }
 
-            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers);
+            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers, pef);
         });
     }
 
-    public void getUserInputOther(CheckInFragment activity, String otherUid){
+    public void getUserInputOther(CheckInFragment activity, String otherUid, String userRole){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
@@ -200,8 +204,12 @@ public class CheckInRepository {
             Long activityLimits = document.getLong("activityLimits");
             Long coughingWheezing = document.getLong("coughingWheezing");
             List<String> triggers = (List<String>) document.get("triggers");
+            Long pef = 0L;
+            if(userRole.equals("child")){
+                pef = document.getLong("pef");
+            }
 
-            activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers);
+            activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers, pef);
         });
     }
 }
