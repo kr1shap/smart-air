@@ -13,8 +13,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.fragments.CheckInFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -42,31 +44,38 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.home);
-        TextView textView3 = findViewById(R.id.textView3);
+        //TextView textView3 = findViewById(R.id.textView3);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
             int id = page.getItemId();
 
+            Fragment selectedFragment = null;
+
             if (id == R.id.home) {
-                textView3.setText("Home clicked!");
-                return true;
+                //
             } else if (id == R.id.triage) {
-                textView3.setText("Triage clicked!");
-                return true;
+                //
             } else if (id == R.id.history) {
-                textView3.setText("History clicked!");
-                return true;
+                //
             } else if (id == R.id.medicine) {
-                textView3.setText("Meidicine clicked!");
-                return true;
+                //
             } else if (id == R.id.checkin) {
-                Intent intent = new Intent(MainActivity.this, CheckInPageActivity.class);
-                startActivity(intent);
-                return true;
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof CheckInFragment)) {
+                    selectedFragment = new CheckInFragment();
+                }
+            } else {
+                return false; // unrecognized item
             }
-            else {
-                return false;
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, selectedFragment)
+                        .commit();
             }
+
+            return true;
         });
 
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.smart_air.CheckInPageActivity;
+import com.example.smart_air.fragments.CheckInFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -26,7 +27,7 @@ public class CheckInRepository {
     public CheckInRepository() {
         db = FirebaseFirestore.getInstance();
     }
-    public void getUserInfo(CheckInPageActivity activity) {
+    public void getUserInfo(CheckInFragment activity) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
@@ -71,7 +72,7 @@ public class CheckInRepository {
 
     }
 
-    public void saveUserData(Context context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue) {
+    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue) {
         // getting user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
@@ -94,7 +95,6 @@ public class CheckInRepository {
         data.put("nightWaking", nightWaking);
         data.put("activityLimits", activityLevel);
         data.put("coughingWheezing", coughingValue);
-        //data.put("triggers", Arrays.asList(selected));
         data.put("triggers", selected);
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
 
@@ -124,7 +124,7 @@ public class CheckInRepository {
         });
     }
 
-    private void addDataUser(Map<String, Object> data, Context context, String uid) {
+    private void addDataUser(Map<String, Object> data, CheckInFragment context, String uid) {
         // create document id
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String todayDocId = sdf.format(new Date());
@@ -144,7 +144,7 @@ public class CheckInRepository {
 
     }
 
-    public void getUserInput(CheckInPageActivity activity){
+    public void getUserInput(CheckInFragment activity){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
@@ -175,7 +175,7 @@ public class CheckInRepository {
         });
     }
 
-    public void getUserInputOther(CheckInPageActivity activity, String otherUid){
+    public void getUserInputOther(CheckInFragment activity, String otherUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
