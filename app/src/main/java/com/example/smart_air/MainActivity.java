@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.example.smart_air.Repository.AuthRepository;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -41,21 +42,31 @@ public class MainActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        TextView textView3 = findViewById(R.id.textView3);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
             int id = page.getItemId();
 
+            Fragment selectedFragment = null;
+
             if (id == R.id.home) {
-                textView3.setText("Home clicked!");
+                // add fragment for dashboard
             } else if (id == R.id.triage) {
-                textView3.setText("Triage clicked!");
+                // add fragment for triage
             } else if (id == R.id.history) {
-                textView3.setText("History clicked!");
+                // add fragment for history
             } else if (id == R.id.medicine) {
-                textView3.setText("Meidicine clicked!");
+                // add fragment for medicine
             } else if (id == R.id.checkin) {
-                textView3.setText("Checkin clicked!");
+                // add fragment for checkin
+            } else {
+                return false; // unrecognized item
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, selectedFragment)
+                        .commit();
             }
 
             return true;
