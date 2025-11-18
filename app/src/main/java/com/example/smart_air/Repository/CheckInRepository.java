@@ -89,17 +89,22 @@ public class CheckInRepository {
         }
 
         Map<String, Object> data = new HashMap<>();
-        data.put("nightWaking", nightWaking);
-        data.put("activityLimits", activityLevel);
-        data.put("coughingWheezing", coughingValue);
-        data.put("triggers", selected);
+        data.put("nightWaking"+userRole, nightWaking);
+        data.put("activityLimits"+userRole, activityLevel);
+        data.put("coughingWheezing"+userRole, coughingValue);
+        data.put("triggers"+userRole, selected);
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
-        if(pef != 0 && userRole.equals("parent")){
+        if(userRole.equals("parent")){
             data.put("pef",pef);
         }
 
+        String childUid = uid;
+        if(userRole.equals("parent")){
+            childUid = correspondingUid;
+        }
+        String childUidFinal = childUid;
 
-        DocumentReference userInfo = db.collection("dailyCheckins").document(uid); // getting the uid
+        DocumentReference userInfo = db.collection("dailyCheckins").document(childUid); // getting the uid
         userInfo.get().addOnSuccessListener(doc -> {
             if (!doc.exists()) {
                 // user doesn't exist yet, create it
@@ -109,28 +114,28 @@ public class CheckInRepository {
                     userData.put("parentUid", correspondingUid);
                 }
                 else {
-                    userData.put("childrenUid", correspondingUid);
+                    userData.put("parentUid", uid);
                 }
                 userInfo.set(userData)
                         .addOnSuccessListener(aVoid -> {
                             // add daily entry
-                            addDataUser(data, context, uid);
+                            addDataUser(data, context, childUidFinal);
                         })
                         .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to create user", e));
             } else {
                 // user already exists so just add the daily entry
-                addDataUser(data, context, uid);
+                addDataUser(data, context, childUidFinal);
             }
         });
     }
 
-    private void addDataUser(Map<String, Object> data, CheckInFragment context, String uid) {
+    private void addDataUser(Map<String, Object> data, CheckInFragment context, String childUid) {
         // create document id
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String todayDocId = sdf.format(new Date());
 
         DocumentReference dailyEntryRef = db.collection("dailyCheckins")
-                .document(uid)
+                .document(childUid)
                 .collection("entries")
                 .document(todayDocId);
 
@@ -139,24 +144,28 @@ public class CheckInRepository {
                     // success
                 })
                 .addOnFailureListener(e -> {
-                    // failure
+                    Log.e("FIRESTORE", "Failed to add daily entry", e);
                 });
 
     }
 
-    public void getUserInput(CheckInFragment activity, String userRole){
+    public void getUserInput(CheckInFragment activity, String userRole, String correspondingUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
             activity.updateInfoInputWithoutValues();
         }
-        String uid = user.getUid();
+        String childUid = correspondingUid;
+        if(userRole.equals("child")){
+            String uid = user.getUid();
+            childUid = uid;
+        }
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String todayDocId = sdf.format(new Date());
 
         DocumentReference dailyEntry = db.collection("dailyCheckins")
-                .document(uid)
+                .document(childUid)
                 .collection("entries")
                 .document(todayDocId);
 
@@ -166,10 +175,15 @@ public class CheckInRepository {
                 return;
             }
 
-            Boolean nightWaking = document.getBoolean("nightWaking");
-            Long activityLimits = document.getLong("activityLimits");
-            Long coughingWheezing = document.getLong("coughingWheezing");
-            List<String> triggers = (List<String>) document.get("triggers");
+            if (!(document.contains("nightWaking"+userRole))){
+                activity.updateInfoInputWithoutValues();
+                return;
+            }
+
+            Boolean nightWaking = document.getBoolean("nightWaking"+userRole);
+            Long activityLimits = document.getLong("activityLimits"+userRole);
+            Long coughingWheezing = document.getLong("coughingWheezing"+userRole);
+            List<String> triggers = (List<String>) document.get("triggers"+userRole);
             Long pef = 0L;
             if(userRole.equals("parent")){
                 pef = document.getLong("pef");
@@ -185,12 +199,20 @@ public class CheckInRepository {
         if (user == null) {
             activity.updateInfoInputOtherWithoutValues();
         }
+        String childUid = otherUid;
+        String otherUserRole = "child";
+        if(userRole.equals("child")){
+            String uid = user.getUid();
+            childUid = uid;
+            otherUserRole = "parent";
+        }
+        String otherUserRoleFinal = otherUserRole;
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String todayDocId = sdf.format(new Date());
 
         DocumentReference dailyEntry = db.collection("dailyCheckins")
-                .document(otherUid)
+                .document(childUid)
                 .collection("entries")
                 .document(todayDocId);
 
@@ -200,13 +222,19 @@ public class CheckInRepository {
                 return;
             }
 
-            Boolean nightWaking = document.getBoolean("nightWaking");
-            Long activityLimits = document.getLong("activityLimits");
-            Long coughingWheezing = document.getLong("coughingWheezing");
-            List<String> triggers = (List<String>) document.get("triggers");
+            if (!(document.contains("nightWaking"+otherUserRoleFinal))){
+                activity.updateInfoInputOtherWithoutValues();
+                return;
+            }
+
+            Boolean nightWaking = document.getBoolean("nightWaking"+otherUserRoleFinal);
+            Long activityLimits = document.getLong("activityLimits"+otherUserRoleFinal);
+            Long coughingWheezing = document.getLong("coughingWheezing"+otherUserRoleFinal);
+            List<String> triggers = (List<String>) document.get("triggers"+otherUserRoleFinal);
             Long pef = 0L;
-            if(userRole.equals("child")){
-                pef = document.getLong("pef");
+            if(userRole.equals("child") && document.contains("pef")){
+                Long temp = document.getLong("pef");
+                pef = temp != null ? temp : 400L;
             }
 
             activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers, pef);

@@ -2,6 +2,7 @@ package com.example.smart_air.fragments;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,11 +52,7 @@ public class CheckInFragment extends Fragment {
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
-        repo.getUserInput(this,userRole);
-
-
-        // fixing bottom navigation
-        //navigationBar(R.id.checkin);
+        //repo.getUserInput(this,userRole,correspondingUid);
 
         // setting date
         TextView textView3 = view.findViewById(R.id.textView3);
@@ -83,15 +80,15 @@ public class CheckInFragment extends Fragment {
             int pef = 0;
             if(userRole.equals("parent")){
                 EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
-                String myNumberEditTextString = myNumberEditText.getText().toString();
-                if(myNumberEditTextString.equals("")){
+                String myNumberEditTextString = myNumberEditText.getText().toString().trim();
+                try {
+                    pef = myNumberEditTextString.isEmpty() ? 400 : Integer.parseInt(myNumberEditTextString);
+                } catch (NumberFormatException e){
                     pef = 400;
                 }
-                else{
-                    pef = Integer.parseInt(myNumberEditTextString);
-                }
             }
-            repo.saveUserData(this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef);
+            Log.d("DEBUG", "Saving data: nightWaking=" + nightWaking + ", activity=" + activityValue + ", coughing=" + coughingValue + ", pef=" + pef);
+            repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef);
         });
 
 
@@ -105,21 +102,21 @@ public class CheckInFragment extends Fragment {
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    repo.getUserInputOther(this,correspondingUid,userRole);
+                   repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
                 }
                 else if(userRole.equals("parent")){
-                    repo.getUserInput(this,userRole);
+                   repo.getUserInput(this,userRole,correspondingUid);
                 }
             }
             else if (checkedId == R.id.buttonChild && isChecked){
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
                 if(userRole.equals("child")){
-                    repo.getUserInput(this,userRole);
+                  repo.getUserInput(this,userRole,correspondingUid);
 
                 }
                 else if(userRole.equals("parent")){
-                    repo.getUserInputOther(this,correspondingUid,userRole);
+                   repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
                 }
             }
         });
@@ -302,6 +299,9 @@ public class CheckInFragment extends Fragment {
         TextView multiSelectView = view.findViewById(R.id.multiSelect);
         multiSelectView.setEnabled(true);
 
+        EditText pefNumber = view.findViewById(R.id.editTextNumber);
+        pefNumber.setEnabled(true);
+
         TextView noInformation = view.findViewById(R.id.textView7);
         noInformation.setVisibility(View.INVISIBLE);
 
@@ -348,6 +348,9 @@ public class CheckInFragment extends Fragment {
 
         TextView multiSelectView = view.findViewById(R.id.multiSelect);
         multiSelectView.setEnabled(false);
+
+        EditText pefNumber = view.findViewById(R.id.editTextNumber);
+        pefNumber.setEnabled(false);
 
         if(userRole.equals("child")){
             updateUIBasedOnRole("parent");
