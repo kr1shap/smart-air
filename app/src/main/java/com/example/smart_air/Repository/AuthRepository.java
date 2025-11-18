@@ -39,7 +39,7 @@ public class AuthRepository {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
-                        //TODO: Ensure we dont need line below (assert)
+                        //TODO: Ensure we don't need line below (assert)
                         assert firebaseUser != null; //assert that not null, b/c task successful
                         User user = new User(
                                 firebaseUser.getUid(), //UID created - save to firestore
