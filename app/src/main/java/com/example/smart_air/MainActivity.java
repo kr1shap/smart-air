@@ -35,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new Dashboard())
+                .commit();
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -50,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (id == R.id.home) {
                 // add fragment for dashboard
+                selectedFragment = new Dashboard();
             } else if (id == R.id.triage) {
                 // add fragment for triage
             } else if (id == R.id.history) {
