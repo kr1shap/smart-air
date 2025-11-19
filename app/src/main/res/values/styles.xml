@@ -105,10 +105,10 @@
 
     <style name="SmartAir.ToggleDefaultButton" parent="Widget.MaterialComponents.Button">
         <item name="cornerRadius">24dp</item>
-        <item name="android:paddingTop">12dp</item>
-        <item name="android:paddingBottom">12dp</item>
-        <item name="android:paddingStart">24dp</item>
-        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
         <item name="android:textColor">@color/colour_white</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textAllCaps">false</item>
@@ -116,6 +116,20 @@
         <item name="backgroundTint">@color/colour_blue</item>
         <item name="rippleColor">@color/colour_lightBlue</item>
         <item name="elevation">4dp</item>
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">32dp</item>
     </style>
+    <style name="RedFlagSquare" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">18dp</item>
+        <item name="android:layout_height">25dp</item>
+        <item name="android:backgroundTint">#B75D5D</item>
+        <item name="android:checkable">true</item>
+        <item name="android:checked">false</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="iconTint">@android:color/white</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
 
 </resources>

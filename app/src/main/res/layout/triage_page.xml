@@ -19,7 +19,7 @@
         <ImageButton
             android:id="@+id/timer"
             android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_height="30dp"
             android:background="@android:color/transparent"
             android:src="@drawable/timer" />
 
@@ -61,11 +61,112 @@
         android:textStyle="bold" />
 
     <LinearLayout
+        android:id="@+id/red_flag_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#C86E6E"
+        android:layout_margin="16dp">
+
+        <TextView
+            android:id="@+id/red_flag_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quick Red Flags"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_flag_sentences"
+                style="@style/RedFlagSquare" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Can’t speak full sentences"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_flag_chest"
+                style="@style/RedFlagSquare" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Chest pulling"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_flag_retractions"
+                style="@style/RedFlagSquare" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="In/Retractions"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_flag_blue"
+                style="@style/RedFlagSquare" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Blue/Gray lips/Nails"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="14dp">
 
         <TextView
             android:id="@+id/textView2"
@@ -79,31 +180,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/textView3"
-            style="@style/SmartAir.Text.body"
-            android:layout_width="309dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="How many times have you used the rescue inhaler"
-            android:textSize="12sp" />
+            <TextView
+                android:id="@+id/textView3"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="309dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="How many times have you used the rescue inhaler"
+                android:textSize="12sp" />
 
-        <View
-            android:layout_width="40dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="8dp"
-            android:background="#EAF4FF" />
+            <EditText
+                android:id="@+id/textrra"
+                android:layout_width="40dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:background="#EAF4FF" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/textView4"
@@ -113,7 +215,8 @@
                 android:text="PEF (Optional)"
                 android:textSize="18sp" />
 
-            <View
+            <EditText
+                android:id="@+id/textpef"
                 android:layout_width="40dp"
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
@@ -123,22 +226,6 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:text="Rapid Rescue Alert"
-                android:textAlignment="center"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:textSize="12sp"
-                app:icon="@drawable/circle_notifications"
-                app:iconPadding="4dp"
-                app:iconSize="24dp" />
-
         </LinearLayout>
 
         <LinearLayout
@@ -153,8 +240,8 @@
                 style="@style/SmartAir.Button1"
                 android:layout_width="0dp"
                 android:layout_height="165dp"
-                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
+                android:layout_weight="1"
                 android:gravity="center"
                 android:text="Call Emergency Now"
                 android:textAlignment="center"
@@ -171,8 +258,8 @@
                 style="@style/SmartAir.Button1"
                 android:layout_width="0dp"
                 android:layout_height="165dp"
-                android:layout_weight="1"
                 android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:gravity="center"
                 android:text="Start Home Steps"
                 android:textAlignment="center"

@@ -1,11 +1,17 @@
 package com.example.smart_air;
-
+import androidx.core.content.ContextCompat;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -14,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -22,9 +29,11 @@ import com.example.smart_air.Repository.AuthRepository;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -39,7 +48,30 @@ public class TriageActivity extends AppCompatActivity{
     boolean timervisible=false;
     Timer timer;
     TimerTask timertask;
-    int recentresattNum=0;
+    EditText rraText;
+    int recentresattNum=-1;
+    EditText pefTriText;
+    int optTriPEF=-1;
+
+    MaterialButton flgsentences;
+    boolean checkedsen;
+    MaterialButton flgchestpull;
+    boolean checkedpull;
+    MaterialButton flgretract;
+    boolean checkedretract;
+    MaterialButton flgBluelips;
+    boolean checkedbluelips;
+
+    Button emergcall;
+    boolean emergcalled=false;
+    Button homestart;
+    boolean homestartpressed=false;
+    String decisioncardchoice;
+    String[] stringflags;
+    String [] guidance;
+    String [] userRes;
+
+
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
@@ -55,6 +87,99 @@ public class TriageActivity extends AppCompatActivity{
             public void onClick(View v) {
                 toggletimerdisplay();
             }
+        });
+        // home start steps click
+        homestart=findViewById((R.id.button4));
+        homestart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                homestartpressed=true;
+            }
+        });
+        // emergency call click
+        emergcall=findViewById(R.id.button3);
+        emergcall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                emergcalled=true;
+                Intent intentcall = new Intent(Intent.ACTION_DIAL);
+                intentcall.setData(Uri.parse("tel:6767676767")); //change to 911
+                startActivity(intentcall);
+            }
+        });
+        // PEF and recent rescue attempts
+        rraText=findViewById(R.id.textrra);
+        pefTriText=findViewById(R.id.textpef);
+
+        rraText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after)
+            {
+
+            }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String txt = s.toString();
+                if (!txt.isEmpty()) {
+                    recentresattNum = Integer.parseInt(txt);
+                }
+                else {
+                    recentresattNum = -1;
+                }
+            }
+            @Override
+            public void afterTextChanged(Editable s)
+            {
+
+            }
+        });
+
+        pefTriText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after)
+            {
+
+            }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String txt = s.toString();
+                if (!txt.isEmpty()) {
+                    optTriPEF = Integer.parseInt(txt);
+                }
+                else {
+                    optTriPEF = -1;
+                }
+            }
+            @Override
+            public void afterTextChanged(Editable s)
+            {
+
+            }
+        });
+        // quick red flag checks
+        flgsentences=findViewById(R.id.btn_flag_sentences);
+        flgsentences.setOnClickListener(v ->
+        {
+            checkedsen=!checkedsen;
+            updateflgbtn(flgsentences,checkedsen);
+        });
+        flgchestpull=findViewById(R.id.btn_flag_chest);
+        flgchestpull.setOnClickListener(v ->
+        {
+            checkedpull=!checkedpull;
+            updateflgbtn(flgchestpull,checkedpull);
+        });
+        flgretract=findViewById(R.id.btn_flag_retractions);
+        flgretract.setOnClickListener(v ->
+        {
+            checkedretract=!checkedretract;
+            updateflgbtn(flgretract,checkedretract);
+        });
+        flgBluelips=findViewById(R.id.btn_flag_blue);
+        flgBluelips.setOnClickListener(v ->
+        {
+            checkedbluelips=!checkedbluelips;
+            updateflgbtn(flgBluelips,checkedbluelips);
         });
     }
     private void toggletimerdisplay()
@@ -137,5 +262,69 @@ public class TriageActivity extends AppCompatActivity{
             timer.cancel();
         }
     }
+    public void updateflgbtn(MaterialButton btn, boolean checked) {
+        if (checked==true) {
+            btn.setIcon(ContextCompat.getDrawable(TriageActivity.this, R.drawable.checkbox));
+            btn.setIconTint(ColorStateList.valueOf(ContextCompat.getColor(TriageActivity.this, android.R.color.white)));
+        } else {
+            btn.setIcon(null);
+        }
+    }
+    public void decisionpressed(boolean ecall, boolean hsteps)
+    {
+        if (ecall==false&&hsteps==false)
+        {
+            decisioncardchoice="None";
+        }
+        else if (ecall==true&&hsteps==false)
+        {
+            decisioncardchoice="Call Emergency Now button clicked";
+        }
+        else if (ecall==false&&hsteps==true)
+        {
+            decisioncardchoice="Start Home Steps button clicked";
+        }
+        else
+        {
+            decisioncardchoice="Call Emergency Now and Start Home Steps buttons clicked";
+        }
+    }
+    public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails)
+    {
+        ArrayList<String> flagslist=new ArrayList<>();
+        if (chtpull==true)
+        {
+            flagslist.add("Can't speak full sentences");
+        }
+        if (sen==true)
+        {
+            flagslist.add("Chest Pulling");
+        }
+        if (inretrt==true)
+        {
+            flagslist.add("In/Retractions");
+        }
+        if (clrnails==true)
+        {
+            flagslist.add("Blue/Gray lips/Nails");
+        }
+        stringflags = flagslist.toArray(new String[0]);
+    }
+    public void guidanceadd(String choice, String zone)
+    {
+        guidance[0]=choice;
+        guidance[1]=zone;//
+    }
+    public void useresponseadd()
+    {
+
+    }
+
+
 }
+
+
+
+
+
 
