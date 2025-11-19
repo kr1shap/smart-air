@@ -12,23 +12,20 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.example.smart_air.Repository.AuthRepository;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.example.smart_air.Fragments.CheckInFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -56,14 +53,16 @@ public class MainActivity extends AppCompatActivity {
         ensureNotificationPermission();
         createNotifChannel(); // makes notification channel
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        TextView textView3 = findViewById(R.id.textView3);
+        bottomNavigationView.setSelectedItemId(R.id.home);
+
         bottomNavigationView.setOnItemSelectedListener(page -> {
             int id = page.getItemId();
 
+            Fragment selectedFragment = null;
+
             if (id == R.id.home) {
-                textView3.setText("Home clicked!");
+                // add fragment for dashboard
             } else if (id == R.id.triage) {
-                textView3.setText("Triage clicked!");
                 // switch page
                 Intent intenttri = new Intent(MainActivity.this, TriageActivity.class);
                 startActivity(intenttri);
@@ -73,11 +72,23 @@ public class MainActivity extends AppCompatActivity {
                 long endtime=System.currentTimeMillis()+10*60*1000L;
                 TriageState.triageendtime=endtime;
             } else if (id == R.id.history) {
-                textView3.setText("History clicked!");
+                // add fragment for history
             } else if (id == R.id.medicine) {
-                textView3.setText("Medicine clicked!");
+                // add fragment for medicine
             } else if (id == R.id.checkin) {
-                textView3.setText("Checkin clicked!");
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof CheckInFragment)) {
+                    selectedFragment = new CheckInFragment();
+                }
+            } else {
+                return false; // unrecognized item
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, selectedFragment)
+                        .commit();
             }
 
             return true;

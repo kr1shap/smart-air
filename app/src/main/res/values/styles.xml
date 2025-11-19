@@ -41,18 +41,18 @@
         <item name="rippleColor">@color/colour_lightBlue</item>
         <item name="elevation">4dp</item>
     </style>
-    <style name="SmartAir.Text.title" parent="TextAppearance.MaterialComponents.Headline1">
+    <style name="SmartAir.Text.title" parent="TextAppearance.AppCompat">
         <item name="android:textColor">@color/colour_blue</item>
         <item name="android:textSize">32sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="fontFamily">@font/dm_sans_regular</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
         <item name="android:letterSpacing">0.02</item>
     </style>
-    <style name="SmartAir.Text.body" parent="TextAppearance.MaterialComponents.Body1">
+    <style name="SmartAir.Text.body" parent="TextAppearance.AppCompat">
         <item name="android:textColor">@color/colour_black</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">normal</item>
-        <item name="fontFamily">@font/dm_sans_regular</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
         <item name="android:letterSpacing">0.02</item>
     </style>
 

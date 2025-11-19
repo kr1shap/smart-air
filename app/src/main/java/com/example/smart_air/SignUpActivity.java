@@ -134,7 +134,7 @@ public class SignUpActivity extends AppCompatActivity implements AuthContract.Si
 
     @Override
     public void navigateToOnboarding(User user) {
-        Intent intent = new Intent(this, MainActivity.class); //TODO: Replace with onboarding
+        Intent intent = new Intent(this, OnboardingActivity.class); //TODO: Replace with onboarding
         intent.putExtra("user", new Gson().toJson(user));
         startActivity(intent);
         finish(); //finish current activity
