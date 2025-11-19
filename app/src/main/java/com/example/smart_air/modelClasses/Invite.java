@@ -37,4 +37,21 @@ public class Invite {
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+
+    // helper method to check if invite is expired
+    public boolean isExpired() {
+        return expiresAt < System.currentTimeMillis();
+    }
+
+    // hlper method to check if invite is valid
+    public boolean isValid() {
+        return !used && !isExpired();
+    }
+
+    // helper method to get remaining days until expiration
+    public long getDaysUntilExpiry() {
+        long diff;
+        diff = expiresAt - System.currentTimeMillis();
+        return diff / (1000 * 60 * 60 * 24);
+    }
 }

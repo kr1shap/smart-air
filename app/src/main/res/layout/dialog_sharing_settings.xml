@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select what to share with provider"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Rescue Logs -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchRescueLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rescue Inhaler Logs"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Controller Adherence -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchControllerAdherence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Controller Adherence Summary"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Symptoms -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSymptoms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Symptoms"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Triggers -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchTriggers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Triggers"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Peak Flow -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchPeakFlow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Peak Flow (PEF)"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Triage Incidents -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchTriageIncidents"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Triage Incidents"
+            android:padding="12dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.2"/>
+
+        <!-- Summary Charts -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSummaryCharts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Summary Charts"
+            android:padding="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Changes take effect immediately"
+            android:textSize="12sp"
+            android:textColor="@color/primary_color"
+            android:layout_marginTop="16dp"
+            android:gravity="center"/>
+
+    </LinearLayout>
+</ScrollView>

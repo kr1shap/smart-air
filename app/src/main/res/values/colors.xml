@@ -12,5 +12,9 @@
     <color name="role_selected_bg">#204ba8</color>
     <color name="role_default_bg">#007CBE</color>
 
+    <!-- R2: child management colors -->
+    <color name="background_color">@color/colour_white</color>
+    <color name="primary_color">@color/colour_blue</color>
+    <color name="accent_color">#FF9800</color>
 
 </resources>

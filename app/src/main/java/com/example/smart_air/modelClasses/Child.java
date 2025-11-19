@@ -1,19 +1,34 @@
 package com.example.smart_air.modelClasses;
 
+import com.google.firebase.firestore.PropertyName;
+
 import java.util.Date;
 import java.util.Map;
+import java.util.HashMap;
 
 public class Child {
 
     private String childUid;
     private String parentUid;
-    private Date dob;   //util date
+    private String name;
+    private Date dob;
     private String extraNotes;
     private int personalBest;
-    private Map<String, Boolean> sharing; //toggle sharing
+    private Map<String, Boolean> sharing;
 
+    // Sharing keys constants
+    public static final String SHARE_RESCUE_LOGS = "rescue";
+    public static final String SHARE_CONTROLLER_ADHERENCE = "controller_as";
+    public static final String SHARE_SYMPTOMS = "symptoms";
+    public static final String SHARE_TRIGGERS = "triggers";
+    public static final String SHARE_PEAK_FLOW = "pef";
+    public static final String SHARE_TRIAGE_INCIDENTS = "triage";
+    public static final String SHARE_SUMMARY_CHARTS = "charts";
 
-    public Child() {}
+    // Empty constructor required for Firestore
+    public Child() {
+        this.sharing = getDefaultSharingSettings();
+    }
 
     public Child(String childUid,
                  String parentUid,
@@ -21,17 +36,54 @@ public class Child {
                  String extraNotes,
                  int personalBest,
                  Map<String, Boolean> sharing) {
-
         this.childUid = childUid;
         this.parentUid = parentUid;
         this.dob = dob;
         this.extraNotes = extraNotes;
         this.personalBest = personalBest;
-        this.sharing = sharing;
+        this.sharing = sharing != null ? sharing : getDefaultSharingSettings();
     }
 
-    // get and set !
+    // Constructor with name
+    public Child(String childUid,
+                 String parentUid,
+                 String name,
+                 Date dob,
+                 String extraNotes,
+                 int personalBest,
+                 Map<String, Boolean> sharing) {
+        this.childUid = childUid;
+        this.parentUid = parentUid;
+        this.name = name;
+        this.dob = dob;
+        this.extraNotes = extraNotes;
+        this.personalBest = personalBest;
+        this.sharing = sharing != null ? sharing : getDefaultSharingSettings();
+    }
 
+    // Helper method to get default sharing settings (all false by default)
+    public static Map<String, Boolean> getDefaultSharingSettings() {
+        Map<String, Boolean> defaultSharing = new HashMap<>();
+        defaultSharing.put(SHARE_RESCUE_LOGS, false);
+        defaultSharing.put(SHARE_CONTROLLER_ADHERENCE, false);
+        defaultSharing.put(SHARE_SYMPTOMS, false);
+        defaultSharing.put(SHARE_TRIGGERS, false);
+        defaultSharing.put(SHARE_PEAK_FLOW, false);
+        defaultSharing.put(SHARE_TRIAGE_INCIDENTS, false);
+        defaultSharing.put(SHARE_SUMMARY_CHARTS, false);
+        return defaultSharing;
+    }
+
+    // Check if any data is being shared
+    public boolean isAnySharingEnabled() {
+        if (sharing == null) return false;
+        for (Boolean value : sharing.values()) {
+            if (value != null && value) return true;
+        }
+        return false;
+    }
+
+    // Getters and Setters
     public String getChildUid() {
         return childUid;
     }
@@ -46,6 +98,14 @@ public class Child {
 
     public void setParentUid(String parentUid) {
         this.parentUid = parentUid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Date getDob() {
