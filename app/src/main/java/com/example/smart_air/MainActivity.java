@@ -1,6 +1,16 @@
 package com.example.smart_air;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.util.TimerTask;
+import androidx.core.app.NotificationManagerCompat;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,6 +20,8 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -23,11 +35,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity {
 
     AuthRepository repo;
     Button signout;
+    static final String CHANNEL_ID ="smartairnotif";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -39,10 +53,10 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
+        ensureNotificationPermission();
+        createNotifChannel(); // makes notification channel
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         TextView textView3 = findViewById(R.id.textView3);
-
         bottomNavigationView.setOnItemSelectedListener(page -> {
             int id = page.getItemId();
 
@@ -50,16 +64,25 @@ public class MainActivity extends AppCompatActivity {
                 textView3.setText("Home clicked!");
             } else if (id == R.id.triage) {
                 textView3.setText("Triage clicked!");
+                // switch page
+                Intent intenttri = new Intent(MainActivity.this, TriageActivity.class);
+                startActivity(intenttri);
+                // parent alert function
+                parentalertnotif();
+                // timer function
+                long endtime=System.currentTimeMillis()+10*60*1000L;
+                TriageState.triageendtime=endtime;
             } else if (id == R.id.history) {
                 textView3.setText("History clicked!");
             } else if (id == R.id.medicine) {
-                textView3.setText("Meidicine clicked!");
+                textView3.setText("Medicine clicked!");
             } else if (id == R.id.checkin) {
                 textView3.setText("Checkin clicked!");
             }
 
             return true;
         });
+
 
 
         //TODO: Remove after - test for signout
@@ -75,7 +98,41 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
-
-
     }
+    public void parentalertnotif() {
+        NotificationCompat.Builder mbuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.parentalert)
+                .setContentTitle("Parent Alert")
+                .setContentText("A triage session has started!")
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(0, mbuilder.build());
+    }
+    public void createNotifChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "SmartAir Notifications";
+            String description = "General notifications for SmartAir app";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+    private static final int REQ_POST_NOTIFS = 1001;
+
+    private void ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        REQ_POST_NOTIFS
+                );
+            }
+        }
+    }
+
 }

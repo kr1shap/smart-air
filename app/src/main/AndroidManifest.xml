@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
 
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools" >
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:name=".FirebaseInitalizer"
         android:allowBackup="true"
@@ -25,6 +27,7 @@
         <activity android:name=".MainActivity" />
         <activity android:name=".SignUpActivity" />
         <activity android:name=".SignInActivity"/>
+        <activity android:name=".TriageActivity"/>
 
     </application>
 

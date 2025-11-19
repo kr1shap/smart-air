@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="57dp"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme">
+
+        <ImageButton
+            android:id="@+id/timer"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/timer" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Smart Air   "
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:contentDescription="Logo"
+            android:src="@drawable/transparentlog" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <TextView
+        android:id="@+id/timerTextV"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:background="#C1DBE3"
+        android:gravity="center"
+        android:textColor="#007CBE"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:background="#D9D9D9"
+        android:gravity="center"
+        android:text="This is a guidance, not a diagnosis. If in doubt, call emergency"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textView2"
+            style="@style/SmartAir.Text.title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recent Rescue Attempts"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/textView3"
+            style="@style/SmartAir.Text.body"
+            android:layout_width="309dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="How many times have you used the rescue inhaler"
+            android:textSize="12sp" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:background="#EAF4FF" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/textView4"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PEF (Optional)"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:background="#EAF4FF" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Rapid Rescue Alert"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                app:icon="@drawable/circle_notifications"
+                app:iconPadding="4dp"
+                app:iconSize="24dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button3"
+                style="@style/SmartAir.Button1"
+                android:layout_width="0dp"
+                android:layout_height="165dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:gravity="center"
+                android:text="Call Emergency Now"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:icon="@drawable/emergency_call"
+                app:iconGravity="top"
+                app:iconPadding="4dp"
+                app:iconSize="70dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button4"
+                style="@style/SmartAir.Button1"
+                android:layout_width="0dp"
+                android:layout_height="165dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="Start Home Steps"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:icon="@drawable/outline_format_list_numbered"
+                app:iconGravity="top"
+                app:iconPadding="4dp"
+                app:iconSize="80dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        app:itemIconTint="@color/colour_white"
+        app:itemTextColor="@color/colour_white"
+        app:menu="@menu/bottom_nav" />
+
+</LinearLayout>
