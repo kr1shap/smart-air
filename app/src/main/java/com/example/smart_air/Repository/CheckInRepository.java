@@ -48,7 +48,7 @@ public class CheckInRepository {
                     if ("parent".equals(role)) {
                         List<String> list = (List<String>) document.get("childrenUid");
                         if (list != null && !list.isEmpty()) {
-                            correspondingUid = list.get(0);
+                            correspondingUid = list.get(0); // TODO: change this to hold the child uid selected on dashboard
                         }
                         else{
                             activity.noUserFound();
