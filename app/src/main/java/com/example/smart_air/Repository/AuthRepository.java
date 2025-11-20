@@ -129,10 +129,13 @@ public class AuthRepository {
                                     @Override
                                     public void onSuccess(User savedUser) {
                                         // Mark invite as used
-                                        addChildToParent(parentUid, auth.getCurrentUser().getUid(), new AuthContract.GeneralCallback() {
+                                        addChildToParent(parentUid, auth.getCurrentUser().getUid(),
+                                                new AuthContract.GeneralCallback() {
                                             @Override
                                             public void onSuccess() {
-                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
+                                                addChildCollection(parentUid, savedUser.getUid(),
+                                                        username, new AuthContract.GeneralCallback()
+                                                        {
                                                     @Override
                                                     public void onSuccess() {
                                                         // invite as used
@@ -155,7 +158,9 @@ public class AuthRepository {
                                             public void onFailure(String error) {
                                                 // even if adding to parent fails, child account was created
                                                 // still, attempt to add to children collection
-                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
+                                                addChildCollection(parentUid, savedUser.getUid(),
+                                                        username, new AuthContract.GeneralCallback()
+                                                        {
                                                     @Override
                                                     public void onSuccess() {
                                                         markInviteAsUsed(accessCode);
@@ -187,38 +192,33 @@ public class AuthRepository {
     }
 
     //Helper method to add a new child object to children db
-    private void addChildCollection(String parentUid, String childUid, AuthContract.GeneralCallback callback) {
+    private void addChildCollection(String parentUid, String childUid, String childName,
+                                    AuthContract.GeneralCallback callback) {
+
         Map<String, Boolean> sharing = new HashMap<>();
         sharing.put("rescue", true);
-        sharing.put("controller_as", true);
+        sharing.put("controller", true);
         sharing.put("symptoms", true);
-        sharing.put("triggers",true);
-        sharing.put("pef",true);
-        sharing.put("triage",true);
-        sharing.put("charts",true);
+        sharing.put("triggers", true);
+        sharing.put("pef", true);
+        sharing.put("triage", true);
+        sharing.put("charts", true);
 
-        // Create the object
         Child child = new Child(
-                childUid,           // childUid
-                parentUid,          // parentUid
-                new Date(),        // make it current date, parent will modify
-                null,              // extraNotes
-                0,                // personalBest
-                sharing           // sharing
+                childName, // name
+                childUid, // child UID
+                parentUid, // parent UID
+                new Date(), // make it current date, parent will modify null,
+                null, // extraNotes
+                0, // personalBest
+                sharing // sharing an
         );
 
         db.collection("children")
-                .document(child.getChildUid())   // doc id
+                .document(child.getChildUid())
                 .set(child)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("Firestore", "Child added using model!");
-                    callback.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Firestore", "Failed to add child", e);
-                    callback.onFailure(e.getMessage());
-                });
-
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
 

@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class Child {
 
+    private String name;
     private String childUid;
     private String parentUid;
     private Date dob;   //util date
@@ -15,13 +16,14 @@ public class Child {
 
     public Child() {}
 
-    public Child(String childUid,
+    public Child(String name, String childUid,
                  String parentUid,
                  Date dob,
                  String extraNotes,
                  int personalBest,
                  Map<String, Boolean> sharing) {
 
+        this.name = name;
         this.childUid = childUid;
         this.parentUid = parentUid;
         this.dob = dob;
@@ -31,6 +33,10 @@ public class Child {
     }
 
     // get and set !
+
+    public String getName() { return name; }
+
+    public void setName(String name) { this.name = name; }
 
     public String getChildUid() {
         return childUid;
