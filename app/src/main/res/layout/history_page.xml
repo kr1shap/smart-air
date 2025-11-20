@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/history_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/historyTitle"
+            style="@style/SmartAir.Text.title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="History"
+            android:textSize="42dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="20dp" />
+
+        <GridLayout
+            android:id="@+id/filterGrid"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="3"
+            android:padding="12dp"
+            android:useDefaultMargins="true"
+            android:alignmentMode="alignMargins"
+            app:layout_constraintTop_toBottomOf="@id/historyTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- NIGHT WAKING -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:endIconMode="dropdown_menu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/selectNightWaking"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Night Waking"
+                    android:inputType="none"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:cursorVisible="false"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ACTIVITY LIMITS -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:endIconMode="dropdown_menu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/selectActivityLimits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Activity Limits"
+                    android:inputType="none"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:cursorVisible="false" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- COUGHING LEVEL -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:endIconMode="dropdown_menu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/selectCoughingLevel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Coughing Level"
+                    android:inputType="none"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:cursorVisible="false"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- TRIGGERS -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:endIconMode="dropdown_menu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/selectTriggers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Triggers"
+                    android:inputType="none"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:cursorVisible="false"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- TRIAGE -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:endIconMode="dropdown_menu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/selectTriage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Triage"
+                    android:inputType="none"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:cursorVisible="false"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </GridLayout>
+
+        <LinearLayout
+            android:id="@+id/historyContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            app:layout_constraintTop_toBottomOf="@id/filterGrid"
+            />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
