@@ -1,6 +1,7 @@
 package com.example.smart_air.Repository;
 
 import android.util.Log;
+import android.widget.LinearLayout;
 
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.modelClasses.HistoryItem;
@@ -13,6 +14,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -53,41 +55,73 @@ public class HistoryRepository {
                 });
     }
 
+
+
     public void getDailyCheckIns(String childUid, HistoryFragment activity){
         DocumentReference userDocRef = db.collection("dailyCheckIns").document(childUid);
         CollectionReference entriesRef = userDocRef.collection("entries");
 
-        db.collection("dailyCheckins")
-                .document(childUid)
-                .collection("entries")
-                .orderBy("date", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (queryDocumentSnapshots.isEmpty()) {
-                        return;
-                    }
+        Query childQuery = filterQuery(activity, childUid,"child");
+        Query parentQuery = filterQuery(activity, childUid,"parent");
 
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        String date = doc.getId(); // the date document ID
-                        boolean nightWakingChild = doc.contains("nightWakingchild") && doc.getBoolean("nightWakingchild");
-                        boolean nightWakingParent = doc.contains("nightWakingparent") && doc.getBoolean("nightWakingparent");
-                        int activityLimitsChild = Math.toIntExact(doc.contains("activityLimitschild") ? doc.getLong("activityLimitschild") : -5);
-                        int activityLimitsParent = Math.toIntExact(doc.contains("activityLimitsparent") ? doc.getLong("activityLimitsparent") : -5);
-                        int coughingWheezingChild = Math.toIntExact(doc.contains("coughingWheezingchild") ? doc.getLong("coughingWheezingchild") : -5);
-                        int coughingWheezingParent = Math.toIntExact(doc.contains("coughingWheezingparent") ? doc.getLong("coughingWheezingparent") : -5);
-                        int pef = Math.toIntExact(doc.contains("pef") ? doc.getLong("pef"): -5);
-                        List<String> triggersChild = new ArrayList<>();
-                        List<String> triggersParent = new ArrayList<>();
-                        if (doc.contains("triggerschild")) {
-                            triggersChild = (List<String>) doc.get("triggerschild");
-                        }
-                        if (doc.contains("triggersparent")) {
-                            triggersParent = (List<String>) doc.get("triggersparent");
-                        }
-                        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef);
-                        activity.createDailyCard(test);
+        List<HistoryItem> results = new ArrayList<>();
+
+        childQuery.get().addOnSuccessListener(snapshot -> {
+            for (DocumentSnapshot doc : snapshot) {
+                results.add(buildHistoryItem(doc));
+            }
+
+            parentQuery.get().addOnSuccessListener(snapshot2 -> {
+                for (DocumentSnapshot doc : snapshot2) {
+                    HistoryItem item = buildHistoryItem(doc);
+                    if (!results.contains(item)) { // avoid duplicates
+                        results.add(item);
                     }
-                })
-                .addOnFailureListener(error -> Log.e("FIRE", "Query failed", error));
+                }
+
+                Collections.sort(results, (a, b) -> b.date.compareTo(a.date));
+
+                for (HistoryItem item : results) {
+                    activity.createDailyCard(item);
+                }
+            });
+        });
+
+
+        //getDailyCheckInsQuery(childUid,activity,q);
+
+
     }
+
+    private HistoryItem buildHistoryItem(DocumentSnapshot doc) {
+        String date = doc.getId(); // the date document ID
+        boolean nightWakingChild = doc.contains("nightWakingchild") && doc.getBoolean("nightWakingchild");
+        boolean nightWakingParent = doc.contains("nightWakingparent") && doc.getBoolean("nightWakingparent");
+        int activityLimitsChild = Math.toIntExact(doc.contains("activityLimitschild") ? doc.getLong("activityLimitschild") : -5);
+        int activityLimitsParent = Math.toIntExact(doc.contains("activityLimitsparent") ? doc.getLong("activityLimitsparent") : -5);
+        int coughingWheezingChild = Math.toIntExact(doc.contains("coughingWheezingchild") ? doc.getLong("coughingWheezingchild") : -5);
+        int coughingWheezingParent = Math.toIntExact(doc.contains("coughingWheezingparent") ? doc.getLong("coughingWheezingparent") : -5);
+        int pef = Math.toIntExact(doc.contains("pef") ? doc.getLong("pef"): -5);
+        List<String> triggersChild = new ArrayList<>();
+        List<String> triggersParent = new ArrayList<>();
+        if (doc.contains("triggerschild")) {
+            triggersChild = (List<String>) doc.get("triggerschild");
+        }
+        if (doc.contains("triggersparent")) {
+            triggersParent = (List<String>) doc.get("triggersparent");
+        }
+        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef);
+        return test;
+    }
+
+    public Query filterQuery(HistoryFragment activity, String childUid, String role){
+        Query q = db.collection("dailyCheckins")
+                .document(childUid)
+                .collection("entries");
+
+        q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
+
+        return q;
+    }
+
 }

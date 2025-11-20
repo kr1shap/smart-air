@@ -36,7 +36,9 @@ public class HistoryFragment extends Fragment {
 
     private View view;
     private HistoryRepository repo;
+    public String [] filters = {"ALL","ALL","ALL","ALL","ALL"};
     String childUid;
+    LinearLayout container;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -50,9 +52,28 @@ public class HistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
         repo = new HistoryRepository();
+        container = view.findViewById(R.id.historyContainer);
 
         setUpFilterUI();
         repo.getChildUid(this);
+
+        AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
+
+        nightDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+            if(selected.equals("YES")){
+                filters[0] = "true";
+            }
+            else if(selected.equals("NO")){
+                filters[0] = "False";
+            }
+            else{
+                filters[0] = selected;
+            }
+            container.removeAllViews();
+            repo.getDailyCheckIns(childUid,this);
+        });
+
 
     }
 
@@ -162,15 +183,16 @@ public class HistoryFragment extends Fragment {
                 items
         );
 
+        dropdown.clearFocus();
         dropdown.setAdapter(adapter);
     }
 
     private void setUpFilterUI(){
-        String [] nightWakingOptions = {"Yes","No"};
-        String [] activityLimitsOptions = {"0-1","2-3","4-5","6-7","8-9","10"};
-        String [] coughingLevelOptions = {"No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
-        String [] triggersOptions = {"Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
-        String [] triageOptions = {"Days with Triage","Days without Triage"};
+        String [] nightWakingOptions = {"ALL","YES","NO"};
+        String [] activityLimitsOptions = {"ALL","0-1","2-3","4-5","6-7","8-9","10"};
+        String [] coughingLevelOptions = {"ALL","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
+        String [] triggersOptions = {"ALL","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
+        String [] triageOptions = {"ALL","Days with Triage","Days without Triage"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);
