@@ -8,43 +8,10 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="57dp"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme">
-
-        <ImageButton
-            android:id="@+id/timer"
-            android:layout_width="45dp"
-            android:layout_height="30dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/timer" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Smart Air   "
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:contentDescription="Logo"
-            android:src="@drawable/transparentlog" />
-    </androidx.appcompat.widget.Toolbar>
-
     <TextView
         android:id="@+id/timerTextV"
         android:layout_width="match_parent"
-        android:layout_height="65dp"
+        android:layout_height="45dp"
         android:background="#C1DBE3"
         android:gravity="center"
         android:textColor="#007CBE"
@@ -272,15 +239,47 @@
                 app:iconSize="80dp" />
         </LinearLayout>
 
-    </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp"
+            android:gravity="center">
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        app:itemIconTint="@color/colour_white"
-        app:itemTextColor="@color/colour_white"
-        app:menu="@menu/bottom_nav" />
+            <ImageButton
+                android:id="@+id/timer"
+
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:color/holo_blue_light"
+                android:padding="8dp"
+                android:src="@drawable/timer"
+                android:layout_marginEnd="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/startriage"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:icon="@drawable/timer"
+                app:iconGravity="textStart"
+                android:text="START TRIAGE"
+                android:layout_marginEnd="12dp"
+                android:backgroundTint="@android:color/holo_blue_light"
+                android:textColor="@android:color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/endtriage"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:icon="@drawable/timer"
+                app:iconGravity="textStart"
+                android:text="END TRIAGE"
+                android:backgroundTint="@android:color/holo_blue_light"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+
+    </LinearLayout>
 
 </LinearLayout>
