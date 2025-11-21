@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import com.google.firebase.Timestamp;
+import java.util.Calendar;
 
 public class HistoryRepository {
     private FirebaseFirestore db;
@@ -123,14 +125,51 @@ public class HistoryRepository {
         if(!activity.filters[0].equals("ALL")) {
             q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
         }
-//        if(!activity.filters[1].equals("ALL")){
-//            if(activity.filters[1].length() == 2){
-//
-//            }
-//        }
+        if(!activity.filters[1].equals("ALL")){
+            if(activity.filters[1].length() == 2){
+                q = q.whereEqualTo("activityLimits"+role,10);
+            }
+            else{
+                String[] parts = activity.filters[1].split("-");
+                int min = Integer.parseInt(parts[0].trim());
+                int max = Integer.parseInt(parts[1].trim());
+
+                q = q.whereGreaterThanOrEqualTo("activityLimits" + role, min)
+                        .whereLessThanOrEqualTo("activityLimits" + role, max);
+            }
+        }
+        if(!activity.filters[2].equals("ALL")){
+            if(activity.filters[2].equals("No Coughing")){
+                q = q.whereEqualTo("coughingWheezing"+role,0);
+            }
+            else if(activity.filters[2].equals("Wheezing")){
+                q = q.whereEqualTo("coughingWheezing"+role,1);
+            }
+            else if(activity.filters[2].equals("Coughing")){
+                q = q.whereEqualTo("coughingWheezing"+role,2);
+            }
+            else{
+                q = q.whereEqualTo("coughingWheezing"+role,3);
+            }
+        }
         if(!activity.filters[3].equals("ALL")){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
+        Calendar cal = Calendar.getInstance();
+        if(activity.filters[4].equals("ALL")){
+            cal.add(Calendar.MONTH, -6);
+        }
+        else if(activity.filters[4].equals("Past 3 months")){
+            cal.add(Calendar.MONTH, -3);
+        }
+        else if(activity.filters[4].equals("Past month")){
+            cal.add(Calendar.MONTH, -1);
+        }
+        else {
+            cal.add(Calendar.WEEK_OF_YEAR, -2);
+        }
+        Timestamp timeFrame = new Timestamp(cal.getTime());
+        q = q.whereGreaterThanOrEqualTo("date", timeFrame);
 
         return q;
     }

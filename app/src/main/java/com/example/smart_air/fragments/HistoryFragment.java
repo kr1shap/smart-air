@@ -39,9 +39,8 @@ public class HistoryFragment extends Fragment {
 
     private View view;
     private HistoryRepository repo;
-    public String [] filters = {"ALL","ALL","ALL","ALL","ALL"};
+    public String [] filters = {"ALL","ALL","ALL","ALL","ALL","ALL"};
     String childUid;
-    LinearLayout container;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -84,6 +83,14 @@ public class HistoryFragment extends Fragment {
             repo.getDailyCheckIns(childUid,this);
         });
 
+        // coughing filter
+        AutoCompleteTextView coughingDropdown = view.findViewById(R.id.selectCoughingLevel);
+        coughingDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+            filters[2] = selected;
+            repo.getDailyCheckIns(childUid,this);
+        });
+
         // triggers filter
         AutoCompleteTextView triggerDropdown = view.findViewById(R.id.selectTriggers);
         triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
@@ -122,42 +129,13 @@ public class HistoryFragment extends Fragment {
         String [] coughingLevelOptions = {"ALL","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
         String [] triggersOptions = {"ALL","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
         String [] triageOptions = {"ALL","Days with Triage","Days without Triage"};
+        String [] dateOptions = {"ALL", "Past 3 months", "Past month", "Past 2 weeks"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);
         setUpOneFilterUI(R.id.selectTriggers,triggersOptions);
         setUpOneFilterUI(R.id.selectTriage,triageOptions);
-    }
-
-    private void setChips(ChipGroup chipGroup, List<String> chipTexts) {
-        // remove all existing chips
-        chipGroup.removeAllViews();
-
-        for (String text : chipTexts) {
-            Chip chip = new Chip(requireContext());
-            chip.setText(text);
-            chip.setTextColor(Color.WHITE);
-            chip.setTextSize(12f);
-            chip.setChipBackgroundColorResource(R.color.colour_blue);
-            float radius = 12 * getResources().getDisplayMetrics().density; // 8dp
-            chip.setShapeAppearanceModel(
-                    chip.getShapeAppearanceModel()
-                            .toBuilder()
-                            .setAllCornerSizes(radius)
-                            .build()
-            );
-            chip.setChipMinHeight(0);
-            chip.setChipStartPadding(6f);
-            chip.setChipEndPadding(6f);
-            chip.setCloseIconEnabled(false);
-
-            int verticalPaddingPx = (int) (4 * getResources().getDisplayMetrics().density); // 2dp top & bottom
-            int horizontalPaddingPx = chip.getPaddingLeft(); // keep existing left/right padding
-            chip.setPadding(horizontalPaddingPx, verticalPaddingPx, horizontalPaddingPx, verticalPaddingPx);
-
-            chip.setEnsureMinTouchTargetSize(false);
-            chipGroup.addView(chip);
-        }
+        setUpOneFilterUI(R.id.selectDate,dateOptions);
     }
 
     public void createRecycleView(List<HistoryItem> results) {
