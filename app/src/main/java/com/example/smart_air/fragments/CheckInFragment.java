@@ -480,7 +480,7 @@ public class CheckInFragment extends Fragment {
         return selectedTriggers;
     }
 
-    public Object zoneColour(int pef) {
+    public String zoneColour(int pef) {
         int percent = (int) Math.round((pef * 100.0) / personalBest);
         if(percent >= 80){
             return "green";
