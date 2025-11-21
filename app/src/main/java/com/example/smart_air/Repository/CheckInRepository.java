@@ -105,6 +105,7 @@ public class CheckInRepository {
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
         if(userRole.equals("parent")){
             data.put("pef",pef);
+            data.put("zone",context.zoneColour(pef));
         }
 
         String childUid = uid;
@@ -247,6 +248,43 @@ public class CheckInRepository {
             }
 
             activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers, pef);
+        });
+    }
+
+    public interface PefCallback {
+        void onResult(int maxPef);
+    }
+
+    public void maxPef(String correspondingUid, String userRole, int inputPef, PefCallback callback) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            callback.onResult(inputPef);
+            return;
+        }
+
+        String childUid = userRole.equals("child") ? user.getUid() : correspondingUid;
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDocId = sdf.format(new Date());
+
+        DocumentReference dailyEntry = db.collection("dailyCheckins")
+                .document(childUid)
+                .collection("entries")
+                .document(todayDocId);
+
+        dailyEntry.get().addOnSuccessListener(document -> {
+
+            int firestorePef = inputPef;
+
+            if (document.exists() && document.contains("pef")) {
+                firestorePef = Math.toIntExact(document.getLong("pef"));
+            }
+
+            int maxValue = Math.max(inputPef, firestorePef);
+            callback.onResult(maxValue);
+
+        }).addOnFailureListener(e -> {
+            callback.onResult(inputPef);
         });
     }
 }
