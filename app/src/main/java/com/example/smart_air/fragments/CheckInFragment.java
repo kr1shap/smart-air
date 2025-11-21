@@ -83,13 +83,29 @@ public class CheckInFragment extends Fragment {
                 EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
                 String myNumberEditTextString = myNumberEditText.getText().toString().trim();
                 int inputPef = Integer.parseInt(myNumberEditTextString);
+
+                EditText preText = view.findViewById(R.id.editTextPreMed);
+                String preTextString = preText.getText().toString().trim();
+                EditText postText = view.findViewById(R.id.editTextPostMed);
+                String postTextString = postText.getText().toString().trim();
+                int pre;
+                int post;
+
+                if(postTextString.isEmpty() || preTextString.isEmpty()){
+                    pre = 0;
+                    post = 0;
+                }
+                else{
+                    pre = Integer.parseInt(preTextString);
+                    post = Integer.parseInt(postTextString);
+                }
                 repo.maxPef(correspondingUid, userRole, inputPef, maxValue -> {
                     pef[0] = maxValue; // if pef changes it runs with new
-                    repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef[0]);
+                    repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef[0],pre,post);
                 });
             }
             else{
-                repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,0); // otherwise runs with no pef
+                repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,0,0,0); // otherwise runs with no pef
             }
         });
 
@@ -124,7 +140,7 @@ public class CheckInFragment extends Fragment {
         });
     }
 
-    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef, int pre, int post) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
@@ -160,6 +176,13 @@ public class CheckInFragment extends Fragment {
         if(userRole.equals("parent")){
             EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
             myNumberEditText.setText(pef.toString());
+        }
+
+        if(!(pre == 0 && post == 0)){
+            EditText preText = view.findViewById(R.id.editTextPreMed);
+            preText.setText(Integer.toString(pre));
+            EditText postText = view.findViewById(R.id.editTextPostMed);
+            postText.setText(Integer.toString(post));
         }
 
         setCardCurrent();

@@ -78,7 +78,7 @@ public class CheckInRepository {
 
     }
 
-    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef) {
+    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef,int pre, int post) {
         // getting user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
@@ -105,6 +105,10 @@ public class CheckInRepository {
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
         if(userRole.equals("parent")){
             data.put("pef",pef);
+            if(pre != 0 && post != 0){
+                data.put("pre",pre);
+                data.put("post",post);
+            }
             data.put("zoneColour",context.zoneColour(pef));
             data.put("zoneNumber", context.zoneNumber(pef));
         }
@@ -196,11 +200,17 @@ public class CheckInRepository {
             Long coughingWheezing = document.getLong("coughingWheezing"+userRole);
             List<String> triggers = (List<String>) document.get("triggers"+userRole);
             Long pef = 0L;
+            int pre = 0;
+            int post = 0;
             if(userRole.equals("parent")){
                 pef = document.getLong("pef");
+                if(document.contains("pre") && document.contains("post")) {
+                    pre = Math.toIntExact(document.getLong("pre"));
+                    post = Math.toIntExact(document.getLong("post"));
+                }
             }
 
-            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers, pef);
+            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers, pef,pre,post);
         });
     }
 
