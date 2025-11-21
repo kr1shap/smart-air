@@ -8,6 +8,7 @@ import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -108,7 +109,7 @@ public class AuthRepository {
         checkAccessCode(accessCode, "child", parentUid -> {
             if (parentUid != null) {
                 //dummy email for child
-                String dummyEmail = username.toLowerCase() + "_child@smartair.com";
+                String dummyEmail = username.toLowerCase().trim() + "_child@smartair.com";
 
                 auth.createUserWithEmailAndPassword(dummyEmail, password)
                         .addOnCompleteListener(authTask -> {
@@ -247,20 +248,20 @@ public class AuthRepository {
 
     //Signin - CHILD
     public void signInChild(String username, String password, AuthCallback callback) {
-        String dummyEmail = username.toLowerCase() + "_child@smartair.com";
+        String dummyEmail = username.toLowerCase().trim() + "_child@smartair.com";
         signIn(dummyEmail, password, callback);
     }
 
 
     //Helper: check access code validity
     private void checkAccessCode(String code, String targetRole, AccessCodeCallback callback) {
-        Timestamp now = Timestamp.now();
+        Timestamp now = Timestamp.now(); //TODO: modify so u check access code using long form, not timestamp
         Log.d("auth repo access code", "target role: " + targetRole);
         db.collection("invites")
                 .whereEqualTo("code", code)
                 .whereEqualTo("targetRole", targetRole)
                 .whereEqualTo("used", false)
-                .whereGreaterThanOrEqualTo("expiresAt", now)
+                .whereGreaterThanOrEqualTo("expiresAt", System.currentTimeMillis())
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     callback.onResult(querySnapshot.isEmpty() ? null : querySnapshot.getDocuments().get(0).getString("parentUid"));
@@ -325,6 +326,9 @@ public class AuthRepository {
         auth.signOut();
     }
 
+    public Task<DocumentSnapshot> getUserDoc(String uid) {
+        return FirebaseInitalizer.getDb().collection("users").document(uid).get();
+    }
 
     //password reset email
     public void sendPasswordResetEmail(String email, AuthContract.GeneralCallback callback) {

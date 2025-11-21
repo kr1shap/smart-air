@@ -30,7 +30,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
 
 
     private boolean isValidEmail(String email) {
-        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches();
     }
 
     @Override
@@ -44,7 +44,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         }
         //Check provider and child specific validation
         if(!role.equals("parent") && (accessCode == null || accessCode.trim().isEmpty() || accessCode.length() < 6)) {
-            view.showError("Access Code is required, or not in format XXXXXX");
+            view.showError("Access Code is required, or not in format.");
             return;
         }
         //Parent and provider-specific validation
@@ -67,15 +67,15 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
 
         switch (role.toLowerCase()) {
             case "parent":
-                repo.signUpParent(email, password, username,
+                repo.signUpParent(email.trim(), password, username,
                         createCallback());
                 break;
             case "provider":
-                repo.signUpProvider(email, password, accessCode,
+                repo.signUpProvider(email.trim(), password, accessCode,
                         createCallback());
                 break;
             case "child":
-                repo.signUpChild(username, accessCode, password,
+                repo.signUpChild(username.trim(), accessCode, password,
                         createCallback());
                 break;
             default: //should never occur
