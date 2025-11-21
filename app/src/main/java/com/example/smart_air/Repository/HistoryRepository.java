@@ -81,9 +81,10 @@ public class HistoryRepository {
 
                 Collections.sort(results, (a, b) -> b.date.compareTo(a.date));
 
-                for (HistoryItem item : results) {
-                    activity.createDailyCard(item);
-                }
+//                for (HistoryItem item : results) {
+//                    activity.createDailyCard(item);
+//                }
+                activity.createRecycleView(results);
             });
         });
 
@@ -119,7 +120,17 @@ public class HistoryRepository {
                 .document(childUid)
                 .collection("entries");
 
-        q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
+        if(!activity.filters[0].equals("ALL")) {
+            q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
+        }
+//        if(!activity.filters[1].equals("ALL")){
+//            if(activity.filters[1].length() == 2){
+//
+//            }
+//        }
+        if(!activity.filters[3].equals("ALL")){
+            q = q.whereArrayContains("triggers"+role, activity.filters[3]);
+        }
 
         return q;
     }

@@ -14,10 +14,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
 import com.example.smart_air.Repository.HistoryRepository;
+import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -52,13 +55,13 @@ public class HistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
         repo = new HistoryRepository();
-        container = view.findViewById(R.id.historyContainer);
+        //container = view.findViewById(R.id.historyContainer);
 
         setUpFilterUI();
         repo.getChildUid(this);
 
+        // night filter
         AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
-
         nightDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             if(selected.equals("YES")){
@@ -70,7 +73,22 @@ public class HistoryFragment extends Fragment {
             else{
                 filters[0] = selected;
             }
-            container.removeAllViews();
+            repo.getDailyCheckIns(childUid,this);
+        });
+
+        // activity filter
+        AutoCompleteTextView activityDropdown = view.findViewById(R.id.selectActivityLimits);
+        activityDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+            filters[1] = selected;
+            repo.getDailyCheckIns(childUid,this);
+        });
+
+        // triggers filter
+        AutoCompleteTextView triggerDropdown = view.findViewById(R.id.selectTriggers);
+        triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+            filters[3] = selected;
             repo.getDailyCheckIns(childUid,this);
         });
 
@@ -83,95 +101,6 @@ public class HistoryFragment extends Fragment {
     }
     public void exitScreen(){
         //TODO: fix it
-    }
-
-    public void createDailyCard(HistoryItem card){
-        LinearLayout container = view.findViewById(R.id.historyContainer);
-        View cardView = LayoutInflater.from(requireContext()).inflate(R.layout.card_parent_child, container, false);
-
-        container.addView(cardView);
-
-        // date
-        TextView dateText = cardView.findViewById(R.id.dateText);
-        dateText.setText(card.date);
-
-        TextView childText = cardView.findViewById(R.id.childText);
-        TextView parentText = cardView.findViewById(R.id.parentText);
-        ProgressBar childActivityLimitsBar = cardView.findViewById(R.id.childActivityLimitsBar);
-        ProgressBar parentActivityLimitsBar = cardView.findViewById(R.id.parentActivityLimitsBar);
-        ProgressBar childCoughingBar = cardView.findViewById(R.id.childCoughingBar);
-        ProgressBar parentCoughingBar = cardView.findViewById(R.id.parentCoughingBar);
-
-        if(card.cardType == HistoryItem.typeOfCard.childOnly){
-            // setting child parent text
-            childText.setVisibility(View.VISIBLE);
-            parentText.setVisibility(View.INVISIBLE);
-
-            // activity bar
-            childActivityLimitsBar.setProgress(card.activityChild);
-            childActivityLimitsBar.setVisibility(View.VISIBLE);
-            parentActivityLimitsBar.setVisibility(View.INVISIBLE);
-
-            // coughing bar
-            childCoughingBar.setVisibility(View.VISIBLE);
-            parentCoughingBar.setVisibility(View.INVISIBLE);
-            childCoughingBar.setProgress(card.coughingChild);
-            parentCoughingBar.setProgress(card.coughingParent);
-        }
-        else if(card.cardType == HistoryItem.typeOfCard.parentOnly){
-            // setting child parent text
-            childText.setVisibility(View.INVISIBLE);
-            parentText.setVisibility(View.VISIBLE);
-
-            // activity bar
-            parentActivityLimitsBar.setProgress(card.activityParent);
-            parentActivityLimitsBar.setVisibility(View.VISIBLE);
-            childActivityLimitsBar.setVisibility(View.INVISIBLE);
-
-            // coughing bar
-            childCoughingBar.setVisibility(View.INVISIBLE);
-            parentCoughingBar.setVisibility(View.VISIBLE);
-            childCoughingBar.setProgress(card.coughingChild);
-            parentCoughingBar.setProgress(card.coughingParent);
-        }
-        else{
-            // setting child parent text
-            childText.setVisibility(View.VISIBLE);
-            parentText.setVisibility(View.VISIBLE);
-
-            // activity bar
-            parentActivityLimitsBar.setProgress(card.activityParent);
-            parentActivityLimitsBar.setVisibility(View.VISIBLE);
-            childActivityLimitsBar.setVisibility(View.VISIBLE);
-            childActivityLimitsBar.setProgress(card.activityChild);
-
-            // coughing bar
-            childCoughingBar.setVisibility(View.VISIBLE);
-            childCoughingBar.setVisibility(View.VISIBLE);
-            childCoughingBar.setProgress(card.coughingChild);
-            parentCoughingBar.setProgress(card.coughingParent);
-        }
-
-        // set night trigger text
-        TextView nightTerrorsStatus = cardView.findViewById(R.id.nightTerrorsStatus);
-        nightTerrorsStatus.setText(card.nightStatus);
-        
-        // activity limit
-        TextView activityLimitsStatus = cardView.findViewById(R.id.activityLimitsStatus);
-        activityLimitsStatus.setText(card.activityStatus);
-
-        // coughing
-        TextView coughingStatus = cardView.findViewById(R.id.coughingStatus);
-        coughingStatus.setText(card.coughingStatus);
-
-        // triggers
-        ChipGroup chipGroup = cardView.findViewById(R.id.triggersContainer);
-        setChips(chipGroup,card.triggers);
-
-        // adding pef
-        TextView pef = cardView.findViewById(R.id.pefText);
-        pef.setText(card.pefText);
-        
     }
 
     private void setUpOneFilterUI(int type, String [] items){
@@ -231,4 +160,10 @@ public class HistoryFragment extends Fragment {
         }
     }
 
+    public void createRecycleView(List<HistoryItem> results) {
+        RecyclerView recyclerView = view.findViewById(R.id.historyRecyclerView);
+        HistoryAdapter adapter = new HistoryAdapter(results); // your list of HistoryItem
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(adapter);
+    }
 }

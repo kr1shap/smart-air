@@ -145,4 +145,13 @@ public class HistoryItem {
         }
 
     }
+
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HistoryItem that = (HistoryItem) o;
+        if (date != null ? !date.equals(that.date) : that.date != null) return false;
+        return true;
+    }
 }
