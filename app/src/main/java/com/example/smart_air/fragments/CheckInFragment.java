@@ -491,4 +491,7 @@ public class CheckInFragment extends Fragment {
         return "red";
 
     }
+    public int zoneNumber(int pef){
+        return (int) Math.round((pef * 100.0) / personalBest);
+    }
 }

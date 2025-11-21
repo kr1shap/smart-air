@@ -105,7 +105,8 @@ public class CheckInRepository {
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
         if(userRole.equals("parent")){
             data.put("pef",pef);
-            data.put("zone",context.zoneColour(pef));
+            data.put("zoneColour",context.zoneColour(pef));
+            data.put("zoneNumber", context.zoneNumber(pef));
         }
 
         String childUid = uid;
