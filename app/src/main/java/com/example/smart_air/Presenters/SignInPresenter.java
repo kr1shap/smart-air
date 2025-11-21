@@ -23,26 +23,25 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
             view.showError("Password is required");
             return;
         }
+        String trimmedEU = emailOrUsername.trim();
 
         view.showLoading();
 
         if ("child".equalsIgnoreCase(role)) {
-            repo.signInChild(emailOrUsername.trim(), password, createCallback()); //username -> email handled in method
+            repo.signInChild(trimmedEU, password, createCallback()); //username -> email handled in method
         } else {
-            repo.signIn(emailOrUsername.trim(), password, createCallback());
+            repo.signIn(trimmedEU, password, createCallback());
         }
 
     }
 
     @Override
     public void sendPasswordReset(String email) {
-        if (email == null || email.trim().isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+        if (email == null || !repo.validEmail(email.trim())) {
             view.showError("Please enter a valid email address");
             return;
         }
-
         view.showLoading();
-
         repo.sendPasswordResetEmail(email.trim(), new AuthContract.GeneralCallback() {
             @Override
             public void onSuccess() {

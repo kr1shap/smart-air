@@ -15,7 +15,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         this.repo = new AuthRepository();
     }
 
-
     //Helper function
     private boolean validatePassword(String password) {
         if (password == null || password.isEmpty()) return false;
@@ -26,11 +25,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
                 "(?=.*[@#$%^&+=!])" +   // at least 1 special char
                 "(?=\\S+$).{8,}$";      // no whitespace, min 8 chars
         return password.matches(regex);
-    }
-
-
-    private boolean isValidEmail(String email) {
-        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches();
     }
 
     @Override
@@ -51,7 +45,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         if(!role.equals("child") && (email == null || email.trim().isEmpty()) ) {
             view.showError("Email is required");
             return;
-        } else if (!role.equals("child") && !isValidEmail(email)) {
+        } else if (!role.equals("child") && !repo.validEmail(email)) {
             view.showError("Invalid email format");
             return;
         }
@@ -64,14 +58,14 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         }
 
         view.showLoading();
-
+        String emailTrim = email.trim();
         switch (role.toLowerCase()) {
             case "parent":
-                repo.signUpParent(email.trim(), password, username,
+                repo.signUpParent(emailTrim, password, username,
                         createCallback());
                 break;
             case "provider":
-                repo.signUpProvider(email.trim(), password, accessCode,
+                repo.signUpProvider(emailTrim, password, accessCode,
                         createCallback());
                 break;
             case "child":
