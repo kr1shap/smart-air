@@ -40,7 +40,7 @@ public class HistoryFragment extends Fragment {
 
     private View view;
     private HistoryRepository repo;
-    public String [] filters = {"ALL","ALL","ALL","ALL","ALL","ALL"};
+    public String [] filters = {"","","","","",""};
     String childUid;
 
     @Override
@@ -139,12 +139,12 @@ public class HistoryFragment extends Fragment {
     }
 
     private void setUpFilterUI(){
-        String [] nightWakingOptions = {"ALL","YES","NO"};
-        String [] activityLimitsOptions = {"ALL","0-1","2-3","4-5","6-7","8-9","10"};
-        String [] coughingLevelOptions = {"ALL","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
-        String [] triggersOptions = {"ALL","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
-        String [] triageOptions = {"ALL","Days with Triage","Days without Triage"};
-        String [] dateOptions = {"ALL", "Past 3 months", "Past month", "Past 2 weeks"};
+        String [] nightWakingOptions = {"","YES","NO"};
+        String [] activityLimitsOptions = {"","0-1","2-3","4-5","6-7","8-9","10"};
+        String [] coughingLevelOptions = {"","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
+        String [] triggersOptions = {"","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
+        String [] triageOptions = {"","Days with Triage","Days without Triage"};
+        String [] dateOptions = {"", "Past 3 months", "Past month", "Past 2 weeks"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);

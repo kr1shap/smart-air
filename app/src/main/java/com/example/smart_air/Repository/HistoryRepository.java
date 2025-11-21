@@ -122,10 +122,10 @@ public class HistoryRepository {
                 .document(childUid)
                 .collection("entries");
 
-        if(!activity.filters[0].equals("ALL")) {
+        if(!activity.filters[0].equals("")) {
             q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
         }
-        if(!activity.filters[1].equals("ALL")){
+        if(!activity.filters[1].equals("")){
             if(activity.filters[1].length() == 2){
                 q = q.whereEqualTo("activityLimits"+role,10);
             }
@@ -138,7 +138,7 @@ public class HistoryRepository {
                         .whereLessThanOrEqualTo("activityLimits" + role, max);
             }
         }
-        if(!activity.filters[2].equals("ALL")){
+        if(!activity.filters[2].equals("")){
             if(activity.filters[2].equals("No Coughing")){
                 q = q.whereEqualTo("coughingWheezing"+role,0);
             }
@@ -152,7 +152,7 @@ public class HistoryRepository {
                 q = q.whereEqualTo("coughingWheezing"+role,3);
             }
         }
-        if(!activity.filters[3].equals("ALL")){
+        if(!activity.filters[3].equals("")){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
 //        Calendar cal = Calendar.getInstance();
