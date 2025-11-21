@@ -16,7 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
-import com.example.smart_air.Fragments.CheckInFragment;
+import com.example.smart_air.fragments.CheckInFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.User;
