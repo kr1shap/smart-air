@@ -18,6 +18,57 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- filter control container -->
+    <LinearLayout
+        android:id="@+id/filterControlsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toBottomOf="@id/historyTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonFilters"
+        style="@style/SmartAir.Button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FILTERS ▼"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:cornerRadius="10000dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/toggleRole"
+        app:layout_constraintBottom_toBottomOf="@id/toggleRole"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSave"
+            style="@style/SmartAir.Button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SAVE"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/toggleRole"
+            app:layout_constraintBottom_toBottomOf="@id/toggleRole"/>
+
+    </LinearLayout>
+
     <GridLayout
         android:id="@+id/filterGrid"
         android:layout_width="0dp"
@@ -29,7 +80,7 @@
         android:useDefaultMargins="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/historyTitle">
+        app:layout_constraintTop_toBottomOf="@id/filterControlsContainer">
 
         <!-- NIGHT WAKING -->
         <com.google.android.material.textfield.TextInputLayout

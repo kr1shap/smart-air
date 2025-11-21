@@ -155,22 +155,21 @@ public class HistoryRepository {
         if(!activity.filters[3].equals("ALL")){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
-        Calendar cal = Calendar.getInstance();
-        if(activity.filters[4].equals("ALL")){
-            cal.add(Calendar.MONTH, -6);
-        }
-        else if(activity.filters[4].equals("Past 3 months")){
-            cal.add(Calendar.MONTH, -3);
-        }
-        else if(activity.filters[4].equals("Past month")){
-            cal.add(Calendar.MONTH, -1);
-        }
-        else {
-            cal.add(Calendar.WEEK_OF_YEAR, -2);
-        }
-        Timestamp timeFrame = new Timestamp(cal.getTime());
-        q = q.whereGreaterThanOrEqualTo("date", timeFrame);
-
+//        Calendar cal = Calendar.getInstance();
+//        if(activity.filters[4].equals("ALL")){
+//            cal.add(Calendar.MONTH, -6);
+//        }
+//        else if(activity.filters[4].equals("Past 3 months")){
+//            cal.add(Calendar.MONTH, -3);
+//        }
+//        else if(activity.filters[4].equals("Past month")){
+//            cal.add(Calendar.MONTH, -1);
+//        }
+//        else {
+//            cal.add(Calendar.WEEK_OF_YEAR, -2);
+//        }
+//        Timestamp timeFrame = new Timestamp(cal.getTime());
+//        q = q.whereGreaterThanOrEqualTo("date", timeFrame);
         return q;
     }
 

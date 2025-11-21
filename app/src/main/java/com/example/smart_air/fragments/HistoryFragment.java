@@ -22,6 +22,7 @@ import com.example.smart_air.Repository.CheckInRepository;
 import com.example.smart_air.Repository.HistoryRepository;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
@@ -54,7 +55,21 @@ public class HistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
         repo = new HistoryRepository();
-        //container = view.findViewById(R.id.historyContainer);
+        GridLayout filterContainerInitial = view.findViewById(R.id.filterGrid);
+        filterContainerInitial.setVisibility(View.GONE);
+
+        MaterialButton filter = view.findViewById(R.id.buttonFilters);
+        filter.setOnClickListener(v -> {
+            GridLayout filterContainer = view.findViewById(R.id.filterGrid);
+            if(filterContainer.getVisibility() == View.GONE){
+                filterContainer.setVisibility(View.VISIBLE);
+                filter.setText("FILTERS ▲");
+            }
+            else{
+                filterContainer.setVisibility(View.GONE);
+                filter.setText("FILTERS ▼");
+            }
+        });
 
         setUpFilterUI();
         repo.getChildUid(this);
@@ -67,7 +82,7 @@ public class HistoryFragment extends Fragment {
                 filters[0] = "true";
             }
             else if(selected.equals("NO")){
-                filters[0] = "False";
+                filters[0] = "false";
             }
             else{
                 filters[0] = selected;
