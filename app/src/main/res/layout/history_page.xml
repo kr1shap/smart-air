@@ -53,11 +53,11 @@
             android:layout_weight="1" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSave"
+            android:id="@+id/buttonExport"
             style="@style/SmartAir.Button2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SAVE"
+            android:text=" EXPORT "
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:paddingStart="16dp"
@@ -208,6 +208,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/card_parent_child" />
+        tools:listitem="@layout/card_dailycheckin" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

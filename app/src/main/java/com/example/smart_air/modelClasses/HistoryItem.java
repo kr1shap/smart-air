@@ -26,7 +26,8 @@ public class HistoryItem {
     public String nightStatus;
     public String nightChildText;
     public String nightParentText;
-    public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef){
+    public String zone;
+    public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone){
         this.pef = pef;
         if(pef != -5){
             this.pefText = Integer.toString(pef) + "L/min";
@@ -143,6 +144,8 @@ public class HistoryItem {
         else{
             nightParentText = "NO";
         }
+
+        this.zone = zone;
 
     }
 

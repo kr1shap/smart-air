@@ -105,6 +105,7 @@ public class HistoryRepository {
         int coughingWheezingChild = Math.toIntExact(doc.contains("coughingWheezingchild") ? doc.getLong("coughingWheezingchild") : -5);
         int coughingWheezingParent = Math.toIntExact(doc.contains("coughingWheezingparent") ? doc.getLong("coughingWheezingparent") : -5);
         int pef = Math.toIntExact(doc.contains("pef") ? doc.getLong("pef"): -5);
+        String zone = doc.contains("zoneColour") ? doc.getString("zoneColour"): "";
         List<String> triggersChild = new ArrayList<>();
         List<String> triggersParent = new ArrayList<>();
         if (doc.contains("triggerschild")) {
@@ -113,7 +114,7 @@ public class HistoryRepository {
         if (doc.contains("triggersparent")) {
             triggersParent = (List<String>) doc.get("triggersparent");
         }
-        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef);
+        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef,zone);
         return test;
     }
 

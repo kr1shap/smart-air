@@ -1,5 +1,7 @@
 package com.example.smart_air.adapter;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +9,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
@@ -26,7 +29,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
     @Override
     public HistoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.card_parent_child, parent, false);
+                .inflate(R.layout.card_dailycheckin, parent, false);
         return new HistoryViewHolder(view);
     }
 
@@ -46,23 +49,35 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
                 holder.childActivityLimitsBar.setProgress(card.activityChild);
                 holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
                 holder.parentActivityLimitsBar.setVisibility(View.INVISIBLE);
+                holder.childActivityLimitsBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
+                );
 
                 holder.childCoughingBar.setProgress(card.coughingChild);
                 holder.childCoughingBar.setVisibility(View.VISIBLE);
                 holder.parentCoughingBar.setVisibility(View.INVISIBLE);
+                holder.childCoughingBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
+                );
                 break;
 
             case parentOnly:
                 holder.childText.setVisibility(View.INVISIBLE);
                 holder.parentText.setVisibility(View.VISIBLE);
 
-                holder.parentActivityLimitsBar.setProgress(card.activityParent);
-                holder.parentActivityLimitsBar.setVisibility(View.VISIBLE);
-                holder.childActivityLimitsBar.setVisibility(View.INVISIBLE);
+                holder.childActivityLimitsBar.setProgress(card.activityParent);
+                holder.parentActivityLimitsBar.setVisibility(View.INVISIBLE);
+                holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
+                holder.childActivityLimitsBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_selected_bg))
+                );
 
-                holder.parentCoughingBar.setProgress(card.coughingParent);
-                holder.parentCoughingBar.setVisibility(View.VISIBLE);
-                holder.childCoughingBar.setVisibility(View.INVISIBLE);
+                holder.childCoughingBar.setProgress(card.coughingParent);
+                holder.parentCoughingBar.setVisibility(View.INVISIBLE);
+                holder.childCoughingBar.setVisibility(View.VISIBLE);
+                holder.childCoughingBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_selected_bg))
+                );
                 break;
 
             case both:
@@ -73,11 +88,17 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
                 holder.parentActivityLimitsBar.setProgress(card.activityParent);
                 holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
                 holder.parentActivityLimitsBar.setVisibility(View.VISIBLE);
+                holder.childActivityLimitsBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
+                );
 
                 holder.childCoughingBar.setProgress(card.coughingChild);
                 holder.parentCoughingBar.setProgress(card.coughingParent);
                 holder.childCoughingBar.setVisibility(View.VISIBLE);
                 holder.parentCoughingBar.setVisibility(View.VISIBLE);
+                holder.childCoughingBar.setProgressTintList(
+                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
+                );
                 break;
         }
 
@@ -85,10 +106,35 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
         holder.nightTerrorsStatus.setText(card.nightStatus);
         holder.activityLimitsStatus.setText(card.activityStatus);
         holder.coughingStatus.setText(card.coughingStatus);
-        holder.pefText.setText(card.pefText);
+        if(card.zone.isEmpty()){
+            holder.colourBox.setVisibility(View.GONE);
+            holder.zoneStatus.setVisibility(View.VISIBLE);
+            holder.zoneStatus.setText("NOT ENTERED");
+        }
+        else{
+            holder.zoneStatus.setVisibility(View.GONE);
+            holder.colourBox.setVisibility(View.VISIBLE);
+            holder.colourBox.setBackgroundColor(getColour(card.zone));
+        }
 
         // triggers
         holder.setChips(card.triggers);
+    }
+
+    private int getColour(String zone) {
+        switch (zone) {
+            case "green":
+                return Color.parseColor("#4CAF50"); // green
+
+            case "yellow":
+                return Color.parseColor("#FFEB3B"); // yellow
+
+            case "red":
+                return Color.parseColor("#F44336"); // red
+
+            default:
+                return Color.GRAY; // safety, won't be called though
+        }
     }
 
     @Override
@@ -103,9 +149,10 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
     }
 
     public static class HistoryViewHolder extends RecyclerView.ViewHolder {
-        TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, pefText;
+        TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus;
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
+        View colourBox;
 
         public HistoryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -116,7 +163,8 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
             nightTerrorsStatus = itemView.findViewById(R.id.nightTerrorsStatus);
             activityLimitsStatus = itemView.findViewById(R.id.activityLimitsStatus);
             coughingStatus = itemView.findViewById(R.id.coughingStatus);
-            pefText = itemView.findViewById(R.id.pefText);
+            colourBox = itemView.findViewById(R.id.colourBox);
+            zoneStatus = itemView.findViewById(R.id.zoneStatus);
 
             childActivityLimitsBar = itemView.findViewById(R.id.childActivityLimitsBar);
             parentActivityLimitsBar = itemView.findViewById(R.id.parentActivityLimitsBar);
