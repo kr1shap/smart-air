@@ -1,6 +1,9 @@
 package com.example.smart_air.modelClasses;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class HistoryItem {
@@ -11,6 +14,7 @@ public class HistoryItem {
     }
     public typeOfCard cardType;
     public String date;
+    public Date accDate;
     public int pef;
     public String pefText;
     public boolean nightChild;
@@ -27,7 +31,7 @@ public class HistoryItem {
     public String nightChildText;
     public String nightParentText;
     public String zone;
-    public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone){
+    public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.pef = pef;
         if(pef != -5){
             this.pefText = Integer.toString(pef) + "L/min";
@@ -146,6 +150,8 @@ public class HistoryItem {
         }
 
         this.zone = zone;
+
+        this.accDate = accDate;
 
     }
 

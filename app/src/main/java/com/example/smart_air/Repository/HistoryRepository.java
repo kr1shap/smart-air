@@ -15,6 +15,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import com.google.firebase.Timestamp;
@@ -81,11 +82,8 @@ public class HistoryRepository {
                     }
                 }
 
-                Collections.sort(results, (a, b) -> b.date.compareTo(a.date));
+                Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
 
-//                for (HistoryItem item : results) {
-//                    activity.createDailyCard(item);
-//                }
                 activity.createRecycleView(results);
             });
         });
@@ -105,6 +103,9 @@ public class HistoryRepository {
         int coughingWheezingChild = Math.toIntExact(doc.contains("coughingWheezingchild") ? doc.getLong("coughingWheezingchild") : -5);
         int coughingWheezingParent = Math.toIntExact(doc.contains("coughingWheezingparent") ? doc.getLong("coughingWheezingparent") : -5);
         int pef = Math.toIntExact(doc.contains("pef") ? doc.getLong("pef"): -5);
+        Timestamp ts = doc.getTimestamp("date");
+        Date accDate = ts != null ? ts.toDate() : null;
+
         String zone = doc.contains("zoneColour") ? doc.getString("zoneColour"): "";
         List<String> triggersChild = new ArrayList<>();
         List<String> triggersParent = new ArrayList<>();
@@ -114,7 +115,7 @@ public class HistoryRepository {
         if (doc.contains("triggersparent")) {
             triggersParent = (List<String>) doc.get("triggersparent");
         }
-        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef,zone);
+        HistoryItem test = new HistoryItem(date,nightWakingChild,nightWakingParent,activityLimitsChild,activityLimitsParent,coughingWheezingChild,coughingWheezingParent,triggersChild,triggersParent,pef,zone,accDate);
         return test;
     }
 
