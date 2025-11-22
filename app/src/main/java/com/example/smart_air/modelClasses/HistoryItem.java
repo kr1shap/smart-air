@@ -17,6 +17,7 @@ public class HistoryItem {
         parentOnly,
         triage
     }
+    public boolean passFilter;
     // daily stuff
     public typeOfCard cardType;
     public String date;
@@ -46,6 +47,7 @@ public class HistoryItem {
     public int rescueAttempts;
     public String emergencyCall;
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
+        this.passFilter = true;
         this.pef = pef;
         if(pef != -5){
             this.pefText = Integer.toString(pef) + "L/min";
@@ -177,6 +179,7 @@ public class HistoryItem {
     }
 
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
+        this.passFilter = true;
         this.accDate = accDate;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         this.time = sdf.format(accDate);

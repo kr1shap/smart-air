@@ -61,11 +61,11 @@
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/flagsChipGroup"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:singleLine="true"
+                app:singleLine="false"
                 app:chipSpacingHorizontal="4dp"
-                app:chipSpacingVertical="4dp"
+                app:chipSpacingVertical="0dp"
                 android:gravity="start">
 
                 <com.google.android.material.chip.Chip

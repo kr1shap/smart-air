@@ -114,6 +114,14 @@ public class HistoryFragment extends Fragment {
             repo.getDailyCheckIns(childUid,this);
         });
 
+        // triage filter
+        AutoCompleteTextView triageDropdown = view.findViewById(R.id.selectTriage);
+        triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+            filters[5] = selected;
+            repo.getDailyCheckIns(childUid,this);
+        });
+
 
     }
 

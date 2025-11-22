@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.google.firebase.Timestamp;
@@ -93,12 +94,64 @@ public class HistoryRepository {
                                                                 results.add(triageItem);
                                                             }
 
+                                                            removeUnPassed(results,activity);
                                                             Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
 
                                                             activity.createRecycleView(results);
                                                         });
             });
         });
+    }
+
+    private void removeUnPassed(List<HistoryItem> results, HistoryFragment activity) {
+        Map<String, List<HistoryItem>> historyMap = new HashMap<>();
+        for(HistoryItem result:results){
+            if(!historyMap.containsKey(result.date)){
+                historyMap.put(result.date, new ArrayList<>());
+            }
+            historyMap.get(result.date).add(result);
+        }
+        if(!activity.filters[5].equals("")){
+            boolean setTriage = activity.filters[5].equals("Days with Triage");
+            for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
+                List<HistoryItem> cards = entry.getValue();
+                boolean hasTriage = false;
+                for(HistoryItem card: cards){
+                    if(card.cardType == HistoryItem.typeOfCard.triage){
+                        hasTriage = true;
+                        break;
+                    }
+                }
+                if(setTriage != hasTriage){
+                    for(HistoryItem card: cards){
+                        card.passFilter = false;
+                    }
+                }
+            }
+        }
+        for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
+            String date = entry.getKey();
+            List<HistoryItem> cards = entry.getValue();
+            boolean passFilter = false;
+            for(HistoryItem card: cards){
+                if(card.cardType != HistoryItem.typeOfCard.triage){
+                    passFilter = true;
+                    break;
+                }
+            }
+            if(!passFilter){
+                for(HistoryItem card: cards){
+                    card.passFilter = false;
+                }
+            }
+        }
+
+        results.clear();
+        for (List<HistoryItem> items : historyMap.values()) {
+            results.addAll(items);
+        }
+
+        results.removeIf(result -> !result.passFilter);
     }
 
     private HistoryItem builtTriageItem(DocumentSnapshot doc) {
