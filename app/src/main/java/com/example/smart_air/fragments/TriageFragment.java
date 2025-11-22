@@ -1,6 +1,8 @@
 package com.example.smart_air.fragments;
 
+import static android.content.ContentValues.TAG;
 import static androidx.core.content.ContextCompat.getSystemService;
+import com.google.firebase.Timestamp;
 
 import android.Manifest;
 import android.app.NotificationChannel;
@@ -13,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,9 +33,18 @@ import androidx.fragment.app.Fragment;
 
 import com.example.smart_air.R;
 import com.example.smart_air.TriageState;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -67,18 +79,17 @@ public class TriageFragment extends Fragment {
     boolean homestartpressed=false;
     String decisioncardchoice;
     String[] stringflags;
-    String [] guidance;
+    String [] guidance=new String[2];
     String [] userRes;
+
     MaterialButton startTriageBtn;
     MaterialButton endTriageBtn;
     boolean triageRunning = false;
     static final long TRIAGE_DURATION_MS =10*60*1000;
-
+    String uid;
 
     public TriageFragment() {
-        // Required empty public constructor
     }
-
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
@@ -91,6 +102,46 @@ public class TriageFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
 
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        String uid = user.getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        View triageContent = view.findViewById(R.id.triageContent);
+        View noAccessMessage = view.findViewById(R.id.noAccessMessage);
+
+        db.collection("users").document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        return;
+                    }
+
+                    String role = doc.getString("role");
+
+                    if (!"child".equals(role)) {
+                        triageContent.setVisibility(View.GONE);
+                        noAccessMessage.setVisibility(View.VISIBLE);      // 👈 updated
+                        return;
+                    }
+
+                    triageContent.setVisibility(View.VISIBLE);
+                    noAccessMessage.setVisibility(View.GONE);              // 👈 updated
+                    triagesession(view);
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error checking role", e);
+                });
+    }
+
+
+
+    private void triagesession(View view)
+    {
+        //timer setup
         checktimerbutton=view.findViewById(R.id.timer);
         timertextview=view.findViewById(R.id.timerTextV);
         timer = new Timer();
@@ -100,6 +151,7 @@ public class TriageFragment extends Fragment {
         //ensureNotificationPermission();
         //createNotifChannel(); // makes notification channel
         checktimerbutton.setOnClickListener(v -> toggletimerdisplay());
+        // set up triage session buttons
         startTriageBtn=view.findViewById(R.id.startriage);
         endTriageBtn=view.findViewById(R.id.endtriage);
         triageRunning=false;
@@ -112,8 +164,14 @@ public class TriageFragment extends Fragment {
                 //parentalertnotif();
             }
         });
-        endTriageBtn.setOnClickListener(v -> endTriageSession());
-
+        endTriageBtn.setOnClickListener(v -> {
+            flagschecked(checkedpull,checkedsen,checkedretract,checkedbluelips);
+            useresponseadd();
+            decisionpressed(emergcalled,homestartpressed);
+            guidanceadd(decisioncardchoice,"Red"); //dummy red
+            savetriagesession();
+            endTriageSession();
+        });
         checktimerbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -151,11 +209,17 @@ public class TriageFragment extends Fragment {
             }
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String txt = s.toString();
-                if (!txt.isEmpty()) {
-                    recentresattNum = Integer.parseInt(txt);
+                String txt = s.toString().trim();
+                if (txt.isEmpty()==false) {
+                    try {
+                        recentresattNum = Integer.parseInt(txt);
+                    } catch (NumberFormatException e) {
+                        recentresattNum = -1;
+                        Log.e(TAG, "Invalid number in recent rescue attempts: " + txt, e);
+                    }
                 }
-                else {
+                else
+                {
                     recentresattNum = -1;
                 }
             }
@@ -174,11 +238,20 @@ public class TriageFragment extends Fragment {
             }
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String txt = s.toString();
-                if (!txt.isEmpty()) {
-                    optTriPEF = Integer.parseInt(txt);
+                String txt = s.toString().trim();
+                if (txt.isEmpty()==false) {
+                    try
+                    {
+                        optTriPEF = Integer.parseInt(txt);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        recentresattNum = -1;
+                        Log.e(TAG, "Invalid number in recent rescue attempts: " + txt, e);
+                    }
                 }
-                else {
+                else
+                {
                     optTriPEF = -1;
                 }
             }
@@ -236,6 +309,10 @@ public class TriageFragment extends Fragment {
     }
     public void showtimer()
     {
+        if (isAdded()==false)
+        {
+            return;
+        }
         long now=System.currentTimeMillis();
         long diff= TriageState.triageendtime-now;
         if (diff<=0)
@@ -256,6 +333,10 @@ public class TriageFragment extends Fragment {
             @Override
             public void run()
             {
+                if (isAdded()==false)
+                {
+                    return;
+                }
                 requireActivity().runOnUiThread(new Runnable()
                 {
                     @Override
@@ -323,13 +404,13 @@ public class TriageFragment extends Fragment {
     }
 
     public void updateflgbtn(MaterialButton btn, boolean checked) {
-        if (checked==true) {
+        if (checked==true)
+        {
             btn.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.checkbox));
-
-            btn.setIconTint(ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), android.R.color.white)
-            ));
-        } else {
+            btn.setIconTint(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), android.R.color.white)));
+        }
+        else
+        {
             btn.setIcon(null);
         }
     }
@@ -355,11 +436,11 @@ public class TriageFragment extends Fragment {
     public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails)
     {
         ArrayList<String> flagslist=new ArrayList<>();
-        if (chtpull==true)
+        if (sen==true)
         {
             flagslist.add("Can't speak full sentences");
         }
-        if (sen==true)
+        if (chtpull==true)
         {
             flagslist.add("Chest Pulling");
         }
@@ -380,11 +461,39 @@ public class TriageFragment extends Fragment {
     }
     public void useresponseadd()
     {
-
+        ArrayList<String> usereslist=new ArrayList<>();
+        // check if any flags have been pressed
+        if (checkedsen==true||checkedpull==true||checkedretract==true||checkedbluelips==true)
+        {
+            usereslist.add("Flags pressed");
+        }
+        // put in values
+        if (optTriPEF!=-1)
+        {
+            usereslist.add("Updated PEF");
+        }
+        if (recentresattNum!=-1)
+        {
+            usereslist.add("Updated recent rescue attempts");
+        }
+        // check what decision card has been pressed
+        if (emergcalled==true)
+        {
+            usereslist.add("Emergency called");
+        }
+        if (homestartpressed==true)
+        {
+            usereslist.add("Home start steps pressed");
+        }
+        userRes=usereslist.toArray(new String[0]);
     }
-    private void startTriageSession() {
+    public void startTriageSession() {
         if (triageRunning==true)
         {
+            return;
+        }
+        if (timertextview == null) {
+            Log.e(TAG, "startTriageSession: timertextview is null");
             return;
         }
         triageRunning=true;
@@ -397,9 +506,13 @@ public class TriageFragment extends Fragment {
         endTriageBtn.setEnabled(true);
     }
 
-    private void endTriageSession() {
+    public void endTriageSession() {
         if (triageRunning==false)
         {
+            return;
+        }
+        if (timertextview == null) {
+            Log.e(TAG, "endTriageSession: timertextview is null");
             return;
         }
         triageRunning=false;
@@ -414,42 +527,87 @@ public class TriageFragment extends Fragment {
         startTriageBtn.setEnabled(true);
         endTriageBtn.setEnabled(false);
     }
-    /*public void parentalertnotif() {
-        NotificationCompat.Builder mbuilder = new NotificationCompat.Builder(this,CHANNEL_ID)
-                .setSmallIcon(R.drawable.parentalert)
-                .setContentTitle("Parent Alert")
-                .setContentText("A triage session has started!")
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(0, mbuilder.build());
-    }
-    public void createNotifChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "SmartAir Notifications";
-            String description = "General notifications for SmartAir app";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+    public void savetriagesession()
+    {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user==null)
+        {
+            return;
         }
-    }
-    private static final int REQ_POST_NOTIFS = 1001;
-
-    private void ensureNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        REQ_POST_NOTIFS
-                );
-            }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> tridata = new HashMap<>();
+        if (stringflags != null)
+        {
+            tridata.put("flagList", Arrays.asList(stringflags));
         }
-    }*/
+        else
+        {
+            tridata.put("flagList",null);
+        }
+        // do not need this if, uses old pef when it has
+        if (optTriPEF!=-1)
+        {
+            tridata.put("PEF",optTriPEF);
+        }
+        else
+        {
+            tridata.put("PEF",null);
+        }
+        if (recentresattNum!=-1)
+        {
+            tridata.put("rescueAttempts",recentresattNum);
+        }
+        else
+        {
+            tridata.put("rescueAttempts",0);
+        }
+        tridata.put("date", new Timestamp(new Date()));
+        if (guidance != null)
+        {
+            tridata.put("guidance", Arrays.asList(guidance));
+        }
+        else
+        {
+            tridata.put("guidance",null);
+        }
+        if (user!=null)
+        {
+            uid=user.getUid();
+        }
+        else{
+            uid=null;
+        }
+        tridata.put("user", uid);
+        if (userRes != null)
+        {
+            tridata.put("userRes", Arrays.asList(userRes));
+        }
+        else
+        {
+            tridata.put("userRes",null);
+        }
 
-}
+        db.collection("incidentLog")
+                .document(uid)
+                .set(new HashMap<>())
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("incidentLog")
+                            .document(uid)
+                            .collection("triageSessions")
+                            .add(tridata)
+                            .addOnSuccessListener(docRef -> {
+                                Log.d(TAG, "Triage session saved: " + docRef.getId());
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.w(TAG, "Error writing triage session", e);
+                            });
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error creating parent incidentLog doc", e);
+                });
+    }
+    }
+
 
 

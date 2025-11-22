@@ -2,284 +2,317 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/timerTextV"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:background="#C1DBE3"
-        android:gravity="center"
-        android:textColor="#007CBE"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="65dp"
-        android:background="#D9D9D9"
-        android:gravity="center"
-        android:text="This is a guidance, not a diagnosis. If in doubt, call emergency"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
-    <LinearLayout
-        android:id="@+id/red_flag_card"
+        android:id="@+id/noAccessMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#C86E6E"
-        android:layout_margin="16dp">
-
-        <TextView
-            android:id="@+id/red_flag_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Quick Red Flags"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:layout_marginBottom="8dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_flag_sentences"
-                style="@style/RedFlagSquare" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Can’t speak full sentences"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_flag_chest"
-                style="@style/RedFlagSquare" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Chest pulling"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_flag_retractions"
-                style="@style/RedFlagSquare" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="In/Retractions"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_flag_blue"
-                style="@style/RedFlagSquare" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Blue/Gray lips/Nails"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-    </LinearLayout>
+        android:text="This feature is not available for your account type."
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone" />
 
     <LinearLayout
+        android:id="@+id/triageContent"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="14dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/textView2"
-            style="@style/SmartAir.Text.title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Recent Rescue Attempts"
-            android:textSize="18sp" />
+            android:id="@+id/timerTextV"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="#C1DBE3"
+            android:gravity="center"
+            android:textColor="#007CBE"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-        <LinearLayout
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
+            android:background="#D9D9D9"
+            android:gravity="center"
+            android:text="This is a guidance, not a diagnosis. If in doubt, call emergency"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Role-based message for parents/providers -->
+        <TextView
+            android:id="@+id/viewOnlyMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:text="View-Only Mode: You can monitor triage information but cannot start sessions."
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:padding="12dp"
+            android:background="#FFF3CD"
+            android:textColor="#856404"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/red_flag_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="#C86E6E"
+            android:layout_margin="16dp">
 
             <TextView
-                android:id="@+id/textView3"
-                style="@style/SmartAir.Text.body"
-                android:layout_width="309dp"
+                android:id="@+id/red_flag_title"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="How many times have you used the rescue inhaler"
-                android:textSize="12sp" />
+                android:text="Quick Red Flags"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp" />
 
-            <EditText
-                android:id="@+id/textrra"
-                android:layout_width="40dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="8dp"
-                android:background="#EAF4FF" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_flag_sentences"
+                    style="@style/RedFlagSquare" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Can't speak full sentences"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_flag_chest"
+                    style="@style/RedFlagSquare" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Chest pulling"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_flag_retractions"
+                    style="@style/RedFlagSquare" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="In/Retractions"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_flag_blue"
+                    style="@style/RedFlagSquare" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Blue/Gray lips/Nails"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="14dp">
 
             <TextView
-                android:id="@+id/textView4"
+                android:id="@+id/textView2"
                 style="@style/SmartAir.Text.title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PEF (Optional)"
+                android:text="Recent Rescue Attempts"
                 android:textSize="18sp" />
 
-            <EditText
-                android:id="@+id/textpef"
-                android:layout_width="40dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="8dp"
-                android:background="#EAF4FF" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/textView3"
+                    style="@style/SmartAir.Text.body"
+                    android:layout_width="309dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="How many times have you used the rescue inhaler"
+                    android:textSize="12sp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:gravity="center"
-            android:orientation="horizontal">
+                <EditText
+                    android:id="@+id/textrra"
+                    android:layout_width="40dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#EAF4FF" />
+            </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button3"
-                style="@style/SmartAir.Button1"
-                android:layout_width="0dp"
-                android:layout_height="165dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textView4"
+                    style="@style/SmartAir.Text.title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PEF (Optional)"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/textpef"
+                    android:layout_width="40dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#EAF4FF" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:gravity="center"
-                android:text="Call Emergency Now"
-                android:textAlignment="center"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                app:icon="@drawable/emergency_call"
-                app:iconGravity="top"
-                app:iconPadding="4dp"
-                app:iconSize="70dp" />
+                android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button4"
-                style="@style/SmartAir.Button1"
-                android:layout_width="0dp"
-                android:layout_height="165dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Start Home Steps"
-                android:textAlignment="center"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                app:icon="@drawable/outline_format_list_numbered"
-                app:iconGravity="top"
-                app:iconPadding="4dp"
-                app:iconSize="80dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button3"
+                    style="@style/SmartAir.Button1"
+                    android:layout_width="0dp"
+                    android:layout_height="165dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Call Emergency Now"
+                    android:textAlignment="center"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    app:icon="@drawable/emergency_call"
+                    app:iconGravity="top"
+                    app:iconPadding="4dp"
+                    app:iconSize="70dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button4"
+                    style="@style/SmartAir.Button1"
+                    android:layout_width="0dp"
+                    android:layout_height="165dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Start Home Steps"
+                    android:textAlignment="center"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    app:icon="@drawable/outline_format_list_numbered"
+                    app:iconGravity="top"
+                    app:iconPadding="4dp"
+                    app:iconSize="80dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+                <ImageButton
+                    android:id="@+id/timer"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@android:color/holo_blue_light"
+                    android:padding="6dp"
+                    android:src="@drawable/timer" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/startriage"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:backgroundTint="@android:color/holo_blue_light"
+                    android:text="HAVING TROUBLE BREATHING?"
+                    android:textColor="@android:color/white"
+                    android:textAllCaps="false"
+                    android:icon="@drawable/timer"
+                    app:iconGravity="textStart" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/endtriage"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="@android:color/holo_blue_light"
+                    android:text="BETTER"
+                    android:textColor="@android:color/white"
+                    android:textAllCaps="false"
+                    android:icon="@drawable/timer"
+                    app:iconGravity="textStart" />
+
+            </LinearLayout>
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="20dp"
-            android:gravity="center">
-
-            <ImageButton
-                android:id="@+id/timer"
-
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@android:color/holo_blue_light"
-                android:padding="8dp"
-                android:src="@drawable/timer"
-                android:layout_marginEnd="12dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/startriage"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:icon="@drawable/timer"
-                app:iconGravity="textStart"
-                android:text="START TRIAGE"
-                android:layout_marginEnd="12dp"
-                android:backgroundTint="@android:color/holo_blue_light"
-                android:textColor="@android:color/white" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/endtriage"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:icon="@drawable/timer"
-                app:iconGravity="textStart"
-                android:text="END TRIAGE"
-                android:backgroundTint="@android:color/holo_blue_light"
-                android:textColor="@android:color/white" />
-
-        </LinearLayout>
-
-
     </LinearLayout>
-
 </LinearLayout>
