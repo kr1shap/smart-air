@@ -31,7 +31,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import org.w3c.dom.Text;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -57,6 +62,14 @@ public class HistoryFragment extends Fragment {
         repo = new HistoryRepository();
         GridLayout filterContainerInitial = view.findViewById(R.id.filterGrid);
         filterContainerInitial.setVisibility(View.GONE);
+
+        // set past 6 months
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -6);
+        Date sixMonthsAgo = cal.getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = sdf.format(sixMonthsAgo);
+        filters[4] = formattedDate;
 
         MaterialButton filter = view.findViewById(R.id.buttonFilters);
         filter.setOnClickListener(v -> {
@@ -114,6 +127,39 @@ public class HistoryFragment extends Fragment {
             repo.getDailyCheckIns(childUid,this);
         });
 
+        // date filter
+        AutoCompleteTextView dateDropdown = view.findViewById(R.id.selectDate);
+        dateDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            String selected = parent.getItemAtPosition(position).toString();
+
+            // set date to compare too based on it
+            Calendar today = Calendar.getInstance();
+            switch (selected) {
+                case "Past 3 months":
+                    today.add(Calendar.MONTH, -3);
+                    break;
+                case "Past month":
+                    today.add(Calendar.MONTH, -1);
+                    break;
+                case "Past 2 weeks":
+                    today.add(Calendar.DAY_OF_YEAR, -14);
+                    break;
+                case "Past week":
+                    today.add(Calendar.DAY_OF_YEAR, -7);
+                    break;
+                case "Past 2 days":
+                    today.add(Calendar.DAY_OF_YEAR, -2);
+                    break;
+                default:
+                    today.add(Calendar.MONTH, -6);
+            }
+            Date filterDate = today.getTime();
+            String formattedFilterDate = sdf.format(filterDate);
+            filters[4] = formattedFilterDate;
+
+            repo.getDailyCheckIns(childUid,this);
+        });
+
         // triage filter
         AutoCompleteTextView triageDropdown = view.findViewById(R.id.selectTriage);
         triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
@@ -152,7 +198,7 @@ public class HistoryFragment extends Fragment {
         String [] coughingLevelOptions = {"","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
         String [] triggersOptions = {"","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
         String [] triageOptions = {"","Days with Triage","Days without Triage"};
-        String [] dateOptions = {"", "Past 3 months", "Past month", "Past 2 weeks"};
+        String [] dateOptions = {"", "Past 3 months", "Past month", "Past 2 weeks", "Past week", "Past 2 days"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);

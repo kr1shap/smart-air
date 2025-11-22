@@ -106,6 +106,9 @@ public class HistoryRepository {
     private void removeUnPassed(List<HistoryItem> results, HistoryFragment activity) {
         Map<String, List<HistoryItem>> historyMap = new HashMap<>();
         for(HistoryItem result:results){
+            if((result.date).compareTo(activity.filters[4]) < 0){
+                continue;
+            }
             if(!historyMap.containsKey(result.date)){
                 historyMap.put(result.date, new ArrayList<>());
             }
@@ -130,7 +133,6 @@ public class HistoryRepository {
             }
         }
         for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
-            String date = entry.getKey();
             List<HistoryItem> cards = entry.getValue();
             boolean passFilter = false;
             for(HistoryItem card: cards){
@@ -245,21 +247,6 @@ public class HistoryRepository {
         if(!activity.filters[3].equals("")){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
-//        Calendar cal = Calendar.getInstance();
-//        if(activity.filters[4].equals("ALL")){
-//            cal.add(Calendar.MONTH, -6);
-//        }
-//        else if(activity.filters[4].equals("Past 3 months")){
-//            cal.add(Calendar.MONTH, -3);
-//        }
-//        else if(activity.filters[4].equals("Past month")){
-//            cal.add(Calendar.MONTH, -1);
-//        }
-//        else {
-//            cal.add(Calendar.WEEK_OF_YEAR, -2);
-//        }
-//        Timestamp timeFrame = new Timestamp(cal.getTime());
-//        q = q.whereGreaterThanOrEqualTo("date", timeFrame);
         return q;
     }
 
