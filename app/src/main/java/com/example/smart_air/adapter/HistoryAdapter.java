@@ -14,126 +14,54 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.modelClasses.HistoryItem;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
 import java.util.List;
 
-public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder> {
+public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int VIEW_TYPE_TRIAGE = 1;
+    private static final int VIEW_TYPE_DAILY = 2;
     private List<HistoryItem> historyItems;
 
     public HistoryAdapter(List<HistoryItem> historyItems) {
         this.historyItems = historyItems;
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        HistoryItem item = historyItems.get(position);
+        if (item.cardType == HistoryItem.typeOfCard.triage) {
+            return VIEW_TYPE_TRIAGE;
+        } else {
+            return VIEW_TYPE_DAILY;
+        }
+    }
+
     @NonNull
     @Override
-    public HistoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.card_dailycheckin, parent, false);
-        return new HistoryViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if(viewType == VIEW_TYPE_DAILY){
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.card_dailycheckin, parent, false);
+            return new DailyViewHolder(view);
+        }
+        else {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.card_triage, parent, false);
+            return new TriageViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull HistoryViewHolder holder, int position) {
-        HistoryItem card = historyItems.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
-        // date
-        holder.dateText.setText(card.date);
+        HistoryItem item = historyItems.get(position);
 
-        // child/parent text & bars
-        switch (card.cardType) {
-            case childOnly:
-                holder.childText.setVisibility(View.VISIBLE);
-                holder.parentText.setVisibility(View.INVISIBLE);
-
-                holder.childActivityLimitsBar.setProgress(card.activityChild);
-                holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
-                holder.parentActivityLimitsBar.setVisibility(View.INVISIBLE);
-                holder.childActivityLimitsBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
-                );
-
-                holder.childCoughingBar.setProgress(card.coughingChild);
-                holder.childCoughingBar.setVisibility(View.VISIBLE);
-                holder.parentCoughingBar.setVisibility(View.INVISIBLE);
-                holder.childCoughingBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
-                );
-                break;
-
-            case parentOnly:
-                holder.childText.setVisibility(View.INVISIBLE);
-                holder.parentText.setVisibility(View.VISIBLE);
-
-                holder.childActivityLimitsBar.setProgress(card.activityParent);
-                holder.parentActivityLimitsBar.setVisibility(View.INVISIBLE);
-                holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
-                holder.childActivityLimitsBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_selected_bg))
-                );
-
-                holder.childCoughingBar.setProgress(card.coughingParent);
-                holder.parentCoughingBar.setVisibility(View.INVISIBLE);
-                holder.childCoughingBar.setVisibility(View.VISIBLE);
-                holder.childCoughingBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_selected_bg))
-                );
-                break;
-
-            case both:
-                holder.childText.setVisibility(View.VISIBLE);
-                holder.parentText.setVisibility(View.VISIBLE);
-
-                holder.childActivityLimitsBar.setProgress(card.activityChild);
-                holder.parentActivityLimitsBar.setProgress(card.activityParent);
-                holder.childActivityLimitsBar.setVisibility(View.VISIBLE);
-                holder.parentActivityLimitsBar.setVisibility(View.VISIBLE);
-                holder.childActivityLimitsBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
-                );
-
-                holder.childCoughingBar.setProgress(card.coughingChild);
-                holder.parentCoughingBar.setProgress(card.coughingParent);
-                holder.childCoughingBar.setVisibility(View.VISIBLE);
-                holder.parentCoughingBar.setVisibility(View.VISIBLE);
-                holder.childCoughingBar.setProgressTintList(
-                        ColorStateList.valueOf(ContextCompat.getColor(holder.itemView.getContext(), R.color.role_default_bg))
-                );
-                break;
-        }
-
-        // other fields
-        holder.nightTerrorsStatus.setText(card.nightStatus);
-        holder.activityLimitsStatus.setText(card.activityStatus);
-        holder.coughingStatus.setText(card.coughingStatus);
-        if(card.zone.isEmpty()){
-            holder.colourBox.setVisibility(View.GONE);
-            holder.zoneStatus.setVisibility(View.VISIBLE);
-            holder.zoneStatus.setText("NOT ENTERED");
-        }
-        else{
-            holder.zoneStatus.setVisibility(View.GONE);
-            holder.colourBox.setVisibility(View.VISIBLE);
-            holder.colourBox.setBackgroundColor(getColour(card.zone));
-        }
-
-        // triggers
-        holder.setChips(card.triggers);
-    }
-
-    private int getColour(String zone) {
-        switch (zone) {
-            case "green":
-                return Color.parseColor("#4CAF50"); // green
-
-            case "yellow":
-                return Color.parseColor("#FFEB3B"); // yellow
-
-            case "red":
-                return Color.parseColor("#F44336"); // red
-
-            default:
-                return Color.GRAY; // safety, won't be called though
+        if (holder instanceof DailyViewHolder) {
+            ((DailyViewHolder) holder).bind(item);
+        } else if (holder instanceof TriageViewHolder) {
+            ((TriageViewHolder) holder).bind(item);
         }
     }
 
@@ -142,19 +70,13 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
         return historyItems.size();
     }
 
-    // method to update filtered list
-    public void updateList(List<HistoryItem> newList) {
-        historyItems = newList;
-        notifyDataSetChanged();
-    }
-
-    public static class HistoryViewHolder extends RecyclerView.ViewHolder {
+    static class DailyViewHolder extends RecyclerView.ViewHolder {
         TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus;
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
         View colourBox;
 
-        public HistoryViewHolder(@NonNull View itemView) {
+        DailyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             dateText = itemView.findViewById(R.id.dateText);
@@ -174,12 +96,140 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
             triggersContainer = itemView.findViewById(R.id.triggersContainer);
         }
 
-        public void setChips(List<String> triggers) {
+        void bind(HistoryItem card) {
+            // DATE
+            dateText.setText(card.date);
+
+            // CHILD / PARENT BAR LOGIC
+            switch (card.cardType) {
+                case childOnly:
+                    childText.setVisibility(View.VISIBLE);
+                    parentText.setVisibility(View.INVISIBLE);
+
+                    childActivityLimitsBar.setProgress(card.activityChild);
+                    parentActivityLimitsBar.setVisibility(View.INVISIBLE);
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+
+                    childCoughingBar.setProgress(card.coughingChild);
+                    parentCoughingBar.setVisibility(View.INVISIBLE);
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                    break;
+
+                case parentOnly:
+                    childText.setVisibility(View.INVISIBLE);
+                    parentText.setVisibility(View.VISIBLE);
+
+                    childActivityLimitsBar.setProgress(card.activityParent);
+                    parentActivityLimitsBar.setVisibility(View.INVISIBLE);
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+
+                    childCoughingBar.setProgress(card.coughingParent);
+                    parentCoughingBar.setVisibility(View.INVISIBLE);
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                    break;
+
+                case both:
+                    childText.setVisibility(View.VISIBLE);
+                    parentText.setVisibility(View.VISIBLE);
+
+                    childActivityLimitsBar.setProgress(card.activityChild);
+                    parentActivityLimitsBar.setProgress(card.activityParent);
+
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+                    parentActivityLimitsBar.setVisibility(View.VISIBLE);
+
+                    childCoughingBar.setProgress(card.coughingChild);
+                    parentCoughingBar.setProgress(card.coughingParent);
+
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                    parentCoughingBar.setVisibility(View.VISIBLE);
+                    break;
+            }
+
+            // statuses
+            nightTerrorsStatus.setText(card.nightStatus);
+            activityLimitsStatus.setText(card.activityStatus);
+            coughingStatus.setText(card.coughingStatus);
+
+            // zone indicator
+            if (card.zone.isEmpty()) {
+                colourBox.setVisibility(View.GONE);
+                zoneStatus.setVisibility(View.VISIBLE);
+                zoneStatus.setText("NOT ENTERED");
+            } else {
+                zoneStatus.setVisibility(View.GONE);
+                colourBox.setVisibility(View.VISIBLE);
+                colourBox.setBackgroundColor(getColour(card.zone));
+            }
+
+            // triggers
+            setChips(card.triggers);
+        }
+
+        private int getColour(String zone) {
+            switch (zone) {
+                case "green": return Color.parseColor("#4CAF50");
+                case "yellow": return Color.parseColor("#FFEB3B");
+                case "red": return Color.parseColor("#F44336");
+                default: return Color.GRAY;
+            }
+        }
+
+        private void setChips(List<String> triggers) {
             triggersContainer.removeAllViews();
             for (String trigger : triggers) {
-                com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(itemView.getContext());
+                Chip chip = new Chip(itemView.getContext());
                 chip.setText(trigger);
                 triggersContainer.addView(chip);
+            }
+        }
+    }
+
+    static class TriageViewHolder extends RecyclerView.ViewHolder {
+        ChipGroup flagsChipGroup;
+        TextView pefValue, rescueAttemptsValue, emergencyButtonText, userResponseList, dateText, title;
+
+        TriageViewHolder(@NonNull View itemView) {
+            super(itemView);
+            flagsChipGroup = itemView.findViewById(R.id.flagsChipGroup);
+            pefValue = itemView.findViewById(R.id.pefValue);
+            rescueAttemptsValue = itemView.findViewById(R.id.rescueAttemptsValue);
+            emergencyButtonText = itemView.findViewById(R.id.emergencyButtonText);
+            userResponseList = itemView.findViewById(R.id.userResponseList);
+            dateText = itemView.findViewById(R.id.dateText);
+            title = itemView.findViewById(R.id.title);
+        }
+
+        void bind(HistoryItem item) {
+            dateText.setText(item.time);
+            title.setText(item.date + " INCIDENT LOG");
+            userResponseList.setText(item.userBullets);
+            if(item.pef == -5){
+                pefValue.setText("not entered");
+            }
+            else{
+                pefValue.setText(String.valueOf(item.pef));
+            }
+            if(item.rescueAttempts == -5){
+                rescueAttemptsValue.setText("0");
+            }
+            else{
+                rescueAttemptsValue.setText(String.valueOf(item.rescueAttempts));
+            }
+            emergencyButtonText.setText(item.emergencyCall);
+            setChips(item.flaglist);
+        }
+
+        private void setChips(List<String> flags) {
+            flagsChipGroup.removeAllViews();
+            for (String flag : flags) {
+                Chip chip = new Chip(itemView.getContext());
+                chip.setText(flag);
+
+                chip.setChipBackgroundColor(ColorStateList.valueOf(Color.parseColor("#0277BD")));
+                chip.setTextColor(Color.WHITE);
+
+                flagsChipGroup.addView(chip);
             }
         }
     }

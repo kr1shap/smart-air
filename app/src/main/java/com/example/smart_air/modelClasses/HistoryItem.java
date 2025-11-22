@@ -3,17 +3,24 @@ package com.example.smart_air.modelClasses;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
+
 
 public class HistoryItem {
     public enum typeOfCard {
         both,
         childOnly,
-        parentOnly
+        parentOnly,
+        triage
     }
+    // daily stuff
     public typeOfCard cardType;
     public String date;
+    public String time;
     public Date accDate;
     public int pef;
     public String pefText;
@@ -31,6 +38,13 @@ public class HistoryItem {
     public String nightChildText;
     public String nightParentText;
     public String zone;
+
+    // triage only stuff
+    public List<String> flaglist;
+    public List<String> userRes;
+    public String userBullets;
+    public int rescueAttempts;
+    public String emergencyCall;
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.pef = pef;
         if(pef != -5){
@@ -151,8 +165,35 @@ public class HistoryItem {
 
         this.zone = zone;
 
-        this.accDate = accDate;
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(accDate);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 0);
 
+        this.accDate = cal.getTime();
+
+    }
+
+    public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
+        this.accDate = accDate;
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        this.time = sdf.format(accDate);
+        sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        this.date = sdf.format(accDate);
+        this.pef = pef;
+        this.flaglist = flaglist;
+        this.emergencyCall = emergencyCall;
+        this.userRes = userRes;
+        this.rescueAttempts = rescueAttempts;
+        this.cardType = typeOfCard.triage;
+        userBullets = "";
+        for(String bullet: userRes){
+            userBullets += ("• " + bullet + "\n");
+        }
+        if(userBullets.isEmpty()){
+            userBullets = "None";}
     }
 
     public boolean equals(Object o){

@@ -7,7 +7,7 @@
     android:layout_margin="16dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="#F0F7F9">
+    app:cardBackgroundColor="#F5F6F6">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,9 +27,9 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="INCIDENT LOG"
+                android:text="2025-11-17 INCIDENT LOG"
                 android:textSize="16sp"
-                android:textColor="@color/colour_black"
+                android:textColor="@color/colour_blue"
                 android:fontFamily="@font/dm_sans_bold"/>
 
             <TextView
@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="4dp">
+            android:layout_marginBottom="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -57,22 +57,38 @@
                 android:textSize="14sp"
                 android:textColor="#212121"
                 android:fontFamily="@font/dm_sans_regular"
-                android:layout_marginBottom="5dp"/>
+                android:layout_marginBottom="0dp"/>
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/flagsChipGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:singleLine="true"
                 app:chipSpacingHorizontal="4dp"
-                app:chipSpacingVertical="4dp">
+                app:chipSpacingVertical="4dp"
+                android:gravity="start">
 
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="In/Retractions"
+                    android:text="dust"
                     android:textColor="#FFFFFF"
                     android:fontFamily="@font/dm_sans_regular"
-                    app:chipBackgroundColor="#0277BD"
+                    app:chipBackgroundColor="@color/colour_indigo"
+                    app:chipCornerRadius="15dp"
+                    app:chipMinHeight="24dp"
+                    app:chipStartPadding="4dp"
+                    app:chipEndPadding="4dp"
+                    android:textSize="13sp"
+                    app:closeIconEnabled="false"/>
+
+                <com.google.android.material.chip.Chip
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="smoke"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/dm_sans_regular"
+                    app:chipBackgroundColor="@color/colour_indigo"
                     app:chipCornerRadius="15dp"
                     app:chipMinHeight="24dp"
                     app:chipStartPadding="4dp"
@@ -112,7 +128,7 @@
                     android:text="400"
                     android:textSize="14sp"
                     android:textColor="#757575"
-                    android:background="#E0E0E0"
+                    android:background="#F5F6F6"
                     android:paddingStart="12dp"
                     android:paddingEnd="12dp"
                     android:paddingTop="4dp"
@@ -138,12 +154,12 @@
 
                 <TextView
                     android:id="@+id/rescueAttemptsValue"
-                    android:layout_width="wrap_content"
+                    android:layout_width="41dp"
                     android:layout_height="wrap_content"
-                    android:text="2"
+                    android:text="67"
                     android:textSize="14sp"
                     android:textColor="#757575"
-                    android:background="#E0E0E0"
+                    android:background="#F5F6F6"
                     android:paddingStart="12dp"
                     android:paddingEnd="12dp"
                     android:paddingTop="4dp"
@@ -171,7 +187,7 @@
             android:text="User Response"
             android:textSize="14sp"
             android:textColor="@color/colour_black"
-            android:fontFamily="@font/dm_sans_regular"
+            android:fontFamily="@font/dm_sans_bolditalic"
             android:layout_marginBottom="4dp"/>
 
         <TextView

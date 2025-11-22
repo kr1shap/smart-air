@@ -14,6 +14,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -69,32 +70,66 @@ public class HistoryRepository {
 
         List<HistoryItem> results = new ArrayList<>();
 
-        childQuery.get().addOnSuccessListener(snapshot -> {
-            for (DocumentSnapshot doc : snapshot) {
-                results.add(buildHistoryItem(doc));
+        childQuery.get().addOnSuccessListener(dailyChild -> {
+            for (DocumentSnapshot doc : dailyChild) {
+                results.add(buildDailyItem(doc));
             }
 
-            parentQuery.get().addOnSuccessListener(snapshot2 -> {
-                for (DocumentSnapshot doc : snapshot2) {
-                    HistoryItem item = buildHistoryItem(doc);
-                    if (!results.contains(item)) { // avoid duplicates
+            parentQuery.get().addOnSuccessListener(dailyParent -> {
+                for (DocumentSnapshot doc : dailyParent) {
+                    HistoryItem item = buildDailyItem(doc);
+                    if (!results.contains(item)) {
                         results.add(item);
                     }
                 }
 
-                Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
+                db.collection("incidentLog")
+                                .document(childUid)
+                                        .collection("triageSessions")
+                                                .get()
+                                                        .addOnSuccessListener(triageDoc -> {
+                                                            for(DocumentSnapshot doc: triageDoc){
+                                                                HistoryItem triageItem = builtTriageItem(doc);
+                                                                results.add(triageItem);
+                                                            }
 
-                activity.createRecycleView(results);
+                                                            Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
+
+                                                            activity.createRecycleView(results);
+                                                        });
             });
         });
-
-
-        //getDailyCheckInsQuery(childUid,activity,q);
-
-
     }
 
-    private HistoryItem buildHistoryItem(DocumentSnapshot doc) {
+    private HistoryItem builtTriageItem(DocumentSnapshot doc) {
+        Timestamp ts = doc.getTimestamp("date");
+        Date accDate = ts != null ? ts.toDate() : null;
+        List<String> flaglist = new ArrayList<>();
+        if (doc.contains("flagList")) {
+            flaglist = (List<String>) doc.get("flagList");
+        }
+        if(flaglist.isEmpty()){
+            flaglist.add("None");
+        }
+        String emergencyCall = "No emergency call!";
+        if (doc.contains("guidance")){
+            List<String> guidanceList = (List<String>) doc.get("guidance");
+
+            if (guidanceList != null && !guidanceList.isEmpty()) {
+                emergencyCall = guidanceList.get(0);
+            }
+        }
+        List<String> userRes = new ArrayList<>();
+        if (doc.contains("userRes")){
+            userRes = (List<String>) doc.get("userRes");
+        }
+        int pef = Math.toIntExact(doc.contains("pef") ? doc.getLong("pef"): -5);
+        int rescueAttempts = Math.toIntExact(doc.contains("rescueAttempts") ? doc.getLong("rescueAttempts") : -5);
+        HistoryItem test = new HistoryItem(accDate,flaglist,emergencyCall,userRes,pef,rescueAttempts);
+        return test;
+    }
+
+    private HistoryItem buildDailyItem(DocumentSnapshot doc) {
         String date = doc.getId(); // the date document ID
         boolean nightWakingChild = doc.contains("nightWakingchild") && doc.getBoolean("nightWakingchild");
         boolean nightWakingParent = doc.contains("nightWakingparent") && doc.getBoolean("nightWakingparent");
