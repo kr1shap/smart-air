@@ -78,7 +78,7 @@ public class CheckInRepository {
 
     }
 
-    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef) {
+    public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef,int pre, int post) {
         // getting user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
@@ -105,6 +105,12 @@ public class CheckInRepository {
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
         if(userRole.equals("parent")){
             data.put("pef",pef);
+            if(pre != 0 && post != 0){
+                data.put("pre",pre);
+                data.put("post",post);
+            }
+            data.put("zoneColour",context.zoneColour(pef));
+            data.put("zoneNumber", context.zoneNumber(pef));
         }
 
         String childUid = uid;
@@ -194,11 +200,17 @@ public class CheckInRepository {
             Long coughingWheezing = document.getLong("coughingWheezing"+userRole);
             List<String> triggers = (List<String>) document.get("triggers"+userRole);
             Long pef = 0L;
+            int pre = 0;
+            int post = 0;
             if(userRole.equals("parent")){
                 pef = document.getLong("pef");
+                if(document.contains("pre") && document.contains("post")) {
+                    pre = Math.toIntExact(document.getLong("pre"));
+                    post = Math.toIntExact(document.getLong("post"));
+                }
             }
 
-            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers, pef);
+            activity.updateInfoInput(nightWaking, activityLimits, coughingWheezing, triggers, pef,pre,post);
         });
     }
 
@@ -247,6 +259,43 @@ public class CheckInRepository {
             }
 
             activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers, pef);
+        });
+    }
+
+    public interface PefCallback {
+        void onResult(int maxPef);
+    }
+
+    public void maxPef(String correspondingUid, String userRole, int inputPef, PefCallback callback) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            callback.onResult(inputPef);
+            return;
+        }
+
+        String childUid = userRole.equals("child") ? user.getUid() : correspondingUid;
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDocId = sdf.format(new Date());
+
+        DocumentReference dailyEntry = db.collection("dailyCheckins")
+                .document(childUid)
+                .collection("entries")
+                .document(todayDocId);
+
+        dailyEntry.get().addOnSuccessListener(document -> {
+
+            int firestorePef = inputPef;
+
+            if (document.exists() && document.contains("pef")) {
+                firestorePef = Math.toIntExact(document.getLong("pef"));
+            }
+
+            int maxValue = Math.max(inputPef, firestorePef);
+            callback.onResult(maxValue);
+
+        }).addOnFailureListener(e -> {
+            callback.onResult(inputPef);
         });
     }
 }

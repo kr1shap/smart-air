@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 
 public class CheckInFragment extends Fragment {
     private View view;
+    int personalBest;
     String userRole = "";
     String correspondingUid;
     String currentTriggers = "Tap to Select";
@@ -50,6 +51,7 @@ public class CheckInFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
+        this.personalBest = 400; //TODO: get personal best from parent's original set up
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
@@ -71,24 +73,40 @@ public class CheckInFragment extends Fragment {
         MaterialButton save = view.findViewById(R.id.buttonSave);
         save.setOnClickListener(v-> {
             RadioGroup radioNight = view.findViewById(R.id.radioNight); // night waking
-            RadioButton radioYes = view.findViewById(R.id.radioYes);    // night waking
             boolean nightWaking = (radioNight.getCheckedRadioButtonId() == R.id.radioYes);
             SeekBar seekBar = view.findViewById(R.id.seekBar);          // activity limit
             int activityValue = (int)seekBar.getProgress();
             Slider slider = view.findViewById(R.id.sliderCough);                         // coughing/wheezing
             int coughingValue = (int)slider.getValue();
-            int pef = 0;
+            int pef[] = {0}; // array to hold current pef
             if(userRole.equals("parent")){
                 EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
                 String myNumberEditTextString = myNumberEditText.getText().toString().trim();
-                try {
-                    pef = myNumberEditTextString.isEmpty() ? 400 : Integer.parseInt(myNumberEditTextString);
-                } catch (NumberFormatException e){
-                    pef = 400;
+                int inputPef = Integer.parseInt(myNumberEditTextString);
+
+                EditText preText = view.findViewById(R.id.editTextPreMed);
+                String preTextString = preText.getText().toString().trim();
+                EditText postText = view.findViewById(R.id.editTextPostMed);
+                String postTextString = postText.getText().toString().trim();
+                int pre;
+                int post;
+
+                if(postTextString.isEmpty() || preTextString.isEmpty()){
+                    pre = 0;
+                    post = 0;
                 }
+                else{
+                    pre = Integer.parseInt(preTextString);
+                    post = Integer.parseInt(postTextString);
+                }
+                repo.maxPef(correspondingUid, userRole, inputPef, maxValue -> {
+                    pef[0] = maxValue; // if pef changes it runs with new
+                    repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef[0],pre,post);
+                });
             }
-            Log.d("DEBUG", "Saving data: nightWaking=" + nightWaking + ", activity=" + activityValue + ", coughing=" + coughingValue + ", pef=" + pef);
-            repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef);
+            else{
+                repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,0,0,0); // otherwise runs with no pef
+            }
         });
 
 
@@ -122,7 +140,7 @@ public class CheckInFragment extends Fragment {
         });
     }
 
-    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef, int pre, int post) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
@@ -160,6 +178,13 @@ public class CheckInFragment extends Fragment {
             myNumberEditText.setText(pef.toString());
         }
 
+        if(!(pre == 0 && post == 0)){
+            EditText preText = view.findViewById(R.id.editTextPreMed);
+            preText.setText(Integer.toString(pre));
+            EditText postText = view.findViewById(R.id.editTextPostMed);
+            postText.setText(Integer.toString(post));
+        }
+
         setCardCurrent();
 
     }
@@ -192,6 +217,7 @@ public class CheckInFragment extends Fragment {
         TextView multiSelectTriggers = view.findViewById(R.id.multiSelect);
         currentTriggers = "Tap to Select";
         multiSelectTriggers.setText(currentTriggers);
+
 
         setCardCurrent();
 
@@ -475,5 +501,20 @@ public class CheckInFragment extends Fragment {
         });
 
         return selectedTriggers;
+    }
+
+    public String zoneColour(int pef) {
+        int percent = (int) Math.round((pef * 100.0) / personalBest);
+        if(percent >= 80){
+            return "green";
+        }
+        if(percent >= 50){
+            return "yellow";
+        }
+        return "red";
+
+    }
+    public int zoneNumber(int pef){
+        return (int) Math.round((pef * 100.0) / personalBest);
     }
 }

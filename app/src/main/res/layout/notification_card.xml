@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/notificationCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    android:layout_marginVertical="10dp"
+    android:layout_marginHorizontal="5dp"
+    app:cardBackgroundColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp">
+
+        <!-- icon -->
+        <ImageView
+            android:id="@+id/notifIcon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="Logo"
+            android:src="@drawable/night_waking"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- title -->
+        <TextView
+            android:id="@+id/notifTitle"
+            style="@style/SmartAir.Text.title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="TITLE"
+            android:textColor="@color/colour_blue"
+            android:textSize="15dp"
+            app:layout_constraintStart_toEndOf="@id/notifIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/notifIcon" />
+
+        <!-- child name -->
+        <TextView
+            android:id="@+id/childName"
+            style="@style/SmartAir.Text.body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Child name"
+            android:textColor="@color/colour_black"
+            android:textSize="10dp"
+            android:layout_marginTop="6dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/notifTitle" />
+
+        <!-- date -->
+        <TextView
+            android:id="@+id/date"
+            style="@style/SmartAir.Text.body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="the date fam"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_indigo"
+            android:textSize="10dp"
+            android:layout_marginTop="2dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/childName" />
+
+        <!-- desc -->
+        <TextView
+            android:id="@+id/notifDescription"
+            style="@style/SmartAir.Text.body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Notification description text"
+            android:textColor="@color/colour_black"
+            android:textSize="13dp"
+            android:layout_marginTop="6dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/date" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>
