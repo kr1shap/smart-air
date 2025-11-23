@@ -14,6 +14,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+
+import com.example.smart_air.fragments.TechniqueHelperFragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.CheckInFragment;
@@ -104,6 +106,11 @@ public class MainActivity extends AppCompatActivity {
                 // add fragment for history
             } else if (id == R.id.medicine) {
                 // add fragment for medicine
+                //TODO: REMOVE THIS FRAGMENT, PURELY FOR TESTING!
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof TechniqueHelperFragment)) {
+                    selectedFragment = new TechniqueHelperFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
