@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="#FFFFFF"
+    android:layout_marginBottom="10dp"
+    android:elevation="0dp">
+
+    <!-- header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/dateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2025-11-22"
+            android:textSize="5sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_black" />
+
+        <!-- zone -->
+        <TextView
+            android:id="@+id/zoneStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GREEN"
+            android:textSize="3sp"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="#DCEBFF"
+            android:fontFamily="@font/dm_sans_medium"
+            android:textColor="@color/colour_black"
+            android:layout_marginStart="6dp"/>
+    </LinearLayout>
+
+    <!-- divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="#BFD2FF"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp" />
+
+    <!-- details -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- night waking -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Night Terrors:"
+                android:textSize="4sp"
+                android:textColor="@color/colour_black"
+                android:fontFamily="@font/dm_sans_medium"/>
+
+            <TextView
+                android:id="@+id/nightStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="None"
+                android:textSize="4sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#0277BD" />
+        </LinearLayout>
+
+        <!-- activity limits -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Activity Limits:"
+                android:textSize="4sp"
+                android:textColor="@color/colour_black"
+                android:fontFamily="@font/dm_sans_medium"/>
+
+            <TextView
+                android:id="@+id/activityStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Limited"
+                android:textSize="4sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#0277BD" />
+        </LinearLayout>
+
+        <!-- coughing -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Coughing:"
+                android:textSize="4sp"
+                android:textColor="@color/colour_black"
+                android:fontFamily="@font/dm_sans_medium"/>
+
+            <TextView
+                android:id="@+id/coughStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Moderate"
+                android:textSize="4sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#0277BD" />
+        </LinearLayout>
+
+        <!-- triggers -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Triggers:"
+            android:textSize="4sp"
+            android:layout_marginTop="0dp"
+            android:textColor="@color/colour_black"
+            android:fontFamily="@font/dm_sans_medium" />
+
+        <TextView
+            android:id="@+id/triggersText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dust • Pollen • Cold Air"
+            android:textSize="4sp"
+            android:textColor="#0277BD"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginTop="0dp"
+            android:lineHeight="11dp"/>
+    </LinearLayout>
+
+</LinearLayout>

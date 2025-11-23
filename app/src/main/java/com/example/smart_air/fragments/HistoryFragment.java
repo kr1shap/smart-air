@@ -1,5 +1,6 @@
 package com.example.smart_air.fragments;
 
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,9 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.GridLayout;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -18,33 +18,32 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
-import com.example.smart_air.Repository.CheckInRepository;
 import com.example.smart_air.Repository.HistoryRepository;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 
-import org.w3c.dom.Text;
-
+import java.io.File;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.io.FileOutputStream;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
+
+import android.graphics.pdf.PdfDocument;
 
 public class HistoryFragment extends Fragment {
 
     private View view;
     private HistoryRepository repo;
+    private HistoryAdapter adapter;
     public String [] filters = {"","","","","",""};
     String childUid;
 
@@ -62,6 +61,12 @@ public class HistoryFragment extends Fragment {
         repo = new HistoryRepository();
         GridLayout filterContainerInitial = view.findViewById(R.id.filterGrid);
         filterContainerInitial.setVisibility(View.GONE);
+
+        // adapter
+        RecyclerView recyclerView = view.findViewById(R.id.historyRecyclerView);
+        adapter = new HistoryAdapter(new ArrayList<>());
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // set past 6 months
         Calendar cal = Calendar.getInstance();
@@ -168,13 +173,222 @@ public class HistoryFragment extends Fragment {
             repo.getDailyCheckIns(childUid,this);
         });
 
+        // export button
+        MaterialButton export = view.findViewById(R.id.buttonExport);
+        export.setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Export")
+                    .setItems(new String[]{"Export as PDF", "Export as CSV"}, (dialog, which) -> {
+                        if (which == 0) {
+                            exportPDF();
+                        } else {
+                            exportCSV();
+                        }
+                    })
+                    .show();
+        });
+    }
 
+    private void exportCSV() {
+        try {
+            List<HistoryItem> listToExport = adapter.getCurrentList();
+            String fileName = "historyLog.csv";
+
+            File csvFile = new File(requireContext().getExternalFilesDir(null), fileName);
+            try (FileOutputStream fos = new FileOutputStream(csvFile);
+                 OutputStreamWriter writer = new OutputStreamWriter(fos)) {
+
+                // daily table
+                writer.append("DAILY DATA\n");
+                writer.append("Date,Night Terrors,Zone,Activity Limits,Coughing/Wheezing,Triggers\n");
+
+                for (HistoryItem card : listToExport) {
+                    if (!(card.passFilter && card.cardType != HistoryItem.typeOfCard.triage)) continue;
+
+                    writer.append(card.date).append(",");
+                    writer.append(card.nightStatus).append(",");
+                    writer.append(card.zone).append(",");
+                    writer.append(card.activityStatus).append(",");
+                    writer.append(card.coughingStatus).append(",");
+                    writer.append(String.join("|", card.triggers)).append("\n"); // newline at end
+                }
+
+                // triage table
+                writer.append("\nTRIAGE DATA\n");
+                writer.append("Date,Time,Present Flags,PEF,Rescue Attempts,Emergency Call,User Response\n");
+                for (HistoryItem card: listToExport){
+                    if (!(card.passFilter && card.cardType == HistoryItem.typeOfCard.triage)) continue;
+
+                    writer.append(card.date).append(",");
+                    writer.append(card.time).append(",");
+                    writer.append(String.join("|", card.flaglist)).append(",");
+                    if(card.pef == -5){writer.append("not entered").append(",");}
+                    else{writer.append(Integer.toString(card.pef)).append(",");}
+                    if(card.rescueAttempts == -5){writer.append("0").append(",");}
+                    else{writer.append(Integer.toString(card.rescueAttempts)).append(",");}
+                    writer.append(card.emergencyCall).append(",");
+                    writer.append(String.join("|", card.userRes)).append("\n");
+                }
+
+                writer.flush();
+                Toast.makeText(getContext(), "CSV saved to: " + csvFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error exporting CSV", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void exportPDF() {
+        // TODO: potential add child name and stuff in pdf
+        List<HistoryItem> listToExport = adapter.getCurrentList();
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        int pageWidth = 612;
+        int pageHeight = 792;
+        int currentY = 50; // leave space for title
+
+        PdfDocument pdfDocument = new PdfDocument();
+
+        Paint titlePaint = new Paint();
+        titlePaint.setColor(Color.parseColor("#0473AE"));
+        titlePaint.setTextSize(24f);
+        titlePaint.setTypeface(Typeface.create("dm_sans", Typeface.BOLD));
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+        canvas.drawText("HISTORY LOG", pageWidth / 2f, 40, titlePaint);
+
+        for (HistoryItem card : listToExport) {
+            if (card.passFilter && card.cardType != HistoryItem.typeOfCard.triage) {
+
+                View cardView = inflater.inflate(R.layout.pdf_card_daily, null, false);
+
+                ((TextView) cardView.findViewById(R.id.dateText))
+                        .setText(card.date);
+                ((TextView) cardView.findViewById(R.id.triggersText))
+                        .setText(String.join(", ", card.triggers).isEmpty() ? "None" : String.join(", ", card.triggers));
+                ((TextView) cardView.findViewById(R.id.coughStatus))
+                        .setText(card.coughingStatus);
+                ((TextView) cardView.findViewById(R.id.activityStatus))
+                        .setText(card.activityStatus);
+                ((TextView) cardView.findViewById(R.id.nightStatus))
+                        .setText(card.nightStatus);
+
+                TextView zoneStatus = cardView.findViewById(R.id.zoneStatus);
+                if (card.zone == null || card.zone.isEmpty()) {
+                    zoneStatus.setBackgroundColor(Color.parseColor("#F5F6F6"));
+                    zoneStatus.setText("No Zone");
+                } else {
+                    switch (card.zone.toLowerCase()) {
+                        case "green":
+                            zoneStatus.setBackgroundColor(Color.parseColor("#9FD46A"));
+                            break;
+                        case "yellow":
+                            zoneStatus.setBackgroundColor(Color.parseColor("#FABF24"));
+                            break;
+                        case "red":
+                            zoneStatus.setBackgroundColor(Color.parseColor("#FB633D"));
+                            break;
+                        default:
+                            zoneStatus.setBackgroundColor(Color.parseColor("#000000"));
+                            break;
+                    }
+                    zoneStatus.setText(card.zone.toUpperCase());
+                }
+
+                cardView.measure(
+                        View.MeasureSpec.makeMeasureSpec(pageWidth, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                );
+                cardView.layout(0, 0, cardView.getMeasuredWidth(), cardView.getMeasuredHeight());
+
+                // start a new page if the card would overflow
+                if (currentY + cardView.getMeasuredHeight() > pageHeight - 20) {
+                    pdfDocument.finishPage(page);
+                    pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pdfDocument.getPages().size() + 1).create();
+                    page = pdfDocument.startPage(pageInfo);
+                    canvas = page.getCanvas();
+                    currentY = 50;
+                }
+
+                // draw the card at current yOffset
+                canvas.save();
+                canvas.translate(0, currentY);
+                cardView.draw(canvas);
+                canvas.restore();
+
+                // increment yOffset for next card
+                currentY += cardView.getMeasuredHeight() + 10; // spacing between cards
+            }
+            if (card.passFilter && card.cardType == HistoryItem.typeOfCard.triage) {
+                View cardView = inflater.inflate(R.layout.pdf_card_triage, null, false);
+
+                TextView triageTitle = cardView.findViewById(R.id.triageTitle);
+                triageTitle.setText("Incident Log @ " + card.time);
+                TextView presentFlags = cardView.findViewById(R.id.presentFlags);
+                presentFlags.setText(String.join(", ",card.flaglist));
+                TextView pefValue = cardView.findViewById(R.id.pefValue);
+                if(card.pef == -5){pefValue.setText("N/A");}
+                else{pefValue.setText(Integer.toString(card.pef));}
+                TextView rescueAttempts = cardView.findViewById(R.id.rescueAttempts);
+                if(card.rescueAttempts == 0){rescueAttempts.setText("0");}
+                else{rescueAttempts.setText(Integer.toString(card.rescueAttempts));}
+                TextView emergencyCall = cardView.findViewById(R.id.emergencyCall);
+                emergencyCall.setText(card.emergencyCall);
+                TextView userResponseList = cardView.findViewById(R.id.userResponseList);
+                userResponseList.setText(card.userBullets);
+
+                cardView.measure(
+                        View.MeasureSpec.makeMeasureSpec(pageWidth, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                );
+                cardView.layout(0, 0, cardView.getMeasuredWidth(), cardView.getMeasuredHeight());
+
+                // start a new page if the card would overflow
+                if (currentY + cardView.getMeasuredHeight() > pageHeight - 20) {
+                    pdfDocument.finishPage(page);
+                    pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pdfDocument.getPages().size() + 1).create();
+                    page = pdfDocument.startPage(pageInfo);
+                    canvas = page.getCanvas();
+                    currentY = 50;
+                }
+
+                // draw the card at current yOffset
+                canvas.save();
+                canvas.translate(0, currentY);
+                cardView.draw(canvas);
+                canvas.restore();
+
+                // increment yOffset for next card
+                currentY += cardView.getMeasuredHeight() + 10; // spacing between cards
+            }
+        }
+
+        // finish the last page
+        pdfDocument.finishPage(page);
+
+        File pdfFile = new File(requireContext().getExternalFilesDir(null), "historyLog.pdf");
+        try {
+            pdfDocument.writeTo(new FileOutputStream(pdfFile));
+            Toast.makeText(getContext(), "PDF saved: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error saving PDF", Toast.LENGTH_SHORT).show();
+        } finally {
+            pdfDocument.close();
+        }
     }
 
     public void setChildUid(String childUid) {
         this.childUid = childUid;
         repo.getDailyCheckIns(childUid,this);
     }
+
     public void exitScreen(){
         //TODO: fix it
     }
@@ -208,6 +422,7 @@ public class HistoryFragment extends Fragment {
     }
 
     public void createRecycleView(List<HistoryItem> results) {
+        adapter.updateList(results);
         RecyclerView recyclerView = view.findViewById(R.id.historyRecyclerView);
         HistoryAdapter adapter = new HistoryAdapter(results); // your list of HistoryItem
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));

@@ -17,6 +17,7 @@ import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -26,6 +27,15 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public HistoryAdapter(List<HistoryItem> historyItems) {
         this.historyItems = historyItems;
+    }
+
+    public void updateList(List<HistoryItem> newList) {
+        this.historyItems.clear();
+        this.historyItems.addAll(newList);
+        notifyDataSetChanged();
+    }
+    public List<HistoryItem> getCurrentList() {
+        return new ArrayList<>(historyItems);
     }
 
     @Override
@@ -70,13 +80,13 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return historyItems.size();
     }
 
-    static class DailyViewHolder extends RecyclerView.ViewHolder {
+    public static class DailyViewHolder extends RecyclerView.ViewHolder {
         TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus;
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
         View colourBox;
 
-        DailyViewHolder(@NonNull View itemView) {
+        public DailyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             dateText = itemView.findViewById(R.id.dateText);
@@ -96,7 +106,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             triggersContainer = itemView.findViewById(R.id.triggersContainer);
         }
 
-        void bind(HistoryItem card) {
+        public void bind(HistoryItem card) {
             // DATE
             dateText.setText(card.date);
 
@@ -109,10 +119,16 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     childActivityLimitsBar.setProgress(card.activityChild);
                     parentActivityLimitsBar.setVisibility(View.INVISIBLE);
                     childActivityLimitsBar.setVisibility(View.VISIBLE);
+                    childActivityLimitsBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_default_bg))
+                    );
 
                     childCoughingBar.setProgress(card.coughingChild);
                     parentCoughingBar.setVisibility(View.INVISIBLE);
                     childCoughingBar.setVisibility(View.VISIBLE);
+                    childCoughingBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_default_bg))
+                    );
                     break;
 
                 case parentOnly:
@@ -120,12 +136,18 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     parentText.setVisibility(View.VISIBLE);
 
                     childActivityLimitsBar.setProgress(card.activityParent);
+                    childActivityLimitsBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_selected_bg))
+                    );
                     parentActivityLimitsBar.setVisibility(View.INVISIBLE);
                     childActivityLimitsBar.setVisibility(View.VISIBLE);
 
                     childCoughingBar.setProgress(card.coughingParent);
                     parentCoughingBar.setVisibility(View.INVISIBLE);
                     childCoughingBar.setVisibility(View.VISIBLE);
+                    childCoughingBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_selected_bg))
+                    );
                     break;
 
                 case both:
@@ -134,12 +156,18 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                     childActivityLimitsBar.setProgress(card.activityChild);
                     parentActivityLimitsBar.setProgress(card.activityParent);
+                    childActivityLimitsBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_default_bg))
+                    );
 
                     childActivityLimitsBar.setVisibility(View.VISIBLE);
                     parentActivityLimitsBar.setVisibility(View.VISIBLE);
 
                     childCoughingBar.setProgress(card.coughingChild);
                     parentCoughingBar.setProgress(card.coughingParent);
+                    childCoughingBar.setProgressTintList(
+                            ColorStateList.valueOf(ContextCompat.getColor(itemView.getContext(), R.color.role_default_bg))
+                    );
 
                     childCoughingBar.setVisibility(View.VISIBLE);
                     parentCoughingBar.setVisibility(View.VISIBLE);
