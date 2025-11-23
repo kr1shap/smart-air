@@ -1,7 +1,13 @@
 package com.example.smart_air.fragments;
+import java.util.List;
 
 import static android.content.ContentValues.TAG;
 import static androidx.core.content.ContextCompat.getSystemService;
+
+import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.Repository.NotificationRepository;
+import com.example.smart_air.modelClasses.Notification;
+import com.example.smart_air.modelClasses.enums.NotifType;
 import com.google.firebase.Timestamp;
 
 import android.Manifest;
@@ -19,10 +25,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -87,6 +97,8 @@ public class TriageFragment extends Fragment {
     boolean triageRunning = false;
     static final long TRIAGE_DURATION_MS =10*60*1000;
     String uid;
+    AutoCompleteTextView autocomptextview;
+    ArrayAdapter<String> adapteritems;
 
     public TriageFragment() {
     }
@@ -116,15 +128,19 @@ public class TriageFragment extends Fragment {
         db.collection("users").document(uid)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
+                    if (doc.exists()==false) {
                         return;
                     }
 
                     String role = doc.getString("role");
 
-                    if (!"child".equals(role)) {
+                    if ("provider".equals(role)) {
                         triageContent.setVisibility(View.GONE);
                         noAccessMessage.setVisibility(View.VISIBLE);      // 👈 updated
+                        return;
+                    }
+                    if ("parent".equals(role)) {
+                        //sethomesteps();
                         return;
                     }
 
@@ -148,8 +164,6 @@ public class TriageFragment extends Fragment {
         timervisible = true;
         timertextview.setVisibility(View.VISIBLE);
         showtimer();
-        //ensureNotificationPermission();
-        //createNotifChannel(); // makes notification channel
         checktimerbutton.setOnClickListener(v -> toggletimerdisplay());
         // set up triage session buttons
         startTriageBtn=view.findViewById(R.id.startriage);
@@ -157,12 +171,9 @@ public class TriageFragment extends Fragment {
         triageRunning=false;
         startTriageBtn.setEnabled(true);
         endTriageBtn.setEnabled(false);
-        startTriageBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startTriageSession();
-                //parentalertnotif();
-            }
+        startTriageBtn.setOnClickListener(v -> {
+            startTriageSession();
+            sendtriageAlert();
         });
         endTriageBtn.setOnClickListener(v -> {
             flagschecked(checkedpull,checkedsen,checkedretract,checkedbluelips);
@@ -350,6 +361,7 @@ public class TriageFragment extends Fragment {
                         {
                             timertextview.setText("00:00:00");
                             timertask.cancel();
+                            sendtriageAlert();
                             return;
                         }
                         time--;
@@ -607,7 +619,101 @@ public class TriageFragment extends Fragment {
                     Log.w(TAG, "Error creating parent incidentLog doc", e);
                 });
     }
+    /*public void sendtriageAlert() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            return;
+        }
+        String cUid = user.getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users")
+                .document(cUid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists() == false) {
+                        Log.e("Triage", "User document missing");
+                        return;
+                    }
+                    List<String> parentUids = (List<String>) doc.get("parentUid");
+                    if (parentUids == null || parentUids.isEmpty()) {
+                        Log.e("Triage", "No parentUid array found");
+                        return;
+                    }
+                    NotificationRepository notifRepo = new NotificationRepository();
+                    for (String pUid : parentUids) {
+                        if (pUid == null) {
+                            continue;
+                        }
+                        Notification notif = new Notification(
+                                pUid,
+                                false,
+                                Timestamp.now(),
+                                NotifType.TRIAGE
+                        );
+                        notifRepo.createNotification(pUid, notif)
+                                .addOnSuccessListener(aVoid ->
+                                        Log.d("NotificationRepo", "Notification created for parent " + pUid))
+                                .addOnFailureListener(e ->
+                                        Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
+                    }
+
+                })
+                .addOnFailureListener(e ->
+                        Log.e("Triage", "Failed to load child document", e)
+                );
     }
+}
+public void sethomesteps() {
+
+    AutoCompleteTextView autocomptextview = autocomptextview.findViewById(R.id.autocomp);
+    ArrayAdapter<String> adapteritems = new ArrayAdapter<>(this, R.layout.list_item);
+    autocomptextview.setAdapter(adapteritems);
+
+    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+    if (user == null)
+    {
+        return;
+    }
+
+    String parentUid = user.getUid();
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    db.collection("users")
+            .document(parentUid)
+            .get()
+            .addOnSuccessListener(doc -> {
+                if (!doc.exists()) {
+                    Log.e("HomeSteps", "Parent doc missing");
+                    return;
+                }
+
+                List<String> childUids = (List<String>) doc.get("children");
+                if (childUids == null || childUids.isEmpty()) {
+                    Log.e("HomeSteps", "No children found for parent");
+                    return;
+                }
+                for (String cUid : childUids) {
+                    db.collection("users")
+                            .document(cUid)
+                            .get()
+                            .addOnSuccessListener(childDoc -> {
+                                if (childDoc.exists()) {
+                                    String name = childDoc.getString("name");
+                                    if (name == null) name = cUid; // fallback
+
+                                    adapteritems.add(name);
+                                    adapteritems.notifyDataSetChanged();
+                                }
+                            });
+                }
+
+            });
+    autocomptextview.setOnItemClickListener((adapterView, view, i, l) -> {
+        String item = adapterView.getItemAtPosition(i).toString();
+        Toast.makeText(this, "Selected: " + item, Toast.LENGTH_SHORT).show();
+    });*/
+}
+
+
 
 
 
