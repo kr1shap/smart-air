@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -23,13 +22,10 @@ import androidx.fragment.app.FragmentManager;
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
-import com.example.smart_air.modelClasses.Notification;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.time.LocalDate;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -140,7 +136,7 @@ public class TechniqueHelperFragment extends Fragment {
                 stepImage.setImageResource(stepImages[currentStep]);
             }
 
-            // disable 'i did it button'
+            // disable 'I did it button'
             if (currentStep == 3) {
                 btnIDidIt.setEnabled(false);
                 btnIDidIt.setText("Wait 10 seconds...");
@@ -219,13 +215,12 @@ public class TechniqueHelperFragment extends Fragment {
             else if (today.equals(lastDateStr)) { } //no change if today equals the last day
             else if (getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
             else { currentStreak = 1; } //reset streak for some other case
-
             if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
-
+            totalCompleted++;                       //add 1 to compelted technique sessions
             Map<String, Object> data = new HashMap<>();
             data.put("currentStreak", currentStreak);
             data.put("totalPerfectSessions", totalPerfect);
-            data.put("totalCompletedSessions", ++totalCompleted); //add 1 to completed, as we completed session
+            data.put("totalCompletedSessions", totalCompleted); //add 1 to completed, as we completed session
             data.put("lastSessionDate", today); //keeps it in the YYYY-MM-DD format
 
             transaction.set(statsRef, data); //set data
@@ -248,12 +243,14 @@ public class TechniqueHelperFragment extends Fragment {
         cal.add(Calendar.DAY_OF_YEAR, -1);
         return new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.getTime());
     }
-
+    /*
+     * pre: N/A
+     * post: returns string of today's date in YYYY-MM-DD format
+     * */
     private String getToday() {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         return fmt.format(new Date()); // today's date string
     }
-
 
     /*
      * a method called when an error occurs, goes back the main activity
