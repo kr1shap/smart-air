@@ -203,7 +203,6 @@ public class TechniqueHelperFragment extends Fragment {
             int currentStreak = 1;
             int totalPerfect = 0;
             int totalCompleted = 0;
-            String lastSessionDate = getToday();
             String lastDateStr = null;
             String today = getToday();
 
@@ -213,10 +212,8 @@ public class TechniqueHelperFragment extends Fragment {
                 totalPerfect = snap.getLong("totalPerfectSessions") != null ? snap.getLong("totalPerfectSessions").intValue() : 0;
                 totalCompleted = snap.getLong("totalCompletedSessions") != null ? snap.getLong("totalCompletedSessions").intValue() : 0;
                 lastDateStr = snap.getString("lastSessionDate");
-//                if (lastDateStr != null) { lastSessionDate = LocalDate.parse(lastDateStr); } //convert into date
             }
 
-//            LocalDate last = (lastDateStr != null) ? LocalDate.parse(lastDateStr) : null;
             //UPDATE CURRENT STREAK
             if (lastDateStr == null) currentStreak = 1; //no last date - new streak
             else if (today.equals(lastDateStr)) { } //no change if today equals the last day
