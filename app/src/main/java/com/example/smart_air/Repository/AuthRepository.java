@@ -1,24 +1,29 @@
 package com.example.smart_air.Repository;
 
-import android.media.MediaRouter;
 import android.util.Log;
+import android.util.Patterns;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.Child;
-import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthEmailException;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import com.example.smart_air.Contracts.AuthContract.AuthCallback;
 
@@ -52,7 +57,7 @@ public class AuthRepository {
 
                         saveUserToFirestore(user, callback);
                     } else {
-                        callback.onFailure(task.getException().getMessage());
+                        callback.onFailure(mapFirebaseAuthError(task.getException()));
                     }
                 });
     }
@@ -92,7 +97,7 @@ public class AuthRepository {
                                     }
                                 });
                             } else { //error occured
-                                callback.onFailure(task.getException().getMessage());
+                                callback.onFailure(mapFirebaseAuthError(task.getException()));
                             }
                         });
             } else {
@@ -108,7 +113,7 @@ public class AuthRepository {
         checkAccessCode(accessCode, "child", parentUid -> {
             if (parentUid != null) {
                 //dummy email for child
-                String dummyEmail = username.toLowerCase() + "_child@smartair.com";
+                String dummyEmail = username.toLowerCase().trim() + "_child@smartair.com";
 
                 auth.createUserWithEmailAndPassword(dummyEmail, password)
                         .addOnCompleteListener(authTask -> {
@@ -177,7 +182,7 @@ public class AuthRepository {
                                     }
                                 });
                             } else {
-                                callback.onFailure(authTask.getException().getMessage()); //internal error
+                                callback.onFailure(mapFirebaseAuthError(authTask.getException())); //internal error
                             }
                         });
             } else {
@@ -240,27 +245,27 @@ public class AuthRepository {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
                         getUserFromFirestore(firebaseUser.getUid(), callback); //callback passed in
                     } else {
-                        callback.onFailure(task.getException().getMessage()); //callback error
+                        callback.onFailure(mapFirebaseAuthError(task.getException())); //callback error
                     }
                 });
     }
 
     //Signin - CHILD
     public void signInChild(String username, String password, AuthCallback callback) {
-        String dummyEmail = username.toLowerCase() + "_child@smartair.com";
+        String dummyEmail = username.toLowerCase().trim() + "_child@smartair.com";
         signIn(dummyEmail, password, callback);
     }
 
 
     //Helper: check access code validity
     private void checkAccessCode(String code, String targetRole, AccessCodeCallback callback) {
-        Timestamp now = Timestamp.now();
+        Timestamp now = Timestamp.now(); //TODO: modify so u check access code using long form, not timestamp
         Log.d("auth repo access code", "target role: " + targetRole);
         db.collection("invites")
                 .whereEqualTo("code", code)
                 .whereEqualTo("targetRole", targetRole)
                 .whereEqualTo("used", false)
-                .whereGreaterThanOrEqualTo("expiresAt", now)
+                .whereGreaterThanOrEqualTo("expiresAt", System.currentTimeMillis())
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     callback.onResult(querySnapshot.isEmpty() ? null : querySnapshot.getDocuments().get(0).getString("parentUid"));
@@ -325,6 +330,44 @@ public class AuthRepository {
         auth.signOut();
     }
 
+    //HERLPER FUNCTIONS
+
+    //Helper function to check if valid email
+    public boolean validEmail(String email) {
+        String emailTrim = email.trim();
+        return !emailTrim.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(emailTrim).matches();
+    }
+
+    //Helper function to tailor firebase auth msg for better ux
+    private String mapFirebaseAuthError(Exception e) {
+        if (e instanceof FirebaseAuthInvalidCredentialsException) { return "Incorrect password. Please try again."; }
+        if (e instanceof FirebaseAuthInvalidUserException) { return "No account found with this email."; }
+        if (e instanceof FirebaseAuthRecentLoginRequiredException) { return "Please log in again to continue.";}
+        if (e instanceof FirebaseAuthEmailException) { return "There was a problem with your email. Please check it and try again."; }
+        if (e instanceof FirebaseAuthUserCollisionException) { return "An account with this email already exists."; }
+
+        if (e instanceof FirebaseAuthException) {
+            FirebaseAuthException authEx = (FirebaseAuthException) e;
+            String code = authEx.getErrorCode();
+            switch (code) {
+                case "ERROR_USER_DISABLED":
+                    return "Your account has been disabled. Please contact support.";
+                case "ERROR_TOO_MANY_REQUESTS":
+                    return "Too many attempts. Please wait a moment and try again.";
+                case "ERROR_INVALID_EMAIL":
+                    return "Invalid email format.";
+                default:
+                    return "Login failed. Please try again.";
+            }
+        }
+        //other
+        return "Something went wrong. Please try again.";
+    }
+
+
+    public Task<DocumentSnapshot> getUserDoc(String uid) {
+        return FirebaseInitalizer.getDb().collection("users").document(uid).get();
+    }
 
     //password reset email
     public void sendPasswordResetEmail(String email, AuthContract.GeneralCallback callback) {

@@ -15,7 +15,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         this.repo = new AuthRepository();
     }
 
-
     //Helper function
     private boolean validatePassword(String password) {
         if (password == null || password.isEmpty()) return false;
@@ -26,11 +25,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
                 "(?=.*[@#$%^&+=!])" +   // at least 1 special char
                 "(?=\\S+$).{8,}$";      // no whitespace, min 8 chars
         return password.matches(regex);
-    }
-
-
-    private boolean isValidEmail(String email) {
-        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     @Override
@@ -44,14 +38,14 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         }
         //Check provider and child specific validation
         if(!role.equals("parent") && (accessCode == null || accessCode.trim().isEmpty() || accessCode.length() < 6)) {
-            view.showError("Access Code is required, or not in format XXXXXX");
+            view.showError("Access Code is required, or not in format.");
             return;
         }
         //Parent and provider-specific validation
         if(!role.equals("child") && (email == null || email.trim().isEmpty()) ) {
             view.showError("Email is required");
             return;
-        } else if (!role.equals("child") && !isValidEmail(email)) {
+        } else if (!role.equals("child") && !repo.validEmail(email)) {
             view.showError("Invalid email format");
             return;
         }
@@ -64,18 +58,18 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         }
 
         view.showLoading();
-
+        String emailTrim = email.trim();
         switch (role.toLowerCase()) {
             case "parent":
-                repo.signUpParent(email, password, username,
+                repo.signUpParent(emailTrim, password, username,
                         createCallback());
                 break;
             case "provider":
-                repo.signUpProvider(email, password, accessCode,
+                repo.signUpProvider(emailTrim, password, accessCode,
                         createCallback());
                 break;
             case "child":
-                repo.signUpChild(username, accessCode, password,
+                repo.signUpChild(username.trim(), accessCode, password,
                         createCallback());
                 break;
             default: //should never occur
