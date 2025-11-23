@@ -102,10 +102,10 @@
             android:id="@+id/et_personal_best"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
             android:hint="e.g., 250"
             android:inputType="number"
-            android:padding="12dp"
-            android:layout_marginBottom="8dp" />
+            android:padding="12dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -159,7 +159,7 @@
                     android:id="@+id/switch_rescue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -185,7 +185,7 @@
                     android:id="@+id/switch_controller"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -211,7 +211,7 @@
                     android:id="@+id/switch_symptoms"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -237,7 +237,7 @@
                     android:id="@+id/switch_triggers"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -263,7 +263,7 @@
                     android:id="@+id/switch_pef"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -289,7 +289,7 @@
                     android:id="@+id/switch_triage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
             <View
@@ -315,7 +315,7 @@
                     android:id="@+id/switch_charts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true" />
+                    android:checked="false" />
             </LinearLayout>
 
         </LinearLayout>
