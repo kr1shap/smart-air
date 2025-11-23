@@ -8,11 +8,17 @@ import com.example.smart_air.modelClasses.User;
 
 public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     private AuthContract.SignUpContract.View view; //is the UI handling
-    private final AuthRepository repo;
+    public AuthRepository repo;
 
     public SignUpPresenter(AuthContract.SignUpContract.View view) {
         this.view = view;
         this.repo = new AuthRepository();
+    }
+
+    //constructor with mock repo, solely for testing purposes only
+    public SignUpPresenter(AuthContract.SignUpContract.View view, AuthRepository repo) {
+        this.view = view;
+        this.repo = repo;
     }
 
     //Helper function
