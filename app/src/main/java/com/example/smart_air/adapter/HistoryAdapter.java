@@ -107,10 +107,10 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         public void bind(HistoryItem card) {
-            // DATE
+            // date
             dateText.setText(card.date);
 
-            // CHILD / PARENT BAR LOGIC
+            // child/parent logic
             switch (card.cardType) {
                 case childOnly:
                     childText.setVisibility(View.VISIBLE);

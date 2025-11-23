@@ -13,7 +13,7 @@
     android:backgroundTint="#FFFFFF"
     android:elevation="0dp">
 
-    <!-- Title -->
+    <!-- title -->
     <TextView
         android:id="@+id/triageTitle"
         android:layout_width="match_parent"
@@ -25,7 +25,6 @@
         android:textStyle="bold"
         android:paddingBottom="0dp"/>
 
-    <!-- Fields -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
