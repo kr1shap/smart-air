@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Manage Children"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/colour_blue"
+        android:layout_marginBottom="8dp" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Children are added when they sign up with your invite code"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registered Children"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="8dp" />
+
+
+    <TextView
+        android:id="@+id/tv_no_children"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No children registered yet."
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_children"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp" />
+
+
+    <!-- Invite Code Section -->
+    <LinearLayout
+        android:id="@+id/invite_code_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F0F8FF"
+        android:padding="16dp"
+        android:visibility="gone">
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Child Invite Code"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+
+        <TextView
+            android:id="@+id/tv_code_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No active invite code"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
+
+
+        <TextView
+            android:id="@+id/tv_invite_code"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Code: 123456"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+
+        <TextView
+            android:id="@+id/tv_expiry_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Expires: Jan 01, 2025"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone" />
+
+
+        <Button
+            android:id="@+id/btn_generate_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Generate Code"
+            android:textAllCaps="false" />
+
+
+    </LinearLayout>
+
+
+</LinearLayout>
+
