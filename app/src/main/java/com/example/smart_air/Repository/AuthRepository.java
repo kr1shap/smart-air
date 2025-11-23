@@ -38,7 +38,7 @@ public class AuthRepository {
     }
 
     //SIGNUP - PARENT
-    public void signUpParent(String email, String password, String username,
+    public void signUpParent(String email, String password,
                              AuthCallback callback) {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {

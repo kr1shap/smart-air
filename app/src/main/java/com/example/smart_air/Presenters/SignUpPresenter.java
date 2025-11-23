@@ -67,7 +67,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         String emailTrim = email.trim();
         switch (role.toLowerCase()) {
             case "parent":
-                repo.signUpParent(emailTrim, password, username,
+                repo.signUpParent(emailTrim, password,
                         createCallback());
                 break;
             case "provider":
