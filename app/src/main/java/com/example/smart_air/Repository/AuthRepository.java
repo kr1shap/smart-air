@@ -111,7 +111,8 @@ public class AuthRepository {
                                     public void onSuccess(User savedUser) {
                                         //invite as used, and on success
                                         // mark invite w/ provider details
-                                        markInviteAsUsedWithDetails(accessCode, providerUid, providerEmail);
+                                        markInviteAsUsedWithDetails(accessCode, providerUid,
+                                                providerEmail);
                                         callback.onSuccess(savedUser); //use callback passed in
                                     }
 
