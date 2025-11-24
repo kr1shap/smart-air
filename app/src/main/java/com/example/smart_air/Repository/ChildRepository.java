@@ -8,6 +8,7 @@ import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -378,15 +379,65 @@ public class ChildRepository {
                                OnFailureListener onFailure) {
         Log.d(TAG, "Unlinking provider with invite code: " + inviteCode);
 
+//        db.collection("invites")
+//                .document(inviteCode)
+//                .delete()
+//                .addOnSuccessListener(aVoid -> {
+//                    Log.d(TAG, "Provider unlinked successfully");
+//                    onSuccess.onSuccess(aVoid);
+//                })
+//                .addOnFailureListener(e -> {
+//                    Log.e(TAG, "Error unlinking provider", e);
+//                    onFailure.onFailure(e);
+//                });
+
         db.collection("invites")
                 .document(inviteCode)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Provider unlinked successfully");
-                    onSuccess.onSuccess(aVoid);
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    if (!snapshot.exists()) {
+                        onFailure.onFailure(new Exception("Invite not found"));
+                        return;
+                    }
+
+                    // Get the connected uid and then the parent uid as well
+                    String usedByUid = snapshot.getString("usedByUid");
+                    String parentUid = snapshot.getString("parentUid");
+
+                    if (usedByUid == null || parentUid == null || usedByUid.trim().isEmpty() || parentUid.trim().isEmpty()) {
+                        onFailure.onFailure(new Exception("Invite missing UIDs"));
+                        return;
+                    }
+
+                    //remove the uid of parent from child or providers list of parents
+                    db.collection("users")
+                            .document(usedByUid)
+                            .update("parentUid", FieldValue.arrayRemove(parentUid))
+                            .addOnSuccessListener(unused -> {
+                                Log.d(TAG, "parent removed from parentUid list");
+                                //now delete invite
+                                db.collection("invites")
+                                        .document(inviteCode)
+                                        .delete()
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d(TAG, "Invite deleted. Unlink complete.");
+                                            onSuccess.onSuccess(null);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e(TAG, "Failed to delete invite", e);
+                                            onFailure.onFailure(e);
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Failed to remove parent from provider/child list", e);
+                                onFailure.onFailure(e);
+                            });
+                    //TODO: if child, must delete the child overall
+
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error unlinking provider", e);
+                    Log.e(TAG, "Error fetching invite doc", e);
                     onFailure.onFailure(e);
                 });
     }
