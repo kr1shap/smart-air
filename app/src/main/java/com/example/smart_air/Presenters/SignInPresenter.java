@@ -1,5 +1,7 @@
 package com.example.smart_air.Presenters;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.User;
@@ -14,6 +16,7 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
     }
 
     //constructor with mock repo, solely for testing purposes only
+    @VisibleForTesting
     public SignInPresenter(AuthContract.SignInContract.View view, AuthRepository repo) {
         this.view = view;
         this.repo = repo;
