@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/checkin_page"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView2"
+        style="@style/SmartAir.Text.title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Daily Check-In"
+        android:textSize="42dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:id="@+id/textView3"
+        style="@style/SmartAir.Text.body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="[Date]"
+        android:textColor="@color/colour_lightBlue"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/textView2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/textView3"
+        android:padding="16dp">
+
+        <!-- toggle parent/child -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleRole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonParent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Parent ENTRY"
+                app:cornerRadius="20dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonChild"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Child ENTRY"
+                app:cornerRadius="20dp"/>
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- SAVE button on the right -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSave"
+            style="@style/SmartAir.Button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SAVE"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/toggleRole"
+            app:layout_constraintBottom_toBottomOf="@id/toggleRole"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No information available"
+        android:textSize="16sp"
+        android:textColor="#9E9E9E"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/topButtons"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"
+        android:visibility="gone"/>
+
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/nightCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="-10dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/topButtons"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textView4"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     NIGHT WAKING"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <ImageView
+                android:id="@+id/nightIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/night_waking"
+                android:layout_gravity="center"
+                android:contentDescription="Logo" />
+
+            <TextView
+                android:id="@+id/textView5"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Did you experience any night waking last night? "
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView4"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <RadioGroup
+                android:id="@+id/radioNight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toBottomOf="@id/textView5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="8dp">
+
+                <RadioButton
+                    android:id="@+id/radioYes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Yes" />
+
+                <RadioButton
+                    android:id="@+id/radioNo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No"
+                    android:layout_marginStart="16dp" />
+
+            </RadioGroup>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:id="@+id/activity"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/nightCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textView10"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     ACTIVITY LIMITS"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <ImageView
+                android:id="@+id/activityIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/activity"
+                android:layout_gravity="center"
+                android:contentDescription="Logo" />
+
+            <TextView
+                android:id="@+id/textView6"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="How limited was your activity level today? "
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView10"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="10"
+                android:progress="5"
+                app:layout_constraintTop_toBottomOf="@id/textView6"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <TextView
+                android:id="@+id/textView8"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Perfectly Normal                             Severely Limited"
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/seekBar"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:id="@+id/coughing"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/activity"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textView20"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     COUGHING/WHEEZING"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <ImageView
+                android:id="@+id/coughIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/cough"
+                android:layout_gravity="center"
+                android:contentDescription="Logo" />
+
+            <TextView
+                android:id="@+id/textView67"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="How often we’re you coughing or wheezing today? "
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView20"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderCough"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="3"
+                android:stepSize="1"
+                app:tickVisible="true"
+                app:layout_constraintTop_toBottomOf="@id/textView67"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/sliderLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No coughing"
+                android:textColor="@color/colour_black"
+                android:textSize="14sp"
+                app:layout_constraintTop_toBottomOf="@id/sliderCough"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="0dp"/>
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:id="@+id/triggers"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/coughing"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- title -->
+            <TextView
+                android:id="@+id/textView80"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     TRIGGERS"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- icon -->
+            <ImageView
+                android:id="@+id/triggerIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/trigger"
+                android:contentDescription="Logo"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/textView81"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Select all that apply:"
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView80"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/multiSelect"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Tap to select"
+                android:textSize="14sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="@color/colour_black"
+                android:background="@color/colour_lightBlue"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:layout_constraintTop_toBottomOf="@id/textView81"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:singleSelection="false"
+                android:layout_marginTop="12dp"/>
+
+            <FrameLayout
+                android:id="@+id/content_frame"
+                android:layout_width="0dp"
+                android:layout_height="0dp"></FrameLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:id="@+id/PEF"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/colour_white"
+        app:layout_constraintTop_toBottomOf="@id/triggers"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- title -->
+            <TextView
+                android:id="@+id/textView90"
+                style="@style/SmartAir.Text.title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="     PEF"
+                android:textSize="18dp"
+                android:textColor="@color/colour_blue"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- icon -->
+            <ImageView
+                android:id="@+id/PEFIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/pef"
+                android:contentDescription="Logo"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/textView91"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="What would you say is your child's PEF for today? "
+                android:textSize="14dp"
+                android:textColor="@color/colour_black"
+                app:layout_constraintTop_toBottomOf="@id/textView90"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <EditText
+                android:id="@+id/editTextNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="6"
+                android:inputType="number"
+                android:text="400"
+                app:layout_constraintTop_toBottomOf="@id/textView91"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/unitLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="12dp"
+                android:text="L/min"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@id/editTextNumber"
+                app:layout_constraintTop_toBottomOf="@id/textView91" />
+
+            <TextView
+                android:id="@+id/unitLabel3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="100dp"
+                android:text="L/min"
+                android:textSize="17sp"
+                app:layout_constraintStart_toEndOf="@id/editTextNumber"
+                app:layout_constraintTop_toBottomOf="@id/textView91" />
+
+            <TextView
+                android:id="@+id/unitLabel4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="156dp"
+                android:text="L/min"
+                android:textSize="17sp"
+                app:layout_constraintStart_toEndOf="@id/editTextNumber"
+                app:layout_constraintTop_toBottomOf="@id/textView91" />
+
+            <TextView
+                android:id="@+id/textViewOptional"
+                style="@style/SmartAir.Text.body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Optional: Pre/Post-Medication Values"
+                android:textSize="12sp"
+                android:textColor="@color/colour_black"
+                android:textStyle="italic"
+                android:layout_marginTop="16dp"
+                app:layout_constraintTop_toBottomOf="@id/editTextNumber"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <EditText
+                android:id="@+id/editTextPreMed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:hint="pre-med"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:ems="5"
+                app:layout_constraintTop_toBottomOf="@id/textViewOptional"/>
+
+            <EditText
+                android:id="@+id/editTextPostMed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:hint="post-med"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:ems="5"
+                app:layout_constraintTop_toBottomOf="@id/editTextPreMed"/>
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

@@ -27,19 +27,95 @@
         <item name="rippleColor">@color/colour_lightBlue</item>
         <item name="elevation">4dp</item>
     </style>
-    <style name="SmartAir.Text.title" parent="TextAppearance.MaterialComponents.Headline1">
+    <style name="SmartAir.Button3" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">24dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textColor">@color/colour_indigo</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="fontFamily">@font/dm_sans_medium</item>
+        <item name="backgroundTint">@color/colour_white</item>
+        <item name="rippleColor">@color/colour_lightBlue</item>
+        <item name="elevation">4dp</item>
+    </style>
+    <style name="SmartAir.Text.title" parent="TextAppearance.AppCompat">
         <item name="android:textColor">@color/colour_blue</item>
         <item name="android:textSize">32sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="fontFamily">@font/dm_sans_regular</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
         <item name="android:letterSpacing">0.02</item>
     </style>
-    <style name="SmartAir.Text.body" parent="TextAppearance.MaterialComponents.Body1">
+    <style name="SmartAir.Text.body" parent="TextAppearance.AppCompat">
         <item name="android:textColor">@color/colour_black</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">normal</item>
-        <item name="fontFamily">@font/dm_sans_regular</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
         <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <!-- Style for the TextField Group Container -->
+    <style name="TextFieldGroup">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!-- style for label (username, password, etc.) -->
+    <style name="TextFieldLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="fontFamily">@font/dm_sans_bold</item>
+        <item name="android:textColor">@color/colour_indigo</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_margin">15dp</item>
+    </style>
+
+    <!-- style for the input field-->
+    <style name="RoundedTextField">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/circular_text_field_background</item>
+        <item name="fontFamily">@font/dm_sans_regular</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:layout_marginLeft">15dp</item>
+        <item name="android:layout_marginRight">15dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/colour_indigo</item>
+    </style>
+
+    <!-- style for the toggle button -->
+    <style name="SmartAir.ToggleSelectedButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">24dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textColor">@color/colour_indigo</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="fontFamily">@font/dm_sans_medium</item>
+        <item name="backgroundTint">@color/colour_indigo</item>
+        <item name="rippleColor">@color/colour_lightBlue</item>
+        <item name="elevation">4dp</item>
+    </style>
+
+    <style name="SmartAir.ToggleDefaultButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">24dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textColor">@color/colour_white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="fontFamily">@font/dm_sans_medium</item>
+        <item name="backgroundTint">@color/colour_blue</item>
+        <item name="rippleColor">@color/colour_lightBlue</item>
+        <item name="elevation">4dp</item>
     </style>
 
 </resources>

@@ -1,0 +1,126 @@
+package com.example.smart_air.Presenters;
+
+import androidx.annotation.VisibleForTesting;
+
+import com.example.smart_air.Contracts.AuthContract;
+import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.modelClasses.User;
+
+public class SignInPresenter implements AuthContract.SignInContract.Presenter {
+    private AuthContract.SignInContract.View view;
+    public AuthRepository repo;
+
+    public SignInPresenter(AuthContract.SignInContract.View view) {
+        this.view = view;
+        this.repo = new AuthRepository();
+    }
+
+    //constructor with mock repo, solely for testing purposes only
+    @VisibleForTesting
+    public SignInPresenter(AuthContract.SignInContract.View view, AuthRepository repo) {
+        this.view = view;
+        this.repo = repo;
+    }
+
+    @Override
+    public void signIn(String emailOrUsername, String password, String role) {
+        if(view==null) {return;}
+        if (emailOrUsername == null || emailOrUsername.trim().isEmpty()) {
+            view.showError("Email/Username is required");
+            return;
+        }
+        if (password == null || password.trim().isEmpty()) {
+            view.showError("Password is required");
+            return;
+        }
+        String trimmedEU = emailOrUsername.trim();
+
+        view.showLoading();
+
+        if ("child".equalsIgnoreCase(role)) {
+            repo.signInChild(trimmedEU, password, createCallback()); //username -> email handled in method
+        } else {
+            repo.signIn(trimmedEU, password, createCallback());
+        }
+
+    }
+
+    @Override
+    public void sendPasswordReset(String email) {
+        if(view==null) {return;}
+        if (email == null || !validEmail(email.trim())) {
+            view.showError("Please enter a valid email address");
+            return;
+        }
+        view.showLoading();
+        repo.sendPasswordResetEmail(email.trim(), new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                if (view != null) {
+                    view.hideLoading();
+                    view.showSuccess("Password reset email sent! Check your inbox.");
+                }
+            }
+
+            @Override
+            public void onFailure(String error) {
+                if (view != null) {
+                    view.hideLoading();
+                    view.showError("Failed to send reset email: " + error);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onRoleSelected(String role) {
+        if(view==null) {return;}
+        switch (role) {
+            case "parentProv":
+                view.showEmailField();
+                view.hideUsernameField();
+                view.showForgotPassword();
+                break;
+
+            case "child":
+                view.hideEmailField();
+                view.showUsernameField();
+                view.hideForgotPassword();
+                break;
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        view = null;
+    }
+
+    private AuthContract.AuthCallback createCallback() {
+        return new AuthContract.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                if(view!=null) {
+                    view.hideLoading();
+                    view.navigateToHome(user); //nav to home (check based on role)
+                }
+
+            }
+
+            @Override
+            public void onFailure(String error) {
+                if(view!=null) {
+                    view.hideLoading();
+                    view.showError(error);
+                }
+            }
+        };
+    }
+
+    //Helper function to check if valid email
+    public static boolean validEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        return email.trim().matches(emailRegex);
+    }
+
+
+}

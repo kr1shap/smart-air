@@ -8,76 +8,85 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <!-- toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+           >
+
+            <!-- Notification Icon -->
+            <ImageButton
+                android:id="@+id/notificationButton"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/outline_circle_notifications_24"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"/>
+
+            <!-- Badge Bubble -->
+            <TextView
+                android:id="@+id/badge_text"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:background="@drawable/badge_circle"
+                android:layout_alignTop="@id/notificationButton"
+                android:layout_alignEnd="@id/notificationButton"
+                android:layout_marginTop="-4dp"
+                android:layout_marginEnd="-4dp"
+                android:gravity="center"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="@android:color/white"
+                android:visibility="gone"/>
+        </RelativeLayout>
+
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Smart Air   "
-            android:textStyle="bold"
+            android:text="Smart Air  "
             android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:layout_gravity="center" />
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:fontFamily="@font/dm_sans_bold" />
 
         <ImageView
             android:id="@+id/logo"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="35dp"
+            android:layout_height="40dp"
             android:src="@drawable/transparentlog"
             android:layout_gravity="center"
             android:contentDescription="Logo" />
 
+        <!-- sign out button -->
+        <Button
+            android:id="@+id/signout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sign Out"
+            android:textColor="@android:color/white"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_gravity="end|center_vertical"/>
     </androidx.appcompat.widget.Toolbar>
 
-
-    <Button
-        android:id="@+id/button"
-        style="@style/SmartAir.Button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Button"
-        tools:layout_editor_absoluteX="152dp"
-        tools:layout_editor_absoluteY="170dp" />
-
-    <Button
-        android:id="@+id/button2"
-        style="@style/SmartAir.Button2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Button"
-        tools:layout_editor_absoluteX="152dp"
-        tools:layout_editor_absoluteY="245dp" />
-
-    <TextView
-        android:id="@+id/textView2"
-        style="@style/SmartAir.Text.title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Title"
-        tools:layout_editor_absoluteX="172dp"
-        tools:layout_editor_absoluteY="322dp" />
-
-    <TextView
-        android:id="@+id/textView3"
-        style="@style/SmartAir.Text.body"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Body"
-        tools:layout_editor_absoluteX="184dp"
-        tools:layout_editor_absoluteY="375dp" />
-
+    <!-- fragment container -->
     <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" >
-    </FrameLayout>
+        android:layout_weight="1" />
 
+    <!-- bottom navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
