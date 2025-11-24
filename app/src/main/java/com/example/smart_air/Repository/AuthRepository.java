@@ -38,7 +38,7 @@ public class AuthRepository {
     }
 
     //SIGNUP - PARENT
-    public void signUpParent(String email, String password, String username,
+    public void signUpParent(String email, String password,
                              AuthCallback callback) {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
@@ -330,13 +330,7 @@ public class AuthRepository {
         auth.signOut();
     }
 
-    //HERLPER FUNCTIONS
-
-    //Helper function to check if valid email
-    public boolean validEmail(String email) {
-        String emailTrim = email.trim();
-        return !emailTrim.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(emailTrim).matches();
-    }
+    //HELPER FUNCTIONS
 
     //Helper function to tailor firebase auth msg for better ux
     private String mapFirebaseAuthError(Exception e) {

@@ -1,6 +1,7 @@
 package com.example.smart_air.Presenters;
 
-import android.util.Patterns;
+
+import androidx.annotation.VisibleForTesting;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
@@ -8,11 +9,18 @@ import com.example.smart_air.modelClasses.User;
 
 public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     private AuthContract.SignUpContract.View view; //is the UI handling
-    private final AuthRepository repo;
+    public AuthRepository repo;
 
     public SignUpPresenter(AuthContract.SignUpContract.View view) {
         this.view = view;
         this.repo = new AuthRepository();
+    }
+
+    //constructor with mock repo, solely for testing purposes only
+    @VisibleForTesting
+    public SignUpPresenter(AuthContract.SignUpContract.View view, AuthRepository repo) {
+        this.view = view;
+        this.repo = repo;
     }
 
     //Helper function
@@ -30,7 +38,13 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     @Override
     public void signUp(String email, String password, String username,
                        String accessCode, String role) {
-
+        if (view == null) {return;}
+        //Check if the role is valid
+        if(!role.equals("child") && !role.equals("parent") && !role.equals("provider")) {
+            view.hideLoading();
+            view.showError("Invalid role selected");
+            return;
+        }
         //Check child-specific validation
         if(role.equals("child") && (username == null || username.trim().isEmpty() || username.trim().length() < 3)) {
             view.showError("Username is required and of minimum length 3");
@@ -45,7 +59,7 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         if(!role.equals("child") && (email == null || email.trim().isEmpty()) ) {
             view.showError("Email is required");
             return;
-        } else if (!role.equals("child") && !repo.validEmail(email)) {
+        } else if (!role.equals("child") && !validEmail(email)) {
             view.showError("Invalid email format");
             return;
         }
@@ -58,10 +72,10 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
         }
 
         view.showLoading();
-        String emailTrim = email.trim();
+        String emailTrim = email != null ? email.trim() : null;
         switch (role.toLowerCase()) {
             case "parent":
-                repo.signUpParent(emailTrim, password, username,
+                repo.signUpParent(emailTrim, password,
                         createCallback());
                 break;
             case "provider":
@@ -72,14 +86,12 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
                 repo.signUpChild(username.trim(), accessCode, password,
                         createCallback());
                 break;
-            default: //should never occur
-                view.hideLoading();
-                view.showError("Invalid role selected");
         }
     }
 
     @Override
     public void onRoleSelected(String role) {
+        if (view == null) {return;}
         switch (role.toLowerCase()) {
             case "parent":
                 view.showEmailField();
@@ -90,13 +102,13 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
             case "provider":
                 view.showEmailField();
                 view.hideUsernameField();
-                view.showAccessCodeField("Enter access code from parent");
+                view.showAccessCodeField("Enter access code the caregiver.");
                 break;
 
             case "child":
                 view.hideEmailField();
                 view.showUsernameField();
-                view.showAccessCodeField("Enter access code from parent/provider");
+                view.showAccessCodeField("Enter access code from your parent.");
                 break;
         }
     }
@@ -126,5 +138,15 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
             }
         };
     }
+
+    //Helper function to check if valid email
+    public static boolean validEmail(String email) {
+//        String emailTrim = email.trim();
+//        return !emailTrim.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(emailTrim).matches();
+        // Simple regex that works in JUnit
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        return email.trim().matches(emailRegex);
+    }
+
 
 }
