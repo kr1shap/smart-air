@@ -334,7 +334,7 @@ public class AuthRepository {
                 .update(
                         "used", true,
                         "usedByUid", usedByUid,
-                        "usedByIdentifier", usedByIdentifier
+                        "usedByEmail", usedByIdentifier
                 )
                 .addOnSuccessListener(aVoid ->
                         Log.d(TAG, "Invite marked as used successfully"))
