@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
+import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.User;
@@ -101,7 +102,10 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.triage) {
                 // add fragment for triage
             } else if (id == R.id.history) {
-                // add fragment for history
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof HistoryFragment)) {
+                    selectedFragment = new HistoryFragment();
+                }
             } else if (id == R.id.medicine) {
                 // add fragment for medicine
             } else if (id == R.id.checkin) {
