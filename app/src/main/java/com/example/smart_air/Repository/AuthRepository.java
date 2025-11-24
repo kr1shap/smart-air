@@ -234,13 +234,13 @@ public class AuthRepository {
     private void addChildCollection(String parentUid, String childUid, String childName,
                                     AuthContract.GeneralCallback callback) {
         Map<String, Boolean> sharing = new HashMap<>();
-        sharing.put("rescue", true);
-        sharing.put("controller", true);
-        sharing.put("symptoms", true);
-        sharing.put("triggers",true);
-        sharing.put("pef",true);
-        sharing.put("triage",true);
-        sharing.put("charts",true);
+        sharing.put("rescue", false);
+        sharing.put("controller", false);
+        sharing.put("symptoms", false);
+        sharing.put("triggers",false);
+        sharing.put("pef",false);
+        sharing.put("triage",false);
+        sharing.put("charts",false);
 
         // Create the object
         Child child = new Child(

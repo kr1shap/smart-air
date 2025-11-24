@@ -221,12 +221,6 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
 
 
     @Override
-    public void onChildClick(Child child) {
-        // No-op: only edit button opens dialog
-    }
-
-
-    @Override
     public void onChildEdit(Child child) {
         Log.d(TAG, "Editing child: " + child.getName());
         EditChildDialogFragment editDialog = EditChildDialogFragment.newInstance(child);

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Switch;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -15,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.example.smart_air.Repository.ChildRepository;
@@ -35,7 +35,7 @@ public class EditChildDialogFragment extends DialogFragment {
     private Child child;
     private ChildRepository childRepo;
     private EditText etChildName, etChildDob, etChildNotes, etPersonalBest;
-    private androidx.appcompat.widget.SwitchCompat switchRescue, switchController, switchSymptoms,
+    private SwitchCompat switchRescue, switchController, switchSymptoms,
             switchTriggers, switchPef, switchTriage, switchCharts;
     private Date selectedDate;
     private OnChildUpdatedListener listener;
@@ -58,6 +58,10 @@ public class EditChildDialogFragment extends DialogFragment {
         if (getArguments() != null) {
             String childJson = getArguments().getString(ARG_CHILD);
             child = new Gson().fromJson(childJson, Child.class);
+            Log.d(TAG, "Child loaded: " + child.getName());
+            if (child.getSharing() != null) {
+                Log.d(TAG, "Sharing settings: " + child.getSharing().toString());
+            }
         }
         childRepo = new ChildRepository();
     }
@@ -69,7 +73,6 @@ public class EditChildDialogFragment extends DialogFragment {
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_edit_child, null);
 
-        // Set max height for scrollable dialog
         view.setMinimumHeight(600);
 
         etChildName = view.findViewById(R.id.et_child_name);
@@ -77,7 +80,6 @@ public class EditChildDialogFragment extends DialogFragment {
         etChildNotes = view.findViewById(R.id.et_child_notes);
         etPersonalBest = view.findViewById(R.id.et_personal_best);
 
-        // Sharing toggle switches
         switchRescue = view.findViewById(R.id.switch_rescue);
         switchController = view.findViewById(R.id.switch_controller);
         switchSymptoms = view.findViewById(R.id.switch_symptoms);
@@ -91,44 +93,54 @@ public class EditChildDialogFragment extends DialogFragment {
 
         // Populate fields with existing data
         if (child != null) {
-            // Display child name
             if (child.getName() != null && !child.getName().isEmpty()) {
                 etChildName.setText(child.getName());
             }
 
-            // Display DOB
             if (child.getDob() != null) {
                 selectedDate = child.getDob();
                 SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
                 etChildDob.setText(sdf.format(child.getDob()));
             }
 
-            // Display notes
             if (child.getExtraNotes() != null) {
                 etChildNotes.setText(child.getExtraNotes());
             }
 
-            // Display personal best
             if (child.getPersonalBest() > 0) {
                 etPersonalBest.setText(String.valueOf(child.getPersonalBest()));
             }
 
-            // Load sharing toggles
-            if (child.getSharing() != null) {
-                Map<String, Boolean> sharing = child.getSharing();
-                switchRescue.setChecked(sharing.getOrDefault("rescue", true));
-                switchController.setChecked(sharing.getOrDefault("controller", true));
-                switchSymptoms.setChecked(sharing.getOrDefault("symptoms", true));
-                switchTriggers.setChecked(sharing.getOrDefault("triggers", true));
-                switchPef.setChecked(sharing.getOrDefault("pef", true));
-                switchTriage.setChecked(sharing.getOrDefault("triage", true));
-                switchCharts.setChecked(sharing.getOrDefault("charts", true));
+            // Load sharing toggles - FIXED
+            Map<String, Boolean> sharing = child.getSharing();
+            if (sharing != null) {
+                Log.d(TAG, "Loading toggles from sharing map:");
+
+                Boolean rescue = sharing.get("rescue");
+                Boolean controller = sharing.get("controller");
+                Boolean symptoms = sharing.get("symptoms");
+                Boolean triggers = sharing.get("triggers");
+                Boolean pef = sharing.get("pef");
+                Boolean triage = sharing.get("triage");
+                Boolean charts = sharing.get("charts");
+
+                switchRescue.setChecked(rescue != null && rescue);
+                switchController.setChecked(controller != null && controller);
+                switchSymptoms.setChecked(symptoms != null && symptoms);
+                switchTriggers.setChecked(triggers != null && triggers);
+                switchPef.setChecked(pef != null && pef);
+                switchTriage.setChecked(triage != null && triage);
+                switchCharts.setChecked(charts != null && charts);
+
+                Log.d(TAG, "Rescue: " + rescue + " -> " + switchRescue.isChecked());
+                Log.d(TAG, "Controller: " + controller + " -> " + switchController.isChecked());
+                Log.d(TAG, "Symptoms: " + symptoms + " -> " + switchSymptoms.isChecked());
+            } else {
+                Log.w(TAG, "Sharing map is null, defaulting to false");
             }
         }
 
-        // Date picker for DOB
         etChildDob.setOnClickListener(v -> showDatePicker());
-
         btnSave.setOnClickListener(v -> saveChild());
         btnCancel.setOnClickListener(v -> dismiss());
 
@@ -157,7 +169,6 @@ public class EditChildDialogFragment extends DialogFragment {
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
 
-        // Set max date to today (can't be born in the future)
         datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         datePickerDialog.show();
     }
@@ -165,7 +176,6 @@ public class EditChildDialogFragment extends DialogFragment {
     private void saveChild() {
         if (child == null) return;
 
-        // Get and validate name
         String name = etChildName.getText().toString().trim();
         if (name.isEmpty()) {
             Toast.makeText(getContext(), "Please enter a child name", Toast.LENGTH_SHORT).show();
@@ -173,9 +183,7 @@ public class EditChildDialogFragment extends DialogFragment {
         }
         child.setName(name);
 
-        // Validate and update DOB
         if (selectedDate != null) {
-            // Validate age (must be between 6-16 years old)
             int age = calculateAge(selectedDate);
             if (age < 6 || age > 16) {
                 Toast.makeText(getContext(), "Child must be between 6 and 16 years old", Toast.LENGTH_SHORT).show();
@@ -184,30 +192,28 @@ public class EditChildDialogFragment extends DialogFragment {
             child.setDob(selectedDate);
         }
 
-        // Update child notes
         String notes = etChildNotes.getText().toString().trim();
         child.setExtraNotes(notes.isEmpty() ? null : notes);
 
-        // Update personal best
         String personalBestStr = etPersonalBest.getText().toString().trim();
         if (!personalBestStr.isEmpty()) {
             try {
                 int personalBest = Integer.parseInt(personalBestStr);
                 if (personalBest < 0) {
-                    Toast.makeText(getContext(), "Personal best must be a positive number", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Personal best must be positive", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (personalBest > 1000) {
-                    Toast.makeText(getContext(), "Personal best seems too high. Please verify.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Personal best seems too high", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 child.setPersonalBest(personalBest);
             } catch (NumberFormatException e) {
-                Toast.makeText(getContext(), "Please enter a valid number for personal best", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Please enter a valid number", Toast.LENGTH_SHORT).show();
                 return;
             }
         } else {
-            child.setPersonalBest(0); // Reset to 0 if empty
+            child.setPersonalBest(0);
         }
 
         // Update sharing toggles
@@ -221,14 +227,12 @@ public class EditChildDialogFragment extends DialogFragment {
         sharing.put("charts", switchCharts.isChecked());
         child.setSharing(sharing);
 
-        Log.d(TAG, "Attempting to update child: " + child.getName());
-        Log.d(TAG, "Personal Best: " + child.getPersonalBest());
+        Log.d(TAG, "Saving child with sharing: " + sharing.toString());
 
-        // Save to Firestore
         childRepo.updateChild(child,
                 aVoid -> {
                     Log.d(TAG, "Child updated successfully");
-                    Toast.makeText(getContext(), "Child updated successfully", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Child updated", Toast.LENGTH_SHORT).show();
                     if (listener != null) {
                         listener.onChildUpdated();
                     }
@@ -236,7 +240,7 @@ public class EditChildDialogFragment extends DialogFragment {
                 },
                 e -> {
                     Log.e(TAG, "Error updating child", e);
-                    Toast.makeText(getContext(), "Error updating child: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -244,20 +248,14 @@ public class EditChildDialogFragment extends DialogFragment {
         this.listener = listener;
     }
 
-    // Helper method to calculate age from date of birth
     private int calculateAge(Date dob) {
         Calendar dobCal = Calendar.getInstance();
         dobCal.setTime(dob);
-
         Calendar today = Calendar.getInstance();
-
         int age = today.get(Calendar.YEAR) - dobCal.get(Calendar.YEAR);
-
-        // Adjust if birthday hasn't occurred yet this year
         if (today.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
             age--;
         }
-
         return age;
     }
 }
