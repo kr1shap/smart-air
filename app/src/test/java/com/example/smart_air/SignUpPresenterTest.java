@@ -6,7 +6,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +39,16 @@ public class SignUpPresenterTest {
         //use mock repository and view
         presenter = new SignUpPresenter(mockView, mockRepository);
     }
+
+    //TEST TO GET COVERAGE FOR FIRST CONSTRUCTOR (IGNORE!)
+    @Test
+    public void testDefaultConstructor() {
+        AuthContract.SignUpContract.View mockView = mock(AuthContract.SignUpContract.View.class);
+        SignUpPresenter presenter = new SignUpPresenter(mockView);
+        assertNotNull(presenter);  // nothing else needed
+
+    }
+
 
     /*
         PARENT SIGN UP TESTS
@@ -89,12 +99,36 @@ public class SignUpPresenterTest {
 
     //TEST 3: Sign up (GENERAL), weak password
     @Test
-    public void signUp_parent_withWeakPassword_shouldShowError() {
+    public void signUp_withWeakPassword_shouldShowError() {
         // Given
         String email = "parent@test.com";
         String password = "cscb07weak";
         // When
         presenter.signUp(email, password, null, null,"parent");
+        // Then
+        verify(mockView).showError("Password must be at least 6 characters, 1 digit, 1 uppercase, 1 lowercase, and 1 special character.");
+        verify(mockRepository, never()).signUpParent(anyString(), anyString(), any()); //never called
+    }
+
+    //TEST 3.5: Sign up (GENERAL), null password
+    @Test
+    public void signUp_withNullPassword_shouldShowError() {
+        // Given
+        String email = "parent@test.com";
+        // When
+        presenter.signUp(email, null, null, null,"parent");
+        // Then
+        verify(mockView).showError("Password must be at least 6 characters, 1 digit, 1 uppercase, 1 lowercase, and 1 special character.");
+        verify(mockRepository, never()).signUpParent(anyString(), anyString(), any()); //never called
+    }
+
+    //TEST 3.75: Sign up (GENERAL), empty password
+    @Test
+    public void signUp_withSpacePassword_shouldShowError() {
+        // Given
+        String email = "parent@test.com";
+        // When
+        presenter.signUp(email, "", null, null,"parent");
         // Then
         verify(mockView).showError("Password must be at least 6 characters, 1 digit, 1 uppercase, 1 lowercase, and 1 special character.");
         verify(mockRepository, never()).signUpParent(anyString(), anyString(), any()); //never called

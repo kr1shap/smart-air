@@ -1,6 +1,5 @@
 package com.example.smart_air.Presenters;
 
-import android.util.Patterns;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
