@@ -1,8 +1,8 @@
 package com.example.smart_air;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -14,20 +14,21 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
-import com.example.smart_air.modelClasses.Notification;
+
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.User;
-import com.example.smart_air.modelClasses.enums.NotifType;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.gson.Gson;
 
 import android.widget.Toast;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
@@ -38,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
     User user;
+
+    // children tracking variables
+    public int currentChild;
+    public List<String> allChildren;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +65,14 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
         }
+
+        // switch child button
+        getChildren(); // fill array list and set index to 0
+        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        setUpChildSwitch(switchChildButton);
+        switchChildButton.setOnClickListener(v -> {
+            showChildPopup(this.allChildren);
+        });
 
         //notif button
         notification = findViewById(R.id.notificationButton);
@@ -128,6 +141,79 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    private void getChildren(){
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        if(role.equals("child")){
+                            return;
+                        }
+                        if(role.equals("parent") ){
+                            List<String> list = user.getChildrenUid();
+                            setChildren(list);
+                        }
+                        if(role.equals("provider")){
+                            //switchChildButton.setVisibility(View.VISIBLE);
+                        }
+                    }
+                    else{
+                        return;
+                    }
+                });
+    }
+
+    private void setChildren(List<String> list) {
+        this.allChildren = list;
+    }
+
+    private void showChildPopup(List<String> children) {
+        AtomicInteger currentIndex = new AtomicInteger(currentChild); // currently selected item
+
+        String[] childArray = children.toArray(new String[0]);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Switch Child")
+                .setSingleChoiceItems(childArray, currentIndex.get(), (dialog, which) -> {
+                    currentIndex.set(which);
+
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+
+    private void setUpChildSwitch(ImageButton switchChildButton) {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        if(role.equals("child")){
+                            return;
+                        }
+                        if(role.equals("parent") ){
+                            switchChildButton.setVisibility(View.VISIBLE);
+                        }
+                        if(role.equals("provider")){
+                            switchChildButton.setVisibility(View.VISIBLE);
+                        }
+                    }
+                    else{
+                        return;
+                    }
+                });
+
+    }
+
 
     private void setupNotificationIcon() {
         repo.getUserDoc(repo.getCurrentUser().getUid())
