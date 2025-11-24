@@ -33,7 +33,7 @@ public class EditChildDialogFragment extends DialogFragment {
     private static final String TAG = "EditChildDialog";
     private static final String ARG_CHILD = "child";
     private Child child;
-    private ChildRepository childRepo; // ✅ FIXED: Changed from childRepository to childRepo
+    private ChildRepository childRepo;
     private EditText etChildName, etChildDob, etChildNotes, etPersonalBest;
     private androidx.appcompat.widget.SwitchCompat switchRescue, switchController, switchSymptoms,
             switchTriggers, switchPef, switchTriage, switchCharts;
@@ -59,7 +59,7 @@ public class EditChildDialogFragment extends DialogFragment {
             String childJson = getArguments().getString(ARG_CHILD);
             child = new Gson().fromJson(childJson, Child.class);
         }
-        childRepo = new ChildRepository(); // ✅ FIXED: Now matches declaration
+        childRepo = new ChildRepository();
     }
 
     @NonNull
