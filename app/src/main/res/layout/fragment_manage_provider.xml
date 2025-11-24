@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:text="Manage Providers"
             android:textSize="24sp"
-            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
             android:textColor="@color/colour_blue"
             android:layout_marginBottom="8dp" />
 
@@ -24,6 +24,7 @@
             android:layout_height="wrap_content"
             android:text="Share your invite code with healthcare providers to grant them read-only access to your children's data"
             android:textSize="12sp"
+            android:fontFamily="@font/dm_sans_regular"
             android:textColor="@android:color/darker_gray"
             android:layout_marginBottom="16dp" />
 
@@ -41,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:text="Provider Invite Code"
                 android:textSize="16sp"
-                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textColor="@color/colour_blue"
                 android:layout_marginBottom="8dp" />
 
@@ -80,6 +81,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Generate Code"
+                style="@style/SmartAir.Button1"
                 android:textAllCaps="false" />
 
         </LinearLayout>
@@ -89,6 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Linked Providers"
+            android:fontFamily="@font/dm_sans_bold"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"

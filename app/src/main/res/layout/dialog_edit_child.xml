@@ -15,6 +15,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Edit Child Profile"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_black"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
@@ -24,8 +26,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Basic Information"
+            android:fontFamily="@font/dm_sans_bold"
             android:textSize="16sp"
-            android:textStyle="bold"
             android:textColor="@color/colour_blue"
             android:layout_marginBottom="8dp" />
 
@@ -33,6 +35,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Child Name *"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
             android:textSize="14sp"
             android:layout_marginBottom="4dp" />
 
@@ -41,6 +45,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Enter child's name"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
             android:inputType="textCapWords"
             android:padding="12dp"
             android:layout_marginBottom="16dp" />
@@ -49,6 +55,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Date of Birth *"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
             android:textSize="14sp"
             android:layout_marginBottom="4dp" />
 
@@ -57,6 +65,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Select date"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
             android:focusable="false"
             android:clickable="true"
             android:padding="12dp"
@@ -67,6 +77,8 @@
             android:layout_height="wrap_content"
             android:text="Extra Notes (optional)"
             android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
             android:layout_marginBottom="4dp" />
 
         <EditText
@@ -74,6 +86,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Enter notes"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
             android:minLines="3"
             android:gravity="top|start"
             android:inputType="textMultiLine"
@@ -86,6 +100,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Peak Flow"
+            android:fontFamily="@font/dm_sans_bold"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/colour_blue"
@@ -96,6 +111,8 @@
             android:layout_height="wrap_content"
             android:text="Personal Best Peak Flow (L/min)"
             android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
             android:layout_marginBottom="4dp" />
 
         <EditText
@@ -104,6 +121,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:hint="e.g., 250"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
             android:inputType="number"
             android:padding="12dp" />
 
@@ -113,6 +132,7 @@
             android:text="Personal best is the highest peak flow reading your child can achieve when their asthma is well controlled."
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
             android:layout_marginBottom="24dp" />
 
         <!-- Sharing Settings Section -->
@@ -121,7 +141,7 @@
             android:layout_height="wrap_content"
             android:text="Share with Provider"
             android:textSize="16sp"
-            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
             android:textColor="@color/colour_blue"
             android:layout_marginBottom="8dp" />
 
@@ -152,6 +172,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Rescue Logs"
                     android:textSize="15sp" />
 
@@ -178,6 +200,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Controller Summary"
                     android:textSize="15sp" />
 
@@ -204,6 +228,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Symptoms"
                     android:textSize="15sp" />
 
@@ -230,6 +256,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Triggers"
                     android:textSize="15sp" />
 
@@ -256,6 +284,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Peak Flow (PEF)"
                     android:textSize="15sp" />
 
@@ -282,6 +312,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Triage Incidents"
                     android:textSize="15sp" />
 
@@ -308,6 +340,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:text="Summary Charts"
                     android:textSize="15sp" />
 
@@ -328,6 +362,7 @@
 
             <Button
                 android:id="@+id/btn_cancel"
+                style="@style/SmartAir.Button1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Cancel"
@@ -335,6 +370,7 @@
 
             <Button
                 android:id="@+id/btn_save"
+                style="@style/SmartAir.Button1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Save Changes" />
