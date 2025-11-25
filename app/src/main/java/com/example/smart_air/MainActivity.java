@@ -14,6 +14,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
@@ -41,8 +42,8 @@ public class MainActivity extends AppCompatActivity {
     User user;
 
     // children tracking variables
-    public int currentChild;
-    public List<String> allChildren;
+    private SharedChildViewModel sharedModel;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,11 +68,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // switch child button
-        getChildren(); // fill array list and set index to 0
+        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
+        getChildren(); // fill array list of children in share modal
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
-        setUpChildSwitch(switchChildButton);
+        setUpChildSwitch(switchChildButton); // set up button
         switchChildButton.setOnClickListener(v -> {
-            showChildPopup(this.allChildren);
+            sharedModel.getAllChildren().observe(this, children -> {
+                if (children != null) {
+                    showChildPopup(children);
+                }
+            });
         });
 
         //notif button
@@ -156,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("parent") ){
                             List<String> list = user.getChildrenUid();
-                            setChildren(list);
+                            sharedModel.setChildren(list);
                         }
                         if(role.equals("provider")){
                             //switchChildButton.setVisibility(View.VISIBLE);
@@ -168,19 +174,16 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void setChildren(List<String> list) {
-        this.allChildren = list;
-    }
-
     private void showChildPopup(List<String> children) {
-        AtomicInteger currentIndex = new AtomicInteger(currentChild); // currently selected item
+        Integer value = sharedModel.getCurrentChild().getValue();
+        AtomicInteger currentIndex = new AtomicInteger(value != null ? value : 0); // currently selected item
 
         String[] childArray = children.toArray(new String[0]);
 
         new AlertDialog.Builder(this)
                 .setTitle("Switch Child")
                 .setSingleChoiceItems(childArray, currentIndex.get(), (dialog, which) -> {
-                    currentIndex.set(which);
+                    sharedModel.setCurrentChild(which);
 
                     dialog.dismiss();
                 })

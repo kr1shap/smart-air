@@ -14,11 +14,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.HistoryRepository;
+import com.example.smart_air.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
@@ -46,6 +48,7 @@ public class HistoryFragment extends Fragment {
     private HistoryAdapter adapter;
     public String [] filters = {"","","","","",""};
     String childUid;
+    private SharedChildViewModel sharedModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -90,7 +93,28 @@ public class HistoryFragment extends Fragment {
         });
 
         setUpFilterUI();
-        repo.getChildUid(this);
+        // shared viewmodal
+        repo.getChildUid(this); // set up child uid if it is a child
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
+            if (children != null && !children.isEmpty()) {
+                int currentIndex = sharedModel.getCurrentChild().getValue() != null
+                        ? sharedModel.getCurrentChild().getValue()
+                        : 0;
+
+                String currentChildUid = children.get(currentIndex);
+                this.childUid = currentChildUid;
+                repo.getCards(childUid,this);
+            }
+        });
+
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
+            List<String> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && currentIndex != null) {
+                this.childUid = children.get(currentIndex);
+                repo.getCards(childUid,this);
+            }
+        });
 
         // night filter
         AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
@@ -105,7 +129,7 @@ public class HistoryFragment extends Fragment {
             else{
                 filters[0] = selected;
             }
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // activity filter
@@ -113,7 +137,7 @@ public class HistoryFragment extends Fragment {
         activityDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[1] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // coughing filter
@@ -121,7 +145,7 @@ public class HistoryFragment extends Fragment {
         coughingDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[2] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // triggers filter
@@ -129,7 +153,7 @@ public class HistoryFragment extends Fragment {
         triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[3] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // date filter
@@ -162,7 +186,7 @@ public class HistoryFragment extends Fragment {
             String formattedFilterDate = sdf.format(filterDate);
             filters[4] = formattedFilterDate;
 
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // triage filter
@@ -170,7 +194,7 @@ public class HistoryFragment extends Fragment {
         triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[5] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
         });
 
         // TODO: make this button provider only later
@@ -386,8 +410,11 @@ public class HistoryFragment extends Fragment {
     }
 
     public void setChildUid(String childUid) {
+        if(childUid.equals("")){
+            return;
+        }
         this.childUid = childUid;
-        repo.getDailyCheckIns(childUid,this);
+        repo.getCards(childUid,this);
     }
 
     public void exitScreen(){
