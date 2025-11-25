@@ -2,10 +2,7 @@ package com.example.smart_air;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.SpannableString;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -14,7 +11,6 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -27,12 +23,13 @@ import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.User;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -175,13 +172,29 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("provider")){
                             List<String> list = user.getParentUid();
-                            //switchChildButton.setVisibility(View.VISIBLE);
+                            getParentsChildren(list);
                         }
                     }
-                    else{
-                        return;
-                    }
                 });
+    }
+
+    private void getParentsChildren(List<String> list) {
+        List<String> allChildren = new ArrayList<>();
+        AtomicInteger processedCount = new AtomicInteger(0);
+        for(String parentId : list) {
+            repo.getUserDoc(parentId).addOnSuccessListener(doc -> {
+                if(doc.exists()) {
+                    User user = doc.toObject(User.class);
+                    if (user != null && user.getChildrenUid() != null) {
+                        allChildren.addAll(user.getChildrenUid());
+                    }
+                }
+
+                if (processedCount.incrementAndGet() == list.size()) {
+                    sharedModel.setChildren(allChildren);
+                }
+            });
+        }
     }
 
     private void showChildPopup(List<String> children) {

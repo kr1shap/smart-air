@@ -1,6 +1,4 @@
-package com.example.smart_air;
-
-import android.view.View;
+package com.example.smart_air.viewmodel;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

@@ -20,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.HistoryRepository;
-import com.example.smart_air.SharedChildViewModel;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
