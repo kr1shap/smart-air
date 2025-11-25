@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -66,15 +67,15 @@ public class CheckInFragment extends Fragment {
                         ? sharedModel.getCurrentChild().getValue()
                         : 0;
 
-                String currentChildUid = children.get(currentIndex);
+                String currentChildUid = children.get(currentIndex).getChildUid();
                 this.correspondingUid = currentChildUid;
             }
         });
 
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
-            List<String> children = sharedModel.getAllChildren().getValue();
+            List<Child> children = sharedModel.getAllChildren().getValue();
             if (children != null && !children.isEmpty() && currentIndex != null) {
-                correspondingUid = children.get(currentIndex);
+                correspondingUid = children.get(currentIndex).getChildUid();
                 refreshUINewChild(repo);
             }
         });

@@ -4,17 +4,19 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.smart_air.modelClasses.Child;
+
 import java.util.List;
 
 public class SharedChildViewModel extends ViewModel {
-    private final MutableLiveData<List<String>> allChildren = new MutableLiveData<>();
+    private final MutableLiveData<List<Child>> allChildren = new MutableLiveData<>();
     private final MutableLiveData<Integer> currentChild = new MutableLiveData<>(0);
 
-    public LiveData<List<String>> getAllChildren() {
+    public LiveData<List<Child>> getAllChildren() {
         return allChildren;
     }
 
-    public void setChildren(List<String> list) {
+    public void setChildren(List<Child> list) {
         allChildren.setValue(list);
     }
 

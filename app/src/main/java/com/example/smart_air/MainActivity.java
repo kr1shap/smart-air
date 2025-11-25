@@ -22,14 +22,17 @@ import com.example.smart_air.Fragments.CheckInFragment;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -168,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("parent") ){
                             List<String> list = user.getChildrenUid();
-                            sharedModel.setChildren(list);
+                            convertToNames(list);
                         }
                         if(role.equals("provider")){
                             List<String> list = user.getParentUid();
@@ -191,17 +194,20 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (processedCount.incrementAndGet() == list.size()) {
-                    sharedModel.setChildren(allChildren);
+                    convertToNames(allChildren);
                 }
             });
         }
     }
 
-    private void showChildPopup(List<String> children) {
+    private void showChildPopup(List<Child> children) {
         Integer value = sharedModel.getCurrentChild().getValue();
         AtomicInteger currentIndex = new AtomicInteger(value != null ? value : 0); // currently selected item
 
-        String[] childArray = children.toArray(new String[0]);
+        String [] childArray = new String[children.size()];
+        for(int i = 0; i < children.size(); i++){
+            childArray[i] = children.get(i).getChildName();
+        }
 
         new AlertDialog.Builder(this)
                 .setTitle("Switch Child")
@@ -262,6 +268,31 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void convertToNames (List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getChildName().toLowerCase()));
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
+    }
 
     private void setupNotificationIcon() {
         repo.getUserDoc(repo.getCurrentUser().getUid())

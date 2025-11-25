@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.HistoryRepository;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
@@ -102,16 +103,16 @@ public class HistoryFragment extends Fragment {
                         ? sharedModel.getCurrentChild().getValue()
                         : 0;
 
-                String currentChildUid = children.get(currentIndex);
+                String currentChildUid = children.get(currentIndex).getChildUid();
                 this.childUid = currentChildUid;
                 repo.getCards(childUid,this);
             }
         });
 
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
-            List<String> children = sharedModel.getAllChildren().getValue();
+            List<Child> children = sharedModel.getAllChildren().getValue();
             if (children != null && !children.isEmpty() && currentIndex != null) {
-                this.childUid = children.get(currentIndex);
+                this.childUid = children.get(currentIndex).getChildUid();
                 repo.getCards(childUid,this);
             }
         });
