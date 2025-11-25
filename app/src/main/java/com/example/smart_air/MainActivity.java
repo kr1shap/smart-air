@@ -250,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
         }
         String [] childArray = new String[children.size()];
         for(int i = 0; i < children.size(); i++){
-            childArray[i] = children.get(i).getChildName();
+            childArray[i] = children.get(i).getName();
         }
         return childArray;
     }
@@ -343,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
                         children.add(currentChild);
 
                         if (counter.incrementAndGet() == uid.size()) {
-                            children.sort(Comparator.comparing(c -> c.getChildName().toLowerCase()));
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
                             int currentIndex = sharedModel.getCurrentChild().getValue();
                             if(currentIndex >= children.size()){ // if last child gets deleted
                                 sharedModel.setCurrentChild(0);
