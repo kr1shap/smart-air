@@ -2,7 +2,11 @@ package com.example.smart_air;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -10,6 +14,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -66,19 +71,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
         }
-
-        // switch child button
-        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
-        getChildren(); // fill array list of children in share modal
-        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
-        setUpChildSwitch(switchChildButton); // set up button
-        switchChildButton.setOnClickListener(v -> {
-            sharedModel.getAllChildren().observe(this, children -> {
-                if (children != null) {
-                    showChildPopup(children);
-                }
-            });
-        });
 
         //notif button
         notification = findViewById(R.id.notificationButton);
@@ -145,6 +137,23 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
+        // get dailyCheckIn menu item to disable later
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+
+        // switch child button
+        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
+        getChildren(); // fill array list of children in share modal
+        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        setUpButtonAccess(switchChildButton, bottomNavigationView, dailyCheckIn, triage); // set up button
+        switchChildButton.setOnClickListener(v -> {
+            sharedModel.getAllChildren().observe(this, children -> {
+                if (children != null) {
+                    showChildPopup(children);
+                }
+            });
+        });
+
 
     }
 
@@ -165,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                             sharedModel.setChildren(list);
                         }
                         if(role.equals("provider")){
+                            List<String> list = user.getParentUid();
                             //switchChildButton.setVisibility(View.VISIBLE);
                         }
                     }
@@ -191,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void setUpChildSwitch(ImageButton switchChildButton) {
+    private void setUpButtonAccess(ImageButton switchChildButton, BottomNavigationView bottomNavigationView, MenuItem dailyCheckIn, MenuItem triage) {
         repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -201,13 +211,35 @@ public class MainActivity extends AppCompatActivity {
                         }
                         String role = user.getRole();
                         if(role.equals("child")){
+                            // enable dailycheckin and triage
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setVisible(true);
+                            triage.setEnabled(true);
+                            triage.setCheckable(true);
+                            triage.setVisible(true);
                             return;
                         }
                         if(role.equals("parent") ){
                             switchChildButton.setVisibility(View.VISIBLE);
+                            // enable dailycheckin and triage
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setVisible(true);
+                            triage.setEnabled(true);
+                            triage.setCheckable(true);
+                            triage.setVisible(true);
                         }
                         if(role.equals("provider")){
+                            // show button
                             switchChildButton.setVisibility(View.VISIBLE);
+                            // disable dailycheckin and triage
+                            dailyCheckIn.setEnabled(false);
+                            dailyCheckIn.setCheckable(false);
+                            dailyCheckIn.setVisible(false);
+                            triage.setEnabled(false);
+                            triage.setCheckable(false);
+                            triage.setVisible(false);
                         }
                     }
                     else{
