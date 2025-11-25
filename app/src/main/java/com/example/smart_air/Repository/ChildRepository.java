@@ -13,6 +13,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ public class ChildRepository {
     public void updateChild(Child child, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
         db.collection("children")
                 .document(child.getChildUid())
-                .set(child)
+                .set(child, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Child updated successfully");
                     onSuccess.onSuccess(aVoid);
