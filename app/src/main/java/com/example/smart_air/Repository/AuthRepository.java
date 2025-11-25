@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -382,6 +383,31 @@ public class AuthRepository {
     public void signOut() {
         auth.signOut();
     }
+
+    public void deleteCurrentUser(AuthContract.GeneralCallback callback) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            // delete firestore user document if it exists
+            DocumentReference userRef = db.collection("users").document(user.getUid());
+            userRef.delete()
+                    .addOnSuccessListener(aVoid1 -> Log.d("Auth", "User document deleted successfully"))
+                    .addOnFailureListener(e -> Log.w("Auth", "User document may not exist: " + e));
+            // delete Auth account
+            user.delete()
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("Auth", "Current user deleted successfully");
+                        callback.onSuccess();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("Auth", "Failed to delete current user", e);
+                        callback.onFailure(String.valueOf(e));
+                    });
+        } else {
+            Log.w("Auth", "No user currently signed in");
+            callback.onFailure("No user currently signed in");
+        }
+    }
+
 
     //HELPER FUNCTIONS
 

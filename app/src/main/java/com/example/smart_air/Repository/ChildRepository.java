@@ -378,12 +378,13 @@ public class ChildRepository {
         if(repo.getCurrentUser() == null) return;
         //find parent, and remove childUid from list
         DocumentReference parentRef = db.collection("users").document(repo.getCurrentUser().getUid());
+        DocumentReference childRefUser = db.collection("users").document(childUid);
         DocumentReference childRef = db.collection("children").document(childUid);
         parentRef.update("childrenUid", FieldValue.arrayRemove(childUid))
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Removed child from parent list");
-                    //delete the parent from the child
-                    childRef.update("parentUid", null)
+                    //delete the parent from the child's user document
+                    childRefUser.update("parentUid", null)
                             .addOnSuccessListener(aVoid2 -> {
                                 Log.d(TAG, "Removed parentUid list from child");
                                 //delete child document
