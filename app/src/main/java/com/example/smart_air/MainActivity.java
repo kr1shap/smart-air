@@ -115,12 +115,6 @@ public class MainActivity extends AppCompatActivity {
                 // add fragment for dashboard
             } else if (id == R.id.triage) {
                 // add fragment for triage
-                //TODO: REMOVE (JUST TESTING MANAGEMENT)
-                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof SettingsDialogFragment)) {
-                    SettingsDialogFragment dialog = new SettingsDialogFragment();
-                    dialog.show(getSupportFragmentManager(), "SettingsDialog");
-                }
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
