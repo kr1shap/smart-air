@@ -1,8 +1,9 @@
 package com.example.smart_air;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -14,20 +15,26 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
-import com.example.smart_air.modelClasses.Notification;
+import androidx.lifecycle.ViewModelProvider;
+
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
-import com.example.smart_air.modelClasses.enums.NotifType;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.gson.Gson;
 
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
@@ -38,6 +45,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
     User user;
+
+    // children tracking variables
+    private SharedChildViewModel sharedModel;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +137,161 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
+        // get dailyCheckIn menu item to disable later
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
 
+        // switch child button
+        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
+        getChildren(); // fill array list of children in share modal
+        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        setUpButtonAccess(switchChildButton, bottomNavigationView, dailyCheckIn, triage); // set up button
+        switchChildButton.setOnClickListener(v -> {
+            sharedModel.getAllChildren().observe(this, children -> {
+                if (children != null) {
+                    showChildPopup(children);
+                }
+            });
+        });
+
+
+    }
+
+    private void getChildren(){
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        if(role.equals("child")){
+                            return;
+                        }
+                        if(role.equals("parent") ){
+                            List<String> list = user.getChildrenUid();
+                            convertToNames(list);
+                        }
+                        if(role.equals("provider")){
+                            List<String> list = user.getParentUid();
+                            getParentsChildren(list);
+                        }
+                    }
+                });
+    }
+
+    private void getParentsChildren(List<String> list) {
+        List<String> allChildren = new ArrayList<>();
+        AtomicInteger processedCount = new AtomicInteger(0);
+        for(String parentId : list) {
+            repo.getUserDoc(parentId).addOnSuccessListener(doc -> {
+                if(doc.exists()) {
+                    User user = doc.toObject(User.class);
+                    if (user != null && user.getChildrenUid() != null) {
+                        allChildren.addAll(user.getChildrenUid());
+                    }
+                }
+
+                if (processedCount.incrementAndGet() == list.size()) {
+                    convertToNames(allChildren);
+                }
+            });
+        }
+    }
+
+    private void showChildPopup(List<Child> children) {
+        Integer value = sharedModel.getCurrentChild().getValue();
+        AtomicInteger currentIndex = new AtomicInteger(value != null ? value : 0); // currently selected item
+
+        String [] childArray = new String[children.size()];
+        for(int i = 0; i < children.size(); i++){
+            childArray[i] = children.get(i).getChildName();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Switch Child")
+                .setSingleChoiceItems(childArray, currentIndex.get(), (dialog, which) -> {
+                    sharedModel.setCurrentChild(which);
+
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+
+    private void setUpButtonAccess(ImageButton switchChildButton, BottomNavigationView bottomNavigationView, MenuItem dailyCheckIn, MenuItem triage) {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        if(role.equals("child")){
+                            // enable dailycheckin and triage
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setVisible(true);
+                            triage.setEnabled(true);
+                            triage.setCheckable(true);
+                            triage.setVisible(true);
+                            return;
+                        }
+                        if(role.equals("parent") ){
+                            switchChildButton.setVisibility(View.VISIBLE);
+                            // enable dailycheckin and triage
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setVisible(true);
+                            triage.setEnabled(true);
+                            triage.setCheckable(true);
+                            triage.setVisible(true);
+                        }
+                        if(role.equals("provider")){
+                            // show button
+                            switchChildButton.setVisibility(View.VISIBLE);
+                            // disable dailycheckin and triage
+                            dailyCheckIn.setEnabled(false);
+                            dailyCheckIn.setCheckable(false);
+                            dailyCheckIn.setVisible(false);
+                            triage.setEnabled(false);
+                            triage.setCheckable(false);
+                            triage.setVisible(false);
+                        }
+                    }
+                    else{
+                        return;
+                    }
+                });
+
+    }
+
+    private void convertToNames (List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getChildName().toLowerCase()));
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
     }
 
     private void setupNotificationIcon() {

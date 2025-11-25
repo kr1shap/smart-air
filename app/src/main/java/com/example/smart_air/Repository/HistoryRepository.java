@@ -48,11 +48,7 @@ public class HistoryRepository {
                                 activity.setChildUid(childUid);
                                 return;
                             }
-                            List<String> childrenUid = (List<String>) document.get("childrenUid");
-                            if (childrenUid != null && !childrenUid.isEmpty()) {
-                                activity.setChildUid(childrenUid.get(0));
-                                return;
-                            }
+                            activity.setChildUid("");
 
                             activity.exitScreen();
                         }
@@ -62,7 +58,7 @@ public class HistoryRepository {
 
 
 
-    public void getDailyCheckIns(String childUid, HistoryFragment activity){
+    public void getCards(String childUid, HistoryFragment activity){
         DocumentReference userDocRef = db.collection("dailyCheckIns").document(childUid);
         CollectionReference entriesRef = userDocRef.collection("entries");
 

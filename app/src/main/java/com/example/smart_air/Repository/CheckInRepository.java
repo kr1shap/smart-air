@@ -45,31 +45,24 @@ public class CheckInRepository {
                     String role = document.getString("role");
                     String correspondingUid = null;
 
-                    if ("parent".equals(role)) {
-                        List<String> list = (List<String>) document.get("childrenUid");
-                        if (list != null && !list.isEmpty()) {
-                            correspondingUid = list.get(0); // TODO: change this to hold the child uid selected on dashboard
-                        }
-                        else{
-                            activity.noUserFound();
-                            return;
-                        }
-                    } else if ("child".equals(role)) {
+                    if ("child".equals(role)) {
                         List<String> list = (List<String>) document.get("parentUid");
                         if (list != null && !list.isEmpty()) {
                             correspondingUid = list.get(0);
-                        }
-                        else{
+                        } else {
                             activity.noUserFound();
                             return;
                         }
+                    }
+                    else{
+                        correspondingUid = "";
                     }
 
                     if (correspondingUid == null){
                         activity.noUserFound();
                         return;
                     }
-                    activity.userInfoLoaded(role, correspondingUid);
+                    activity.userInfoLoaded(role,correspondingUid);
                 })
                 .addOnFailureListener(e -> {
                     activity.noUserFound();

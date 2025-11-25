@@ -2,7 +2,6 @@ package com.example.smart_air.Fragments;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,9 +16,12 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
+import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.slider.Slider;
@@ -37,6 +39,7 @@ public class CheckInFragment extends Fragment {
     String correspondingUid;
     String currentTriggers = "Tap to Select";
     String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
+    private SharedChildViewModel sharedModel;
     @Nullable
 
     @Override
@@ -55,6 +58,27 @@ public class CheckInFragment extends Fragment {
 
         CheckInRepository repo = new CheckInRepository();
         repo.getUserInfo(this);
+
+        // shared viewmodal
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
+            if (children != null && !children.isEmpty()) {
+                int currentIndex = sharedModel.getCurrentChild().getValue() != null
+                        ? sharedModel.getCurrentChild().getValue()
+                        : 0;
+
+                String currentChildUid = children.get(currentIndex).getChildUid();
+                this.correspondingUid = currentChildUid;
+            }
+        });
+
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
+            List<Child> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && currentIndex != null) {
+                correspondingUid = children.get(currentIndex).getChildUid();
+                refreshUINewChild(repo);
+            }
+        });
 
         // setting date
         TextView textView3 = view.findViewById(R.id.textView3);
@@ -138,6 +162,29 @@ public class CheckInFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private void refreshUINewChild(CheckInRepository repo) {
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
+        int checkedId = toggleGroup.getCheckedButtonId();
+
+        if (checkedId == R.id.buttonParent){
+            if(userRole.equals("child")){
+                repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
+            }
+            else if(userRole.equals("parent")){
+                repo.getUserInput(this,userRole,correspondingUid);
+            }
+        }
+        else if (checkedId == R.id.buttonChild){
+            if(userRole.equals("child")){
+                repo.getUserInput(this,userRole,correspondingUid);
+
+            }
+            else if(userRole.equals("parent")){
+                repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
+            }
+        }
     }
 
     public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef, int pre, int post) {
@@ -428,12 +475,14 @@ public class CheckInFragment extends Fragment {
     /**
      * a method that loads info about the user into variables
      * @param role, stores what type of user it is
-     * @param correspondingUid, stores it's corresponding child or user
      */
     public void userInfoLoaded(String role, String correspondingUid){
         userRole = role;
-        this.correspondingUid = correspondingUid;
         updateUIBasedOnRole(role);
+        if(correspondingUid.equals("")){
+            return;
+        }
+        this.correspondingUid = correspondingUid;
     }
 
     /**
