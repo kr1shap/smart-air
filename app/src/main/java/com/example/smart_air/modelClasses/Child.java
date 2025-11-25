@@ -7,7 +7,6 @@ public class Child {
 
     private String childUid;
     private String parentUid;
-    private String name;
     private Date dob;   //util date
     private String extraNotes;
     private int personalBest;
@@ -26,15 +25,13 @@ public class Child {
 
     public Child() {}
 
-    public Child(String name,
-                 String childUid,
+    public Child(String childUid,
                  String parentUid,
                  Date dob,
                  String extraNotes,
                  int personalBest,
                  Map<String, Boolean> sharing) {
 
-        this.name = name;
         this.childUid = childUid;
         this.parentUid = parentUid;
         this.dob = dob;
@@ -61,9 +58,6 @@ public class Child {
         this.parentUid = parentUid;
     }
 
-    public String getName(){ return name; }
-
-    public void setName(String name){this.name = name; }
     public Date getDob() {
         return dob;
     }

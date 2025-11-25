@@ -3,9 +3,8 @@ package com.example.smart_air.Presenters;
 import androidx.annotation.VisibleForTesting;
 
 import com.example.smart_air.Contracts.AuthContract;
-import com.example.smart_air.modelClasses.User;
-
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.modelClasses.User;
 
 public class SignInPresenter implements AuthContract.SignInContract.Presenter {
     private AuthContract.SignInContract.View view;

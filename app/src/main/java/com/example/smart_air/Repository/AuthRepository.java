@@ -8,6 +8,7 @@ import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthEmailException;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -15,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -26,7 +28,6 @@ import java.util.Map;
 import com.example.smart_air.Contracts.AuthContract.AuthCallback;
 
 public class AuthRepository {
-    private static final String TAG = "AuthRepository"; // just a label for LogCat
     private final FirebaseAuth auth;
     private final FirebaseFirestore db;
 
@@ -38,21 +39,13 @@ public class AuthRepository {
 
     //SIGNUP - PARENT
     public void signUpParent(String email, String password,
-                             AuthContract.AuthCallback callback) {
+                             AuthCallback callback) {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
-
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
-
-                        if(firebaseUser == null){
-                            Log.e(TAG, "User creation succeeded but getCurrentUser() " +
-                                    "returned null");
-                            callback.onFailure("Account created but unable to retrieve " +
-                                    "user info. Please try logging in.");
-                            return;
-                        }
-
+                        //TODO: Ensure we dont need line below (assert)
+                        assert firebaseUser != null; //assert that not null, b/c task successful
                         User user = new User(
                                 firebaseUser.getUid(), //UID created - save to firestore
                                 email.toLowerCase(), //email (lowercase as auth makes all lowercase)
@@ -60,7 +53,6 @@ public class AuthRepository {
                                 "parent",
                                 null ,//no parent uid needed
                                 List.of() //empty list
-
                         );
 
                         saveUserToFirestore(user, callback);
@@ -72,32 +64,18 @@ public class AuthRepository {
 
     // SIGNUP - Provider
     public void signUpProvider(String email, String password,
-                               String accessCode, AuthContract.AuthCallback callback) {
-
+                               String accessCode, AuthCallback callback) {
         checkAccessCode(accessCode, "provider", parentUid -> {
-
             if (parentUid != null) {
                 //if valid access code (non null)
                 auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener(task -> {
-
                             if (task.isSuccessful()) {
-
-                                FirebaseUser firebaseUser = auth.getCurrentUser();
-
-                                if (firebaseUser == null) {
-                                    Log.e(TAG, "Provider account created but getCurrentUser() returned null");
-                                    callback.onFailure("Account created but unable to retrieve user info. Please try logging in.");
-                                    return;
-                                }
-
-                                String providerUid = firebaseUser.getUid();
-                                String providerEmail = email.toLowerCase();
 
                                 // create user to save
                                 User user = new User(
-                                        providerUid,
-                                        providerEmail,
+                                        auth.getCurrentUser().getUid(),
+                                        email.toLowerCase(),
                                         null,
                                         "provider",
                                         List.of(parentUid),
@@ -109,9 +87,7 @@ public class AuthRepository {
                                     @Override
                                     public void onSuccess(User savedUser) {
                                         //invite as used, and on success
-                                        // mark invite w/ provider details
-                                        markInviteAsUsedWithDetails(accessCode, providerUid,
-                                                providerEmail);
+                                        markInviteAsUsed(accessCode);
                                         callback.onSuccess(savedUser); //use callback passed in
                                     }
 
@@ -134,86 +110,71 @@ public class AuthRepository {
     //SIGNUP - child
     public void signUpChild(String username, String accessCode, String password,
                             AuthCallback callback) {
-
         checkAccessCode(accessCode, "child", parentUid -> {
-
             if (parentUid != null) {
-
                 //dummy email for child
                 String dummyEmail = username.toLowerCase().trim() + "_child@smartair.com";
 
                 auth.createUserWithEmailAndPassword(dummyEmail, password)
                         .addOnCompleteListener(authTask -> {
-
                             if (authTask.isSuccessful()) {
-
-                                FirebaseUser firebaseUser = auth.getCurrentUser();
-
-                                if(firebaseUser == null){
-                                    Log.e(TAG, "User creation succeeded but getCurrentUser() " +
-                                            "returned null");
-                                    callback.onFailure("Account created but unable to retrieve user info. Please try logging in.");
-                                    return;
-                                }
-
-                                String childUid = firebaseUser.getUid();
-
                                 //user to save to firestore
+                                //TODO: fix yellow underline for null ptr exception (should NEVER occur though)
                                 User user = new User(
-                                        childUid,
+                                        auth.getCurrentUser().getUid(),
                                         dummyEmail,
                                         username,
                                         "child",
-                                        List.of(parentUid), // link to parent
-                                        List.of() // last field of children one null
+                                        List.of(parentUid), //link to parent
+                                        List.of() //last field of children one null
                                 );
 
-                                // Call save function (helper)
-                                saveUserToFirestore(user, new AuthContract.AuthCallback() {
+                                //Call save function (helper)
+                                saveUserToFirestore(user, new AuthCallback() {
                                     @Override
                                     public void onSuccess(User savedUser) {
                                         // Mark invite as used
-                                        addChildToParent(parentUid, childUid,
-                                                new AuthContract.GeneralCallback() {
+                                        addChildToParent(parentUid, auth.getCurrentUser().getUid(), new AuthContract.GeneralCallback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
                                                     @Override
                                                     public void onSuccess() {
-                                                        addChildCollection(parentUid, childUid, username,
-                                                                new AuthContract.GeneralCallback() {
-                                                                    @Override
-                                                                    public void onSuccess() {
-                                                                        // invite as used
-                                                                        markInviteAsUsedWithDetails(accessCode,
-                                                                                childUid, username);
-                                                                        callback.onSuccess(savedUser);
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onFailure(String error) {
-                                                                        // give error
-                                                                        callback.onFailure(error);
-                                                                    }
-                                                                });
+                                                        // invite as used
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
                                                     }
+
                                                     @Override
                                                     public void onFailure(String error) {
-                                                        // even if adding to parent fails, child account was created
-                                                        // still, attempt to add to children collection
-                                                        addChildCollection(parentUid, savedUser.getUid(), username,
-                                                                new AuthContract.GeneralCallback() {
-                                                                    @Override
-                                                                    public void onSuccess() {
-                                                                        markInviteAsUsedWithDetails(accessCode, childUid, username);
-                                                                        callback.onSuccess(savedUser);
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onFailure(String childError) {
-                                                                        markInviteAsUsedWithDetails(accessCode, childUid, username);
-                                                                        callback.onSuccess(savedUser);
-                                                                    }
-                                                                });
+                                                        // child user created but child collection failed
+                                                        // still, mark invite as used and continue
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
                                                     }
                                                 });
+
+                                            }
+
+                                            @Override
+                                            public void onFailure(String error) {
+                                                // even if adding to parent fails, child account was created
+                                                // still, attempt to add to children collection
+                                                addChildCollection(parentUid, savedUser.getUid(), new AuthContract.GeneralCallback() {
+                                                    @Override
+                                                    public void onSuccess() {
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(String childError) {
+                                                        markInviteAsUsed(accessCode);
+                                                        callback.onSuccess(savedUser);
+                                                    }
+                                                });
+                                            }
+                                        });
                                     }
                                     @Override
                                     public void onFailure(String error) {
@@ -231,26 +192,24 @@ public class AuthRepository {
     }
 
     //Helper method to add a new child object to children db
-    private void addChildCollection(String parentUid, String childUid, String childName,
-                                    AuthContract.GeneralCallback callback) {
+    private void addChildCollection(String parentUid, String childUid, AuthContract.GeneralCallback callback) {
         Map<String, Boolean> sharing = new HashMap<>();
-        sharing.put("rescue", false);
-        sharing.put("controller", false);
-        sharing.put("symptoms", false);
-        sharing.put("triggers",false);
-        sharing.put("pef",false);
-        sharing.put("triage",false);
-        sharing.put("charts",false);
+        sharing.put("rescue", true);
+        sharing.put("controller_as", true);
+        sharing.put("symptoms", true);
+        sharing.put("triggers",true);
+        sharing.put("pef",true);
+        sharing.put("triage",true);
+        sharing.put("charts",true);
 
         // Create the object
         Child child = new Child(
-                childName,          // name
                 childUid,           // childUid
                 parentUid,          // parentUid
-                new Date(),         // make it current date, parent will modify
-                null,               // extraNotes
-                0,                  // personalBest
-                sharing             // sharing
+                new Date(),        // make it current date, parent will modify
+                null,              // extraNotes
+                0,                // personalBest
+                sharing           // sharing
         );
 
         db.collection("children")
@@ -264,6 +223,7 @@ public class AuthRepository {
                     Log.e("Firestore", "Failed to add child", e);
                     callback.onFailure(e.getMessage());
                 });
+
     }
 
 
@@ -299,46 +259,33 @@ public class AuthRepository {
 
     //Helper: check access code validity
     private void checkAccessCode(String code, String targetRole, AccessCodeCallback callback) {
-        long now = System.currentTimeMillis();
-        Log.d(TAG, "Checking access code: " + code + " for role: " + targetRole);
-
+        Timestamp now = Timestamp.now(); //TODO: modify so u check access code using long form, not timestamp
+        Log.d("auth repo access code", "target role: " + targetRole);
         db.collection("invites")
                 .whereEqualTo("code", code)
                 .whereEqualTo("targetRole", targetRole)
                 .whereEqualTo("used", false)
-                .whereGreaterThanOrEqualTo("expiresAt", now)
+                .whereGreaterThanOrEqualTo("expiresAt", System.currentTimeMillis())
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        String parentUid = querySnapshot.getDocuments().get(0).getString("parentUid");
-                        Log.d(TAG, "Access code valid! Parent UID: " + parentUid);
-                        callback.onResult(parentUid);
-                    } else {
-                        Log.d(TAG, "No valid invite found");
-                        callback.onResult(null);
-                    }
+                    callback.onResult(querySnapshot.isEmpty() ? null : querySnapshot.getDocuments().get(0).getString("parentUid"));
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error checking access code", e);
-                    callback.onResult(null);
-                });
+                .addOnFailureListener(e -> callback.onResult(null));
     }
 
-    //Mark invite as used AFTER sign up (not after validity) - WITH user details
-    private void markInviteAsUsedWithDetails(String code, String usedByUid, String usedByIdentifier) {
-        Log.d(TAG, "Marking invite " + code + " as used by: " + usedByIdentifier);
-
+    //Mark invite as used AFTER sign up (not after validity)
+    private void markInviteAsUsed(String code) {
         db.collection("invites")
-                .document(code)
-                .update(
-                        "used", true,
-                        "usedByUid", usedByUid,
-                        "usedByEmail", usedByIdentifier
-                )
-                .addOnSuccessListener(aVoid ->
-                        Log.d(TAG, "Invite marked as used successfully"))
-                .addOnFailureListener(e ->
-                        Log.e(TAG, "Error marking invite as used", e));
+            .whereEqualTo("code", code)
+            .get()
+            .addOnSuccessListener(querySnapshot -> {
+                if (!querySnapshot.isEmpty()) {
+                    DocumentSnapshot doc = querySnapshot.getDocuments().get(0);
+                    db.collection("invites")
+                            .document(doc.getId())
+                            .update("used", true);
+                }
+            });
     }
 
     //ADD USER TO 'USERS'
@@ -384,12 +331,6 @@ public class AuthRepository {
     }
 
     //HELPER FUNCTIONS
-
-    //Helper function to check if valid email
-    public boolean validEmail(String email) {
-        String emailTrim = email.trim();
-        return !emailTrim.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(emailTrim).matches();
-    }
 
     //Helper function to tailor firebase auth msg for better ux
     private String mapFirebaseAuthError(Exception e) {

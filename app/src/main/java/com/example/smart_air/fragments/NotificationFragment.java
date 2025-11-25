@@ -15,15 +15,19 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.LandingPageActivity;
 import com.example.smart_air.MainActivity;
 import com.example.smart_air.R;
+import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.adapter.NotificationsAdapter;
 import com.example.smart_air.modelClasses.Notification;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.HashMap;

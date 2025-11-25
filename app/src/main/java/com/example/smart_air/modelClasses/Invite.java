@@ -7,8 +7,6 @@ public class Invite {
     private long expiresAt;
     private boolean used;
     private long createdAt;
-    private String usedByUid;
-    private String usedByEmail;
 
     public Invite() {}
 
@@ -19,8 +17,6 @@ public class Invite {
         this.expiresAt = expiresAt;
         this.used = false;
         this.createdAt = System.currentTimeMillis();
-        this.usedByUid = null;
-        this.usedByEmail = null;
     }
 
     // get and set
@@ -41,10 +37,4 @@ public class Invite {
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
-
-    public String getUsedByUid() { return usedByUid; }
-    public void setUsedByUid(String usedByUid) { this.usedByUid = usedByUid; }
-
-    public String getUsedByEmail() { return usedByEmail; }
-    public void setUsedByEmail(String usedByEmail) { this.usedByEmail = usedByEmail; }
 }
