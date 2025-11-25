@@ -19,7 +19,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
-import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
@@ -27,8 +26,6 @@ import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
