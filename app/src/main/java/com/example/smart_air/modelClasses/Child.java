@@ -15,6 +15,7 @@ public class Child {
     private Map<String, Boolean> sharing; //toggle sharing
 
     //new fields
+    private Map<String, Boolean> weeklySchedule;        // weekly schedule
     private Map<String, Boolean> badges;
     private Map<String, Object> techniqueStats;
     private Map<String, Object> controllerStats;
@@ -26,10 +27,6 @@ public class Child {
         this.childUid = childUid;
         this.name = name;
     }
-    public String getChildName(){
-        return name;
-    }
-
 
     public Child() {  initializeDefaults(); } //for safety, will add these when u auto convert!
 
@@ -56,7 +53,14 @@ public class Child {
     //initalize defaults
 
     private void initializeDefaults() {
-
+        this.weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", false);
+        weeklySchedule.put("Tuesday", false);
+        weeklySchedule.put("Wednesday", false);
+        weeklySchedule.put("Thursday", false);
+        weeklySchedule.put("Friday", false);
+        weeklySchedule.put("Saturday", false);
+        weeklySchedule.put("Sunday", false);
         // badges
         this.badges = new HashMap<>();
         badges.put("techniqueBadge", false);
@@ -149,4 +153,8 @@ public class Child {
     public Map<String, Integer> getThresholds() { return thresholds; }
 
     public void setThresholds(Map<String, Integer> thresholds) { this.thresholds = thresholds; }
+
+    public Map<String, Boolean> getWeeklySchedule() { return weeklySchedule; }
+
+    public void setWeeklySchedule(Map<String, Boolean> weeklySchedule) { this.weeklySchedule = weeklySchedule; }
 }

@@ -112,6 +112,12 @@ public class MainActivity extends AppCompatActivity {
                 // add fragment for dashboard
             } else if (id == R.id.triage) {
                 // add fragment for triage
+                //TODO: REMOVE (JUST TESTING MANAGEMENT)
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof SettingsDialogFragment)) {
+                    SettingsDialogFragment dialog = new SettingsDialogFragment();
+                    dialog.show(getSupportFragmentManager(), "SettingsDialog");
+                }
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
@@ -206,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
         String [] childArray = new String[children.size()];
         for(int i = 0; i < children.size(); i++){
-            childArray[i] = children.get(i).getChildName();
+            childArray[i] = children.get(i).getName();
         }
 
         new AlertDialog.Builder(this)
@@ -286,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
                         children.add(currentChild);
 
                         if (counter.incrementAndGet() == uid.size()) {
-                            children.sort(Comparator.comparing(c -> c.getChildName().toLowerCase()));
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
                             sharedModel.setChildren(children);
                         }
                     });

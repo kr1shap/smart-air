@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,9 +20,12 @@ import androidx.fragment.app.DialogFragment;
 
 import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.modelClasses.Child;
+import com.google.android.material.chip.Chip;
 import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,11 +38,14 @@ public class EditChildDialogFragment extends DialogFragment {
     private static final String ARG_CHILD = "child";
     private Child child;
     private ChildRepository childRepo;
-    private EditText etChildName, etChildDob, etChildNotes, etPersonalBest;
+    private EditText etChildName, etChildDob, etChildNotes, etPersonalBest, etTresholdTechnique, etTresholdRescue;
     private SwitchCompat switchRescue, switchController, switchSymptoms,
             switchTriggers, switchPef, switchTriage, switchCharts;
     private Date selectedDate;
     private OnChildUpdatedListener listener;
+
+    //Toggle buttons
+    private Chip chipMon, chipTues, chipWed, chipThurs, chipFri, chipSat, chipSun;
 
     public interface OnChildUpdatedListener {
         void onChildUpdated();
@@ -80,6 +87,19 @@ public class EditChildDialogFragment extends DialogFragment {
         etChildNotes = view.findViewById(R.id.et_child_notes);
         etPersonalBest = view.findViewById(R.id.et_personal_best);
 
+        etTresholdTechnique = view.findViewById(R.id.et_badge_threshold_tech);
+        etTresholdRescue = view.findViewById(R.id.et_badge_threshold_rescue);
+
+        //toggle buttons
+        chipMon = view.findViewById(R.id.chipMon);
+        chipTues = view.findViewById(R.id.chipTues);
+        chipWed = view.findViewById(R.id.chipWed);
+        chipThurs = view.findViewById(R.id.chipThurs);
+        chipFri = view.findViewById(R.id.chipFri);
+        chipSat = view.findViewById(R.id.chipSat);
+        chipSun = view.findViewById(R.id.chipSun);
+
+
         switchRescue = view.findViewById(R.id.switch_rescue);
         switchController = view.findViewById(R.id.switch_controller);
         switchSymptoms = view.findViewById(R.id.switch_symptoms);
@@ -109,6 +129,31 @@ public class EditChildDialogFragment extends DialogFragment {
 
             if (child.getPersonalBest() > 0) {
                 etPersonalBest.setText(String.valueOf(child.getPersonalBest()));
+            }
+
+            if(child.getThresholds() != null) {
+                if(child.getThresholds().containsKey("quality_thresh")) {
+                    etTresholdTechnique.setText(String.valueOf(child.getThresholds().get("quality_thresh")));
+                }
+                if(child.getThresholds().containsKey("rescue_thresh")) {
+                    etTresholdRescue.setText(String.valueOf(child.getThresholds().get("rescue_thresh")));
+                }
+            }
+
+            //Load the badge thresholds
+            Map<String, Boolean> weeklySchedule = child.getWeeklySchedule();        // weekly schedule
+            // Load sharing toggles - FIXED
+            if (weeklySchedule != null) {
+                chipMon.setChecked(weeklySchedule.getOrDefault("Monday", false));
+                chipTues.setChecked(weeklySchedule.getOrDefault("Tuesday", false));
+                chipWed.setChecked(weeklySchedule.getOrDefault("Wednesday", false));
+                chipThurs.setChecked(weeklySchedule.getOrDefault("Thursday", false));
+                chipFri.setChecked(weeklySchedule.getOrDefault("Friday", false));
+                chipSat.setChecked(weeklySchedule.getOrDefault("Saturday", false));
+                chipSun.setChecked(weeklySchedule.getOrDefault("Sunday", false));
+
+            } else {
+                Log.w(TAG, "Weekly map is null, defaulting to false");
             }
 
             // Load sharing toggles - FIXED
@@ -215,6 +260,55 @@ public class EditChildDialogFragment extends DialogFragment {
         } else {
             child.setPersonalBest(0);
         }
+
+        //UPDATE THRESHOLDS
+        String tresholdTechStr = etTresholdTechnique.getText().toString().trim();
+        String rescueStr = etTresholdRescue.getText().toString().trim();
+        Map<String, Integer> thresholds = new HashMap<>();
+        //for technique thresh
+        if (!tresholdTechStr.isEmpty()) {
+            try {
+                int number = Integer.parseInt(tresholdTechStr);
+                if (number < 0) {
+                    Toast.makeText(getContext(), "Threshold for technique must be positive", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                thresholds.put("quality_thresh", number);
+            } catch (NumberFormatException e) {
+                Toast.makeText(getContext(), "Please enter a valid number", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            thresholds.put("quality_thresh", 10); //default 10
+        }
+        //for rescue thresh
+        if (!rescueStr.isEmpty()) {
+            try {
+                int number = Integer.parseInt(rescueStr);
+                if (number < 0) {
+                    Toast.makeText(getContext(), "Threshold for rescue must be positive", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                thresholds.put("rescue_thresh", number);
+            } catch (NumberFormatException e) {
+                Toast.makeText(getContext(), "Please enter a valid number", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            thresholds.put("rescue_thresh", 4); //default 4
+        }
+        child.setThresholds(thresholds);
+
+        // Update weekly toggles
+        Map<String, Boolean> weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", chipMon.isChecked());
+        weeklySchedule.put("Tuesday", chipTues.isChecked());
+        weeklySchedule.put("Wednesday", chipWed.isChecked());
+        weeklySchedule.put("Thursday", chipThurs.isChecked());
+        weeklySchedule.put("Friday", chipFri.isChecked());
+        weeklySchedule.put("Saturday", chipSat.isChecked());
+        weeklySchedule.put("Sunday", chipSun.isChecked());
+        child.setWeeklySchedule(weeklySchedule);
 
         // Update sharing toggles
         Map<String, Boolean> sharing = new HashMap<>();
