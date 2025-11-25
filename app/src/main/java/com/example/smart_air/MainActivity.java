@@ -25,7 +25,6 @@ import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
@@ -147,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         switchChildButton.setOnClickListener(v -> {
             sharedModel.getAllChildren().observe(this, children -> {
                 if (children != null) {
-                    showChildPopup(children.get(1));
+                    showChildPopup(children);
                 }
             });
         });
@@ -169,8 +168,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("parent") ){
                             List<String> list = user.getChildrenUid();
-                            convertToNames(list);
-                            //sharedModel.setChildren(list);
+                            sharedModel.setChildren(list);
                         }
                         if(role.equals("provider")){
                             List<String> list = user.getParentUid();
@@ -178,31 +176,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
-    }
-
-    private void convertToNames(List<String> list) {
-        List<List<String>> listWithBoth = new ArrayList<>();
-        List <String> listWithNames = new ArrayList<String>();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        AtomicInteger counter = new AtomicInteger(0);
-
-        for(String childUid: list){
-            db.collection("children").document(childUid).get()
-                    .addOnSuccessListener(doc -> {
-                        if(doc.exists()){
-                            String name = doc.getString("name");
-                            if (name != null) {listWithNames.add(name);}
-                        }
-                        else{
-                            listWithNames.add(childUid);
-                        }
-                        if (counter.incrementAndGet() == list.size()) {
-                            listWithBoth.add(list);
-                            listWithBoth.add(listWithNames);
-                            sharedModel.setChildren(listWithBoth);
-                        }
-                    });
-        }
     }
 
     private void getParentsChildren(List<String> list) {
@@ -218,8 +191,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (processedCount.incrementAndGet() == list.size()) {
-                    convertToNames(allChildren);
-                    //sharedModel.setChildren(allChildren);
+                    sharedModel.setChildren(allChildren);
                 }
             });
         }
