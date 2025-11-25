@@ -1,11 +1,11 @@
 package com.example.smart_air.Presenters;
 
-
 import androidx.annotation.VisibleForTesting;
 
 import com.example.smart_air.Contracts.AuthContract;
-import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.User;
+
+import com.example.smart_air.Repository.AuthRepository;
 
 public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     private AuthContract.SignUpContract.View view; //is the UI handling
