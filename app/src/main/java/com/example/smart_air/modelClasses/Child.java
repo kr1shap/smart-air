@@ -11,7 +11,6 @@ public class Child {
     private String extraNotes;
     private int personalBest;
     private Map<String, Boolean> sharing; //toggle sharing
-    private String name;
 
     // made for dropdown
     public Child(String childUid, String name){

@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
+import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
@@ -26,6 +27,8 @@ import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -48,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
+    private ChildRepository childRepo;
 
 
     @Override
@@ -137,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // get dailyCheckIn menu item to disable later
+        // get menu item to disable/enable
         MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
 
@@ -153,6 +157,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         });
+
+        // update child switching list
+        childRepo = new ChildRepository();
+        //if (repo.getCurrentUser().getUid().equals("parent")) {
+            // gets multiple children
+            childRepo.getChildrenByParent(
+                    repo.getCurrentUser().getUid(),
+                    children -> {
+                        getChildren();
+                    },
+                    e -> {
+                        Toast.makeText(this, "Failed to load children: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+            );
+        //}
 
 
     }
