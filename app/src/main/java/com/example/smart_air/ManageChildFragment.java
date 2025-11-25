@@ -1,6 +1,7 @@
 package com.example.smart_air;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -35,7 +36,6 @@ import java.util.Locale;
 
 public class ManageChildFragment extends Fragment implements ChildAdapter.OnChildClickListener {
 
-
     private static final String TAG = "ManageChildFragment";
     private ChildRepository childRepo;
     private AuthRepository authRepo;
@@ -46,18 +46,26 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
     private Button btnGenerateCode;
     private LinearLayout inviteCodeSection;
     private Child selectedChild;
-
+    private View view;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_manage_child, container, false);
+        return inflater.inflate(R.layout.fragment_manage_child, container, false);
+    }
 
+    @Override
+    public void onViewCreated(@NonNull View view,
+                              @javax.annotation.Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        this.view = view;
 
         childRepo = new ChildRepository();
         authRepo = new AuthRepository();
         childrenList = new ArrayList<>();
 
+        //check if user is authenticated
+        if (authRepo.getCurrentUser() == null) { redirectToLogin(); return; }
 
         rvChildren = view.findViewById(R.id.rv_children);
         tvNoChildren = view.findViewById(R.id.tv_no_children);
@@ -67,15 +75,10 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         tvCodeStatus = view.findViewById(R.id.tv_code_status);
         btnGenerateCode = view.findViewById(R.id.btn_generate_code);
 
-
         setupRecyclerView();
         loadChildren();
 
-
         btnGenerateCode.setOnClickListener(v -> generateInviteCode());
-
-
-        return view;
     }
 
 
@@ -93,19 +96,13 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
             return;
         }
 
-
         Log.d(TAG, "Loading children for parent: " + currentUser.getUid());
-
 
         childRepo.getChildrenByParent(currentUser.getUid(),
                 children -> {
                     childrenList.clear();
                     childrenList.addAll(children);
                     childAdapter.notifyDataSetChanged();
-
-
-                    Log.d(TAG, "Loaded " + children.size() + " children");
-
 
                     if (children.isEmpty()) {
                         tvNoChildren.setVisibility(View.VISIBLE);
@@ -114,16 +111,10 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
                     } else {
                         tvNoChildren.setVisibility(View.GONE);
                         rvChildren.setVisibility(View.VISIBLE);
-
-
                         // Select first child by default
-                        if (selectedChild == null && !children.isEmpty()) {
-                            selectedChild = children.get(0);
-                        }
+                        if (selectedChild == null && !children.isEmpty()) { selectedChild = children.get(0); }
                     }
-
-
-                    // Always check for existing invite (whether or not there are children)
+                    //check if invite exists (that is unused)
                     checkExistingInvite();
                 },
                 e -> {
@@ -134,18 +125,15 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
     }
 
 
+    //PRIVATE FUNCTION: Checks if an invite exists that is unused!
     private void checkExistingInvite() {
         FirebaseUser currentUser = authRepo.getCurrentUser();
         if (currentUser == null) return;
 
-
         childRepo.getActiveInviteForParent(currentUser.getUid(), "child",
                 invite -> {
-                    if (invite != null) {
-                        displayInviteCode(invite);
-                    } else {
-                        showNoCodeMessage();
-                    }
+                    if (invite != null) { displayInviteCode(invite);}
+                    else { showNoCodeMessage();} //no message if no code there
                     inviteCodeSection.setVisibility(View.VISIBLE);
                 },
                 e -> {
@@ -156,6 +144,7 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
     }
 
 
+    //generates invite code, if user clicks generate
     private void generateInviteCode() {
         FirebaseUser currentUser = authRepo.getCurrentUser();
         if (currentUser == null) {
@@ -163,13 +152,10 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
             return;
         }
 
-
         btnGenerateCode.setEnabled(false);
-        btnGenerateCode.setText("Generating...");
-
+        btnGenerateCode.setText("Re-generate..."); //allows them to revoke
 
         Log.d(TAG, "Generating invite code for parent: " + currentUser.getUid());
-
 
         childRepo.generateInviteCode(currentUser.getUid(), "child",
                 invite -> {
@@ -177,39 +163,41 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
                     displayInviteCode(invite);
                     Toast.makeText(getContext(), "Invite code generated!", Toast.LENGTH_SHORT).show();
                     btnGenerateCode.setEnabled(true);
-                    btnGenerateCode.setText("Generate New Code");
+                    btnGenerateCode.setText("Re-generate New Code");
                 },
                 e -> {
                     Log.e(TAG, "Error generating invite code", e);
                     Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     btnGenerateCode.setEnabled(true);
-                    btnGenerateCode.setText("Generate Code");
+                    btnGenerateCode.setText("Re-generate New Code");
                 });
     }
 
 
+    //displays invite code
     private void displayInviteCode(Invite invite) {
         tvInviteCode.setText("Code: " + invite.getCode());
         tvInviteCode.setVisibility(View.VISIBLE);
-
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
         String expiryDateStr = sdf.format(new Date(invite.getExpiresAt()));
         tvExpiryDate.setText("Expires: " + expiryDateStr);
         tvExpiryDate.setVisibility(View.VISIBLE);
 
-
         if (invite.isUsed()) {
             tvCodeStatus.setText("⚠ Code has been used. Generate a new one to add another child.");
+            tvCodeStatus.setVisibility(View.VISIBLE);
+            btnGenerateCode.setText("Generate New Code");
+        } else if (invite.getExpiresAt() < System.currentTimeMillis()) {
+            tvCodeStatus.setText("⚠ Code has been expired. Generate a new one to add a child.");
             tvCodeStatus.setVisibility(View.VISIBLE);
             btnGenerateCode.setText("Generate New Code");
         } else {
             tvCodeStatus.setText("Share this code with your child to link their account.");
             tvCodeStatus.setVisibility(View.VISIBLE);
-            btnGenerateCode.setText("Generate New Code");
+            btnGenerateCode.setText("Re-generate Code");
         }
     }
-
 
     private void showNoCodeMessage() {
         tvInviteCode.setVisibility(View.GONE);
@@ -219,7 +207,6 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         btnGenerateCode.setText("Generate Code");
     }
 
-
     @Override
     public void onChildEdit(Child child) {
         Log.d(TAG, "Editing child: " + child.getName());
@@ -228,7 +215,7 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         editDialog.show(getParentFragmentManager(), "EditChildDialog");
     }
 
-
+    //TODO: delete the child account
     @Override
     public void onChildDelete(Child child) {
         // Show confirmation dialog before deleting
@@ -251,12 +238,19 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
                 .show();
     }
 
-
     @Override
     public void onResume() {
         super.onResume();
         // Refresh data when fragment becomes visible
         loadChildren();
+    }
+
+    //redirect if user unauth, invalid
+    private void redirectToLogin() {
+        if (getActivity() == null) return;
+        Toast.makeText(getContext(), "Please sign in again", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(getActivity(), LandingPageActivity.class));
+        getActivity().finish();
     }
 }
 

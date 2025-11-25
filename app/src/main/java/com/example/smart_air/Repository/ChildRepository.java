@@ -2,14 +2,17 @@ package com.example.smart_air.Repository;
 
 import android.util.Log;
 
+import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +21,15 @@ import java.util.Random;
 
 public class ChildRepository {
 
-    private static final String TAG = "ChildRepository";
+    private static final String TAG = "ChildRepository"; //for logcat
     private final FirebaseFirestore db;
 
     public ChildRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this.db = FirebaseInitalizer.getDb();
     }
+
+
+    //GENERAL CHILD REPO FUNCTIONS
 
     // add a new child
     public void addChild(Child child, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
@@ -60,35 +66,16 @@ public class ChildRepository {
                 });
     }
 
-    // delete child
-    public void deleteChild(String childUid, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
-        db.collection("children")
-                .document(childUid)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Child deleted successfully");
-                    onSuccess.onSuccess(aVoid);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error deleting child", e);
-                    onFailure.onFailure(e);
-                });
-    }
-
     // get all children by parent UID
     public void getChildrenByParent(String parentUid, OnSuccessListener<List<Child>> onSuccess,
                                     OnFailureListener onFailure) {
-        Log.d(TAG, "Fetching children for parent: " + parentUid);
-
         db.collection("children").whereEqualTo("parentUid", parentUid)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Child> children = new ArrayList<>();
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         Child child = doc.toObject(Child.class);
-                        if (child != null) {
-                            children.add(child);
-                        }
+                        if (child != null) { children.add(child); }
                     }
                     Log.d(TAG, "Retrieved " + children.size() + " children for parent: " + parentUid);
                     onSuccess.onSuccess(children);
@@ -100,6 +87,7 @@ public class ChildRepository {
     }
 
     // generate invite code (6-8 digit unique code)
+    //checks first if the code is unique, and replaces the UNUSED code from parent, rather than generating 1000 of them!!
     public void generateInviteCode(String parentUid, String targetRole, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
         String code = generateRandomCode();
         // expires 7 days from now
@@ -107,23 +95,41 @@ public class ChildRepository {
 
         Invite invite = new Invite(code, parentUid, targetRole, expiresAt);
 
-        Log.d(TAG, "Generating invite code: " + code);
-        Log.d(TAG, "ParentUid: " + parentUid);
-        Log.d(TAG, "TargetRole: " + targetRole);
-        Log.d(TAG, "ExpiresAt: " + expiresAt);
-        Log.d(TAG, "Current time: " + System.currentTimeMillis());
-
         db.collection("invites")
-                .document(code)
-                .set(invite)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Invite code generated successfully: " + code);
-                    onSuccess.onSuccess(invite);
+                .whereEqualTo("parentUid", parentUid)
+                .whereEqualTo("targetRole", targetRole) //only query invites that are of specfic role
+                .get()
+                .addOnSuccessListener(query -> {
+                    //get all unused invites (should only be one though, but for now assume list)
+                    List<DocumentSnapshot> unused = new ArrayList<>();
+                    for (DocumentSnapshot doc : query.getDocuments()) {
+                        Boolean used = doc.getBoolean("used");
+                        if (used == null || !used) { unused.add(doc); }
+                    }
+                    //if its not empty, we replace the code
+                    if (!unused.isEmpty()) {
+                        // Replace unused code
+                        DocumentSnapshot unusedInvite = unused.get(0);
+                        Log.d(TAG, "Found unused invite to replace: " + unusedInvite.getId());
+
+                        //collision before regenerating code
+                        checkCodeCollision(code,
+                                () -> {
+                                    unusedInvite.getReference().delete()
+                                            .addOnSuccessListener(v -> add_replaceInvite(invite, onSuccess, onFailure))
+                                            .addOnFailureListener(onFailure);
+                                },
+                                onFailure
+                        );   //we are able to delete the invite, and replace it with a new one
+
+                    } else {
+                        // generate a new one if none are found!
+                        Log.d(TAG, "No unused invites; creating new.");
+                        checkCodeCollision(code, () -> add_replaceInvite(invite, onSuccess, onFailure), onFailure);
+                    }
+
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error generating invite code", e);
-                    onFailure.onFailure(e);
-                });
+                .addOnFailureListener(onFailure);
     }
 
     // validate invite code
@@ -150,14 +156,6 @@ public class ChildRepository {
                     }
 
                     long currentTime = System.currentTimeMillis();
-                    Log.d(TAG, "Invite details:");
-                    Log.d(TAG, "  Code: " + invite.getCode());
-                    Log.d(TAG, "  ParentUid: " + invite.getParentUid());
-                    Log.d(TAG, "  TargetRole: " + invite.getTargetRole());
-                    Log.d(TAG, "  ExpiresAt: " + invite.getExpiresAt());
-                    Log.d(TAG, "  Current time: " + currentTime);
-                    Log.d(TAG, "  Time until expiry: " + (invite.getExpiresAt() - currentTime) + "ms");
-                    Log.d(TAG, "  Used: " + invite.isUsed());
 
                     // check if expired
                     if (currentTime > invite.getExpiresAt()) {
@@ -210,7 +208,7 @@ public class ChildRepository {
 
         // update users parentUid list
         db.collection("users")
-                .document(userUid)
+                .document(userUid) //find child or provider
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     User user = documentSnapshot.toObject(User.class);
@@ -221,12 +219,8 @@ public class ChildRepository {
                     }
 
                     List<String> parentUids = user.getParentUid();
-                    if (parentUids == null) {
-                        parentUids = new ArrayList<>();
-                    }
-                    if (!parentUids.contains(parentUid)) {
-                        parentUids.add(parentUid);
-                    }
+                    if (parentUids == null) { parentUids = new ArrayList<>(); }
+                    if (!parentUids.contains(parentUid)) { parentUids.add(parentUid); }
 
                     db.collection("users")
                             .document(userUid)
@@ -269,12 +263,8 @@ public class ChildRepository {
                     }
 
                     List<String> childrenUids = parent.getChildrenUid();
-                    if (childrenUids == null) {
-                        childrenUids = new ArrayList<>();
-                    }
-                    if (!childrenUids.contains(childUid)) {
-                        childrenUids.add(childUid);
-                    }
+                    if (childrenUids == null) { childrenUids = new ArrayList<>(); }
+                    if (!childrenUids.contains(childUid)) { childrenUids.add(childUid); }
 
                     db.collection("users")
                             .document(parentUid)
@@ -311,27 +301,25 @@ public class ChildRepository {
 
     // get existing invite for parent (to check if one already exists)
     public void getActiveInviteForParent(String parentUid, String targetRole, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
-        Log.d(TAG, "Checking for active invite. ParentUid: " + parentUid + ", TargetRole: " + targetRole);
-
         db.collection("invites")
                 .whereEqualTo("parentUid", parentUid)
                 .whereEqualTo("targetRole", targetRole)
-                .whereEqualTo("used", false)
+                .whereEqualTo("used", false) //must be unused function
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.d(TAG, "Found " + queryDocumentSnapshots.size() + " potential invites");
 
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         Invite invite = doc.toObject(Invite.class);
                         if (invite != null) {
-                            Log.d(TAG, "Checking invite: " + invite.getCode());
-                            Log.d(TAG, "  ExpiresAt: " + invite.getExpiresAt());
-                            Log.d(TAG, "  Current: " + System.currentTimeMillis());
-
                             if (System.currentTimeMillis() < invite.getExpiresAt()) {
-                                Log.d(TAG, "Found active invite: " + invite.getCode());
+                                Log.d(TAG, "Found active invite: " + invite.getCode()); //return this invite
                                 onSuccess.onSuccess(invite);
                                 return;
+                            }
+                            //If the invite has expired, simply delete it as it is unused
+                            else {
+                                doc.getReference().delete();
+                                Log.d(TAG, "Invite expired; deleted.");
                             }
                         }
                     }
@@ -374,73 +362,72 @@ public class ChildRepository {
                 });
     }
 
-    // Unlink a provider (mark invite as inactive or delete)
-    public void unlinkProvider(String inviteCode, OnSuccessListener<Void> onSuccess,
-                               OnFailureListener onFailure) {
-        Log.d(TAG, "Unlinking provider with invite code: " + inviteCode);
 
-//        db.collection("invites")
-//                .document(inviteCode)
-//                .delete()
-//                .addOnSuccessListener(aVoid -> {
-//                    Log.d(TAG, "Provider unlinked successfully");
-//                    onSuccess.onSuccess(aVoid);
-//                })
-//                .addOnFailureListener(e -> {
-//                    Log.e(TAG, "Error unlinking provider", e);
-//                    onFailure.onFailure(e);
-//                });
+    //UNLINKING FUNCTIONS
 
-        db.collection("invites")
-                .document(inviteCode)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-
-                    if (!snapshot.exists()) {
-                        onFailure.onFailure(new Exception("Invite not found"));
-                        return;
-                    }
-
-                    // Get the connected uid and then the parent uid as well
-                    String usedByUid = snapshot.getString("usedByUid");
-                    String parentUid = snapshot.getString("parentUid");
-
-                    if (usedByUid == null || parentUid == null || usedByUid.trim().isEmpty() || parentUid.trim().isEmpty()) {
-                        onFailure.onFailure(new Exception("Invite missing UIDs"));
-                        return;
-                    }
-
-                    //remove the uid of parent from child or providers list of parents
-                    db.collection("users")
-                            .document(usedByUid)
-                            .update("parentUid", FieldValue.arrayRemove(parentUid))
-                            .addOnSuccessListener(unused -> {
-                                Log.d(TAG, "parent removed from parentUid list");
-                                //now delete invite
-                                db.collection("invites")
-                                        .document(inviteCode)
-                                        .delete()
-                                        .addOnSuccessListener(aVoid -> {
-                                            Log.d(TAG, "Invite deleted. Unlink complete.");
-                                            onSuccess.onSuccess(null);
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            Log.e(TAG, "Failed to delete invite", e);
-                                            onFailure.onFailure(e);
-                                        });
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Failed to remove parent from provider/child list", e);
-                                onFailure.onFailure(e);
-                            });
-                    //TODO: if child, must delete the child overall
-
+    // delete child
+    //TODO: MAKE IT SO IT DELETES ALL CHILDREN REFERENCES ACROSS THE DB!
+    public void deleteChild(String childUid, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        db.collection("children")
+                .document(childUid)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Child deleted successfully");
+                    onSuccess.onSuccess(aVoid);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching invite doc", e);
+                    Log.e(TAG, "Error deleting child", e);
                     onFailure.onFailure(e);
                 });
     }
+
+    // Unlink a provider (mark invite as inactive or delete)
+    public void unlinkProvider(String inviteCode, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        Log.d(TAG, "Unlinking provider with invite code (transaction): " + inviteCode);
+        db.runTransaction(transaction -> {
+
+            //get document for invite
+            DocumentReference inviteRef = db.collection("invites").document(inviteCode);
+            DocumentSnapshot inviteSnap = transaction.get(inviteRef);
+
+            if (!inviteSnap.exists()) {
+                throw new FirebaseFirestoreException("Invite not found", FirebaseFirestoreException.Code.NOT_FOUND);
+            }
+
+            String usedByUid = inviteSnap.getString("usedByUid");
+            String parentUid = inviteSnap.getString("parentUid");
+            //if uid is null, dne (just an invalid invite generation)
+            if (usedByUid == null || parentUid == null ||
+                    usedByUid.trim().isEmpty() || parentUid.trim().isEmpty()) {
+                throw new FirebaseFirestoreException("Invite missing required UIDs", FirebaseFirestoreException.Code.ABORTED);
+            }
+
+            // STEP 2 : Remove the parentUid from the provider UID
+            DocumentReference providerRef = db.collection("users").document(usedByUid);
+            //get a snapshot (transaction)
+            DocumentSnapshot providerSnap = transaction.get(providerRef);
+            //get the parent list
+            List<String> parentList = (List<String>) providerSnap.get("parentUid");
+            //check if provider list contains parent uid
+            if (parentList == null || !parentList.contains(parentUid)) {
+                throw new FirebaseFirestoreException("Provider does not contain that parent UID", FirebaseFirestoreException.Code.ABORTED);
+            }
+            //remove from array
+            transaction.update(providerRef, "parentUid", FieldValue.arrayRemove(parentUid));
+            //delete the invite doc
+            transaction.delete(inviteRef);
+            return null;
+
+        }).addOnSuccessListener(aVoid -> {
+            Log.d(TAG, "Transaction completed: Provider unlinked & invite deleted");
+            onSuccess.onSuccess(null);
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Transaction failed", e);
+            onFailure.onFailure(e);
+        });
+    }
+
+    //PRIVATE HELPER FUNCTIONS
 
     // random 6-7 (& 8) digit code generator
     private String generateRandomCode() {
@@ -453,5 +440,33 @@ public class ChildRepository {
         String generatedCode = code.toString();
         Log.d(TAG, "Generated random code: " + generatedCode + " (length: " + length + ")");
         return generatedCode;
+    }
+
+    //Function checks if the code generated already exists (as unique number)
+    private void checkCodeCollision(String code, Runnable onSafe, OnFailureListener onFailure) {
+        db.collection("invites")
+                .document(code)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        onFailure.onFailure(new Exception("Invite code collision: " + code));
+                    } else {
+                        onSafe.run();
+                    }
+                })
+                .addOnFailureListener(onFailure);
+    }
+
+
+    //Private function: ADD OR REPLACE THE INVITE GIVEN!
+    private void add_replaceInvite(Invite inv, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
+        db.collection("invites")
+                .document(inv.getCode())
+                .set(inv)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "New invite created successfully: " + inv.getCode());
+                    onSuccess.onSuccess(inv);
+                })
+                .addOnFailureListener(onFailure);
     }
 }
