@@ -66,15 +66,15 @@ public class CheckInFragment extends Fragment {
                         ? sharedModel.getCurrentChild().getValue()
                         : 0;
 
-                String currentChildUid = children.get(currentIndex);
+                String currentChildUid = children.get(0).get(currentIndex);
                 this.correspondingUid = currentChildUid;
             }
         });
 
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
-            List<String> children = sharedModel.getAllChildren().getValue();
+            List<List<String>> children = sharedModel.getAllChildren().getValue();
             if (children != null && !children.isEmpty() && currentIndex != null) {
-                correspondingUid = children.get(currentIndex);
+                correspondingUid = children.get(0).get(currentIndex);
                 refreshUINewChild(repo);
             }
         });

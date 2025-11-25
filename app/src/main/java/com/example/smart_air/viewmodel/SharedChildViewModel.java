@@ -7,14 +7,14 @@ import androidx.lifecycle.ViewModel;
 import java.util.List;
 
 public class SharedChildViewModel extends ViewModel {
-    private final MutableLiveData<List<String>> allChildren = new MutableLiveData<>();
+    private final MutableLiveData<List<List<String>>> allChildren = new MutableLiveData<>();
     private final MutableLiveData<Integer> currentChild = new MutableLiveData<>(0);
 
-    public LiveData<List<String>> getAllChildren() {
+    public LiveData<List<List<String>>> getAllChildren() {
         return allChildren;
     }
 
-    public void setChildren(List<String> list) {
+    public void setChildren(List<List<String>> list) {
         allChildren.setValue(list);
     }
 

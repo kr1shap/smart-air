@@ -97,22 +97,26 @@ public class HistoryFragment extends Fragment {
         repo.getChildUid(this); // set up child uid if it is a child
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
-            if (children != null && !children.isEmpty()) {
+            if (children != null && !children.isEmpty() && children.get(0) != null) {
                 int currentIndex = sharedModel.getCurrentChild().getValue() != null
                         ? sharedModel.getCurrentChild().getValue()
                         : 0;
 
-                String currentChildUid = children.get(currentIndex);
+                String currentChildUid = children.get(0).get(currentIndex);
                 this.childUid = currentChildUid;
                 repo.getCards(childUid,this);
             }
         });
 
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
-            List<String> children = sharedModel.getAllChildren().getValue();
-            if (children != null && !children.isEmpty() && currentIndex != null) {
-                this.childUid = children.get(currentIndex);
-                repo.getCards(childUid,this);
+            List<List<String>> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && children.get(0) != null
+                    && currentIndex != null) {
+                List<String> uids = children.get(0);
+                if (currentIndex < uids.size()) {
+                    this.childUid = uids.get(currentIndex);
+                    repo.getCards(childUid, this);
+                }
             }
         });
 
