@@ -6,6 +6,11 @@ import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.User;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+
+
 public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
     private AuthContract.SignUpContract.View view; //is the UI handling
     private final AuthRepository repo;
@@ -119,9 +124,40 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
             public void onSuccess(User user) {
                 if (view != null) {
                     view.hideLoading();
-                    view.navigateToOnboarding(user); //move on to next step
+
+                    // 🔽 Firestore logic
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    String uid = user.getUid();
+
+                    Map<String, Object> controller = new HashMap<>();
+                    controller.put("name", "Ventolin");
+                    controller.put("dailyUsage", 0);
+                    controller.put("usageLeft", 200);
+                    controller.put("reminders", "Once per day");
+
+                    Map<String, Object> rescue = new HashMap<>();
+                    rescue.put("name", "Flovent");
+                    rescue.put("dailyUsage", 0);
+                    rescue.put("usageLeft", 200);
+                    rescue.put("reminders", "No reminders");
+
+                    db.collection("users")
+                            .document(uid)
+                            .collection("medications")
+                            .document("controller")
+                            .set(controller);
+
+                    db.collection("users")
+                            .document(uid)
+                            .collection("medications")
+                            .document("rescue")
+                            .set(rescue);
+
+                    // 🔽 Continue app flow
+                    view.navigateToOnboarding(user);
                 }
             }
+
 
             @Override
             public void onFailure(String error) {
