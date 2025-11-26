@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.example.smart_air.fragments.MedicineTabFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.history) {
                 // add fragment for history
             } else if (id == R.id.medicine) {
+                selectedFragment = new MedicineTabFragment();
                 // add fragment for medicine
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
