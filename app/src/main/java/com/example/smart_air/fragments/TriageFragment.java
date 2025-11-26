@@ -769,59 +769,6 @@ public class TriageFragment extends Fragment {
         btnGreen.setOnClickListener(zoneClick);
         btnYellow.setOnClickListener(zoneClick);
         btnRed.setOnClickListener(zoneClick);
-        // store all childs
-       /* ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, new ArrayList<>());
-        childDropdown.setAdapter(adapter);
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null)
-        {
-            return;
-        }
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        //parent document contains childrenUid array
-        db.collection("users")
-                .document(user.getUid())
-                .get()
-                .addOnSuccessListener(parentDoc -> {
-                    if (!parentDoc.exists())
-                    {
-                        return;
-                    }
-
-                    List<String> childUids = (List<String>) parentDoc.get("childrenUid");
-                    if (childUids == null)
-                    {
-                        return;
-                    }
-
-                    for (String cUid : childUids) {
-                        db.collection("users")
-                                .document(cUid)
-                                .get()
-                                .addOnSuccessListener(childDoc -> {
-                                    if (childDoc.exists())
-                                    {
-                                        String name = childDoc.getString("username");
-                                        if (name == null)
-                                        {
-                                            name = childDoc.getId();
-                                        }
-                                        childNameToUid.put(name, childDoc.getId());
-                                        adapter.add(name);
-                                        adapter.notifyDataSetChanged();
-                                    }
-                                });
-                    }
-                });
-
-        // when a child is picked, remember its uid + load its steps for the current zone
-        childDropdown.setOnItemClickListener((parent, v1, position, id) -> {
-            String name = (String) parent.getItemAtPosition(position);
-            selectedChildUid = childNameToUid.get(name);
-            currentStepCount = 0;
-            loadstepsforchildzone(selectedChildUid, selectedZone, stepsContainer);
-        });*/
-
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
@@ -833,7 +780,6 @@ public class TriageFragment extends Fragment {
                 String currentChildUid = children.get(currentIndex).getChildUid();
                 this.selectedChildUid = currentChildUid;
                 currentStepCount = 0;
-                //loadstepsforchildzone(selectedChildUid, selectedZone, stepsContainer);
             }
         });
 
