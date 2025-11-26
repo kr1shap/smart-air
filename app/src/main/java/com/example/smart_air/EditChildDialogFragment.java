@@ -8,18 +8,23 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.modelClasses.User;
 import com.google.android.material.chip.Chip;
 import com.google.gson.Gson;
 
@@ -29,6 +34,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -36,6 +42,7 @@ public class EditChildDialogFragment extends DialogFragment {
 
     private static final String TAG = "EditChildDialog";
     private static final String ARG_CHILD = "child";
+    private static final String ARG_PROVIDERS = "providers";
     private Child child;
     private ChildRepository childRepo;
     private EditText etChildName, etChildDob, etChildNotes, etPersonalBest, etTresholdTechnique, etTresholdRescue;
@@ -46,15 +53,21 @@ public class EditChildDialogFragment extends DialogFragment {
 
     //Toggle buttons
     private Chip chipMon, chipTues, chipWed, chipThurs, chipFri, chipSat, chipSun;
+    //Provider list
+    private ArrayList<User> providersList;
+    private LinearLayout llProvidersList;
+    private TextView tvNoProviders;
+    private List<CheckBox> providerCheckboxes;
 
     public interface OnChildUpdatedListener {
         void onChildUpdated();
     }
 
-    public static EditChildDialogFragment newInstance(Child child) {
+    public static EditChildDialogFragment newInstance(Child child, ArrayList<User> providers) {
         EditChildDialogFragment fragment = new EditChildDialogFragment();
         Bundle args = new Bundle();
         args.putString(ARG_CHILD, new Gson().toJson(child));
+        args.putSerializable(ARG_PROVIDERS, providers);
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,10 +77,14 @@ public class EditChildDialogFragment extends DialogFragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             String childJson = getArguments().getString(ARG_CHILD);
+            providersList = (ArrayList<User>) getArguments().getSerializable(ARG_PROVIDERS);
             child = new Gson().fromJson(childJson, Child.class);
             Log.d(TAG, "Child loaded: " + child.getName());
             if (child.getSharing() != null) {
                 Log.d(TAG, "Sharing settings: " + child.getSharing().toString());
+            }
+            if (providersList == null) {
+                providersList = new ArrayList<>();
             }
         }
         childRepo = new ChildRepository();
@@ -90,6 +107,11 @@ public class EditChildDialogFragment extends DialogFragment {
         etTresholdTechnique = view.findViewById(R.id.et_badge_threshold_tech);
         etTresholdRescue = view.findViewById(R.id.et_badge_threshold_rescue);
 
+        //provider buttons
+        llProvidersList = view.findViewById(R.id.ll_providers_list);
+        tvNoProviders = view.findViewById(R.id.tv_no_providers);
+        providerCheckboxes = new ArrayList<>();
+//FJF3bxcFoyasVnLIh2jjP14rYYR2
         //toggle buttons
         chipMon = view.findViewById(R.id.chipMon);
         chipTues = view.findViewById(R.id.chipTues);
@@ -177,12 +199,52 @@ public class EditChildDialogFragment extends DialogFragment {
             }
         }
 
+        //load all providers
+        displayProviders();
+
         etChildDob.setOnClickListener(v -> showDatePicker());
         btnSave.setOnClickListener(v -> saveChild());
         btnCancel.setOnClickListener(v -> dismiss());
 
         builder.setView(view);
         return builder.create();
+    }
+
+
+    //function displays providers
+    private void displayProviders() {
+        llProvidersList.removeAllViews();
+        providerCheckboxes.clear();
+
+        if (providersList.isEmpty()) {
+            tvNoProviders.setVisibility(View.VISIBLE);
+            tvNoProviders.setText("No healthcare providers connected yet.");
+            return;
+        }
+        //if there are providers
+        tvNoProviders.setVisibility(View.GONE);
+        //get the allowed ones
+        ArrayList<String> allowedProviders = child.getAllowedProviderUids();
+        if (allowedProviders == null) { allowedProviders = new ArrayList<>(); } //init if mistake
+        //get all providers connected to parents
+        for (User provider : providersList) {
+            CheckBox checkBox = new CheckBox(getContext());
+            checkBox.setText(provider.getEmail() + " (" + provider.getEmail() + ")");
+            checkBox.setTag(provider.getUid());
+            //set checkbox to allowed or not based on the provider
+            checkBox.setTypeface(ResourcesCompat.getFont(getContext(), R.font.dm_sans_regular));
+            checkBox.setChecked(allowedProviders.contains(provider.getUid()));
+            //some padding for details
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(0, 8, 0, 15);
+            checkBox.setLayoutParams(params);
+            checkBox.setPadding(10, 10, 10, 10);
+            providerCheckboxes.add(checkBox);
+            llProvidersList.addView(checkBox);
+        }
     }
 
     private void showDatePicker() {
@@ -309,6 +371,8 @@ public class EditChildDialogFragment extends DialogFragment {
         child.setWeeklySchedule(editWeekly());
         // Update sharing toggles
         child.setSharing(editSharing());
+        //set the allowed providers
+        child.setAllowedProviderUids(editProviderUid());
 
         childRepo.updateChild(child,
                 aVoid -> {
@@ -329,6 +393,17 @@ public class EditChildDialogFragment extends DialogFragment {
         this.listener = listener;
     }
 
+
+    private ArrayList<String> editProviderUid() {
+        ArrayList<String> allowedProviders = new ArrayList<>();
+        for (CheckBox checkBox : providerCheckboxes) {
+            if (checkBox.isChecked()) {
+                String providerUid = (String) checkBox.getTag();
+                allowedProviders.add(providerUid);
+            }
+        }
+        return allowedProviders;
+    }
     private Map<String, Boolean> editSharing() {
         Map<String, Boolean> sharing = new HashMap<>();
         sharing.put("rescue", switchRescue.isChecked());
@@ -362,8 +437,8 @@ public class EditChildDialogFragment extends DialogFragment {
         return age;
     }
 
+
     private void makeToast(String str) {
         Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
-
     }
 }
