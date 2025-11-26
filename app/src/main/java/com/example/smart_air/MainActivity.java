@@ -117,10 +117,7 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.home) {
                 // add fragment for dashboard
             } else if (id == R.id.triage) {
-                // add fragment for triage
-                //TODO: remove (just testing the management for children)
-                SettingsDialogFragment dialog = new SettingsDialogFragment();
-                dialog.show(getSupportFragmentManager(), "SettingsDialogFragment");
+                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
