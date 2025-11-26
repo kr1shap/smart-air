@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F4F4F4"
+    android:layout_marginBottom="12dp">
+
+    <TextView
+        android:id="@+id/txtStepTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Step X"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@android:color/holo_blue_dark"/>
+
+    <EditText
+        android:id="@+id/edtStepDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Add Desc"
+        android:minLines="2"
+        android:background="@android:color/transparent"/>
+
+    <Button
+        android:id="@+id/btnSaveStep"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Save"/>
+</LinearLayout>
