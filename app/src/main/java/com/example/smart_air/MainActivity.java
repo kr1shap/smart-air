@@ -164,15 +164,16 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         user = doc.toObject(User.class);
-                        if (user == null){
+                        if (user == null) {
                             return;
                         }
-                        if(user.getRole().equals("child") && (user.getParentUid() == null || user.getParentUid().isEmpty())) {
+                        if (user.getRole().equals("child") && (user.getParentUid() == null || user.getParentUid().isEmpty())) {
                             //get the array list
                             repo.deleteCurrentUser(deleteCallback());
                         }
                     }
                 });
+    }
     private void listenerToParent(String parentUid) {
         DocumentReference parentRef = FirebaseFirestore.getInstance()
                 .collection("users")
