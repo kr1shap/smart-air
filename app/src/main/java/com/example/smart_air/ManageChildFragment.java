@@ -221,7 +221,7 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         // Show confirmation dialog before deleting
         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                 .setTitle("Delete Child")
-                .setMessage("Are you sure you want to remove " + child.getName() + "? This will not delete their account, only unlink them from your parent account.")
+                .setMessage("Are you sure you want to remove " + child.getName() + "? This will not delete their account yet, but will unlink them and cause deletion upon their sign-in.")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     Log.d(TAG, "Deleting child: " + child.getName());
                     childRepo.deleteChild(child.getChildUid(),

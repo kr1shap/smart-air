@@ -8,12 +8,17 @@ import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -369,17 +374,73 @@ public class ChildRepository {
     // delete child
     //TODO: MAKE IT SO IT DELETES ALL CHILDREN REFERENCES ACROSS THE DB!
     public void deleteChild(String childUid, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
-        db.collection("children")
-                .document(childUid)
-                .delete()
+        AuthRepository repo = new AuthRepository();
+        if(repo.getCurrentUser() == null) return;
+        //find parent, and remove childUid from list
+        DocumentReference parentRef = db.collection("users").document(repo.getCurrentUser().getUid());
+        DocumentReference childRefUser = db.collection("users").document(childUid);
+        DocumentReference childRef = db.collection("children").document(childUid);
+        parentRef.update("childrenUid", FieldValue.arrayRemove(childUid))
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Child deleted successfully");
-                    onSuccess.onSuccess(aVoid);
+                    Log.d(TAG, "Removed child from parent list");
+                    //delete the parent from the child's user document
+                    childRefUser.update("parentUid", null)
+                            .addOnSuccessListener(aVoid2 -> {
+                                Log.d(TAG, "Removed parentUid list from child");
+                                //delete child document
+                                childRef.delete()
+                                        .addOnSuccessListener(aVoid3 -> {
+                                            Log.d(TAG, "Deleted child document");
+                                            //go and delete the related documents
+                                            deleteChildRelatedDocs(db, childUid,
+                                                    () -> {
+                                                        Log.d(TAG, "Deleted all related documents");
+                                                        onSuccess.onSuccess(null);
+                                                    }, onFailure);
+
+                                        }).addOnFailureListener(onFailure);
+
+                            }).addOnFailureListener(onFailure);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error deleting child", e);
-                    onFailure.onFailure(e);
-                });
+                .addOnFailureListener(onFailure);
+    }
+
+    // Helper method to delete related documents in other collections
+    private void deleteChildRelatedDocs(FirebaseFirestore db, String childUid,
+                                        Runnable onSuccess, OnFailureListener onFailure) {
+        //collection names
+        String[] collections = {"actionPlan", "dailyCheckins", "incidentLog", "invites"};
+        WriteBatch batch = db.batch();
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+        for (String col : collections) {
+            if (col.equals("invites")) {
+                // get all invite docs where childUid is used
+                Task<QuerySnapshot> task = db.collection(col)
+                        .whereEqualTo("usedByUid", childUid)
+                        .get()
+                        .addOnSuccessListener(querySnapshot -> {
+                            for (DocumentSnapshot doc : querySnapshot) {
+                                batch.delete(doc.getReference());
+                            }
+                        });
+                tasks.add(task);
+            } else {
+                DocumentReference docRef = db.collection(col).document(childUid);
+                batch.delete(docRef);
+            }
+        }
+
+        //wait for all queries
+        Tasks.whenAll(tasks)
+                .addOnSuccessListener(aVoid -> {
+                    batch.commit()
+                            .addOnSuccessListener(aVoid1 -> {
+                                Log.d(TAG, "Deleted all related documents");
+                                onSuccess.run();
+                            })
+                            .addOnFailureListener(onFailure);
+                })
+                .addOnFailureListener(onFailure);
     }
 
     // Unlink a provider (mark invite as inactive or delete)

@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,9 +20,12 @@ import androidx.fragment.app.DialogFragment;
 
 import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.modelClasses.Child;
+import com.google.android.material.chip.Chip;
 import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,11 +38,14 @@ public class EditChildDialogFragment extends DialogFragment {
     private static final String ARG_CHILD = "child";
     private Child child;
     private ChildRepository childRepo;
-    private EditText etChildName, etChildDob, etChildNotes, etPersonalBest;
+    private EditText etChildName, etChildDob, etChildNotes, etPersonalBest, etTresholdTechnique, etTresholdRescue;
     private SwitchCompat switchRescue, switchController, switchSymptoms,
             switchTriggers, switchPef, switchTriage, switchCharts;
     private Date selectedDate;
     private OnChildUpdatedListener listener;
+
+    //Toggle buttons
+    private Chip chipMon, chipTues, chipWed, chipThurs, chipFri, chipSat, chipSun;
 
     public interface OnChildUpdatedListener {
         void onChildUpdated();
@@ -80,6 +87,19 @@ public class EditChildDialogFragment extends DialogFragment {
         etChildNotes = view.findViewById(R.id.et_child_notes);
         etPersonalBest = view.findViewById(R.id.et_personal_best);
 
+        etTresholdTechnique = view.findViewById(R.id.et_badge_threshold_tech);
+        etTresholdRescue = view.findViewById(R.id.et_badge_threshold_rescue);
+
+        //toggle buttons
+        chipMon = view.findViewById(R.id.chipMon);
+        chipTues = view.findViewById(R.id.chipTues);
+        chipWed = view.findViewById(R.id.chipWed);
+        chipThurs = view.findViewById(R.id.chipThurs);
+        chipFri = view.findViewById(R.id.chipFri);
+        chipSat = view.findViewById(R.id.chipSat);
+        chipSun = view.findViewById(R.id.chipSun);
+
+
         switchRescue = view.findViewById(R.id.switch_rescue);
         switchController = view.findViewById(R.id.switch_controller);
         switchSymptoms = view.findViewById(R.id.switch_symptoms);
@@ -93,9 +113,7 @@ public class EditChildDialogFragment extends DialogFragment {
 
         // Populate fields with existing data
         if (child != null) {
-            if (child.getName() != null && !child.getName().isEmpty()) {
-                etChildName.setText(child.getName());
-            }
+            if (child.getName() != null && !child.getName().isEmpty()) { etChildName.setText(child.getName()); }
 
             if (child.getDob() != null) {
                 selectedDate = child.getDob();
@@ -103,12 +121,31 @@ public class EditChildDialogFragment extends DialogFragment {
                 etChildDob.setText(sdf.format(child.getDob()));
             }
 
-            if (child.getExtraNotes() != null) {
-                etChildNotes.setText(child.getExtraNotes());
+            if (child.getExtraNotes() != null) { etChildNotes.setText(child.getExtraNotes()); }
+            if (child.getPersonalBest() > 0) { etPersonalBest.setText(String.valueOf(child.getPersonalBest())); }
+
+            if(child.getThresholds() != null) {
+                if(child.getThresholds().containsKey("quality_thresh")) {
+                    etTresholdTechnique.setText(String.valueOf(child.getThresholds().get("quality_thresh")));
+                }
+                if(child.getThresholds().containsKey("rescue_thresh")) {
+                    etTresholdRescue.setText(String.valueOf(child.getThresholds().get("rescue_thresh")));
+                }
             }
 
-            if (child.getPersonalBest() > 0) {
-                etPersonalBest.setText(String.valueOf(child.getPersonalBest()));
+            //Load the badge thresholds
+            Map<String, Boolean> weeklySchedule = child.getWeeklySchedule();        // weekly schedule
+            // Load sharing toggles - FIXED
+            if (weeklySchedule != null) {
+                chipMon.setChecked(weeklySchedule.getOrDefault("Monday", false));
+                chipTues.setChecked(weeklySchedule.getOrDefault("Tuesday", false));
+                chipWed.setChecked(weeklySchedule.getOrDefault("Wednesday", false));
+                chipThurs.setChecked(weeklySchedule.getOrDefault("Thursday", false));
+                chipFri.setChecked(weeklySchedule.getOrDefault("Friday", false));
+                chipSat.setChecked(weeklySchedule.getOrDefault("Saturday", false));
+                chipSun.setChecked(weeklySchedule.getOrDefault("Sunday", false));
+            } else {
+                Log.w(TAG, "Weekly map is null, defaulting to false");
             }
 
             // Load sharing toggles - FIXED
@@ -156,6 +193,7 @@ public class EditChildDialogFragment extends DialogFragment {
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 requireContext(),
+                android.R.style.Theme_Holo_Light_Dialog_MinWidth,
                 (view, year, month, dayOfMonth) -> {
                     Calendar selected = Calendar.getInstance();
                     selected.set(year, month, dayOfMonth);
@@ -169,6 +207,7 @@ public class EditChildDialogFragment extends DialogFragment {
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
 
+        datePickerDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         datePickerDialog.show();
     }
@@ -200,23 +239,97 @@ public class EditChildDialogFragment extends DialogFragment {
             try {
                 int personalBest = Integer.parseInt(personalBestStr);
                 if (personalBest < 0) {
-                    Toast.makeText(getContext(), "Personal best must be positive", Toast.LENGTH_SHORT).show();
+                    makeToast("Personal best must be positive.");
                     return;
                 }
                 if (personalBest > 1000) {
-                    Toast.makeText(getContext(), "Personal best seems too high", Toast.LENGTH_SHORT).show();
+                    makeToast("Personal best seems too high");
                     return;
                 }
                 child.setPersonalBest(personalBest);
             } catch (NumberFormatException e) {
-                Toast.makeText(getContext(), "Please enter a valid number", Toast.LENGTH_SHORT).show();
+                makeToast("Please enter a valid number");
                 return;
             }
         } else {
             child.setPersonalBest(0);
         }
 
+        //UPDATE THRESHOLDS
+        String tresholdTechStr = etTresholdTechnique.getText().toString().trim();
+        String rescueStr = etTresholdRescue.getText().toString().trim();
+        Map<String, Integer> thresholds = new HashMap<>();
+        //Get the old thresholds, put them into thresholds
+        Map<String, Integer> thresholdsOld = child.getThresholds();
+        if (thresholdsOld != null) {
+            thresholds.putAll(thresholdsOld);
+        }
+        //for technique thresh
+        if (!tresholdTechStr.isEmpty()) {
+            try {
+                int number = Integer.parseInt(tresholdTechStr);
+                if (number < 0) {
+                    makeToast("Threshold for technique must be positive");
+                    return;
+                }
+                // If the new threshold is greater than the old one, reset technique badge
+                if (thresholdsOld != null && thresholdsOld.containsKey("quality_thresh") && number > thresholdsOld.get("quality_thresh")) {
+                        child.getBadges().put("techniqueBadge", false);
+                }
+                thresholds.put("quality_thresh", number);
+            } catch (NumberFormatException e) {
+                makeToast("Please enter a valid number");
+                return;
+            }
+        } else {
+            thresholds.put("quality_thresh", 10); //default 10
+        }
+        //for rescue thresh
+        if (!rescueStr.isEmpty()) {
+            try {
+                int number = Integer.parseInt(rescueStr);
+                if (number < 0) {
+                    makeToast("Threshold for rescue must be positive");
+                    return;
+                }
+                // If the new threshold is less than the old one, reset rescue badge
+                if (thresholdsOld != null && thresholdsOld.containsKey("rescue_thresh") && number < thresholdsOld.get("rescue_thresh")) {
+                    child.getBadges().put("lowRescueBadge", false);
+                }
+                thresholds.put("rescue_thresh", number);
+            } catch (NumberFormatException e) {
+                makeToast("Please enter a valid number");
+                return;
+            }
+        } else {
+            thresholds.put("rescue_thresh", 4); //default 4
+        }
+        child.setThresholds(thresholds);
+        // Update weekly toggles
+        child.setWeeklySchedule(editWeekly());
         // Update sharing toggles
+        child.setSharing(editSharing());
+
+        childRepo.updateChild(child,
+                aVoid -> {
+                    Log.d(TAG, "Child updated successfully");
+                    makeToast("Child updated");
+                    if (listener != null) {
+                        listener.onChildUpdated();
+                    }
+                    dismiss();
+                },
+                e -> {
+                    Log.e(TAG, "Error updating child", e);
+                    makeToast("Error: " + e.getMessage());
+                });
+    }
+
+    public void setOnChildUpdatedListener(OnChildUpdatedListener listener) {
+        this.listener = listener;
+    }
+
+    private Map<String, Boolean> editSharing() {
         Map<String, Boolean> sharing = new HashMap<>();
         sharing.put("rescue", switchRescue.isChecked());
         sharing.put("controller", switchController.isChecked());
@@ -225,29 +338,19 @@ public class EditChildDialogFragment extends DialogFragment {
         sharing.put("pef", switchPef.isChecked());
         sharing.put("triage", switchTriage.isChecked());
         sharing.put("charts", switchCharts.isChecked());
-        child.setSharing(sharing);
-
-        Log.d(TAG, "Saving child with sharing: " + sharing.toString());
-
-        childRepo.updateChild(child,
-                aVoid -> {
-                    Log.d(TAG, "Child updated successfully");
-                    Toast.makeText(getContext(), "Child updated", Toast.LENGTH_SHORT).show();
-                    if (listener != null) {
-                        listener.onChildUpdated();
-                    }
-                    dismiss();
-                },
-                e -> {
-                    Log.e(TAG, "Error updating child", e);
-                    Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        return sharing;
     }
-
-    public void setOnChildUpdatedListener(OnChildUpdatedListener listener) {
-        this.listener = listener;
+    private Map<String, Boolean> editWeekly() {
+        Map<String, Boolean> weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", chipMon.isChecked());
+        weeklySchedule.put("Tuesday", chipTues.isChecked());
+        weeklySchedule.put("Wednesday", chipWed.isChecked());
+        weeklySchedule.put("Thursday", chipThurs.isChecked());
+        weeklySchedule.put("Friday", chipFri.isChecked());
+        weeklySchedule.put("Saturday", chipSat.isChecked());
+        weeklySchedule.put("Sunday", chipSun.isChecked());
+        return weeklySchedule;
     }
-
     private int calculateAge(Date dob) {
         Calendar dobCal = Calendar.getInstance();
         dobCal.setTime(dob);
@@ -257,5 +360,10 @@ public class EditChildDialogFragment extends DialogFragment {
             age--;
         }
         return age;
+    }
+
+    private void makeToast(String str) {
+        Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
+
     }
 }

@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
 import com.example.smart_air.fragments.HistoryFragment;
@@ -74,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
         }
+        //check if child account is useless, then delete
+        checkChildDeletion();
 
         //notif button
         notification = findViewById(R.id.notificationButton);
@@ -156,6 +159,21 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void checkChildDeletion() {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null) {
+                            return;
+                        }
+                        if (user.getRole().equals("child") && (user.getParentUid() == null || user.getParentUid().isEmpty())) {
+                            //get the array list
+                            repo.deleteCurrentUser(deleteCallback());
+                        }
+                    }
+                });
+    }
     private void listenerToParent(String parentUid) {
         DocumentReference parentRef = FirebaseFirestore.getInstance()
                 .collection("users")
@@ -389,5 +407,21 @@ public class MainActivity extends AppCompatActivity {
         } else {
             badge.setVisibility(View.GONE);
         }
+    }
+
+    //Callback for main call in general, used to delete account
+    private AuthContract.GeneralCallback deleteCallback() {
+        return new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
+                finish();
+            }
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
+            }
+        };
     }
 }

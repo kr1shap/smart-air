@@ -141,9 +141,6 @@ public class SignUpPresenter implements AuthContract.SignUpContract.Presenter  {
 
     //Helper function to check if valid email
     public static boolean validEmail(String email) {
-//        String emailTrim = email.trim();
-//        return !emailTrim.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(emailTrim).matches();
-        // Simple regex that works in JUnit
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         return email.trim().matches(emailRegex);
     }
