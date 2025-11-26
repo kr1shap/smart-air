@@ -215,7 +215,6 @@ public class EditChildDialogFragment extends DialogFragment {
     private void displayProviders() {
         llProvidersList.removeAllViews();
         providerCheckboxes.clear();
-
         if (providersList.isEmpty()) {
             tvNoProviders.setVisibility(View.VISIBLE);
             tvNoProviders.setText("No healthcare providers connected yet.");
@@ -233,6 +232,7 @@ public class EditChildDialogFragment extends DialogFragment {
             checkBox.setTag(provider.getUid());
             //set checkbox to allowed or not based on the provider
             checkBox.setTypeface(ResourcesCompat.getFont(getContext(), R.font.dm_sans_regular));
+            checkBox.setTextColor(getResources().getColor(R.color.colour_indigo, null));
             checkBox.setChecked(allowedProviders.contains(provider.getUid()));
             //some padding for details
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
