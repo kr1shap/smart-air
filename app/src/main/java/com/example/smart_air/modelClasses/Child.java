@@ -28,6 +28,7 @@ public class Child {
         this.name = name;
     }
 
+
     public Child() {  initializeDefaults(); } //for safety, will add these when u auto convert!
 
     public Child(String name,

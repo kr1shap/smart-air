@@ -27,12 +27,14 @@ import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
+    private ListenerRegistration parentListener;
 
 
     @Override
@@ -140,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // get dailyCheckIn menu item to disable later
+        // get menu item to disable/enable
         MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
 
@@ -148,13 +151,9 @@ public class MainActivity extends AppCompatActivity {
         sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
         getChildren(); // fill array list of children in share modal
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
-        setUpButtonAccess(switchChildButton, bottomNavigationView, dailyCheckIn, triage); // set up button
+        setUpButtonAndListener(switchChildButton, bottomNavigationView, dailyCheckIn, triage); // set up button
         switchChildButton.setOnClickListener(v -> {
-            sharedModel.getAllChildren().observe(this, children -> {
-                if (children != null) {
-                    showChildPopup(children);
-                }
-            });
+            showChildPopup();
         });
 
 
@@ -174,6 +173,32 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+    private void listenerToParent(String parentUid) {
+        DocumentReference parentRef = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(parentUid);
+
+        parentListener = parentRef.addSnapshotListener((snapshot, e) -> {
+            if (e != null || snapshot == null || !snapshot.exists()) {
+                return;
+            }
+
+            // get new children array from Firestore parent doc
+            List<String> newChildren = (List<String>) snapshot.get("childrenUid");
+            if (newChildren == null) newChildren = new ArrayList<>();
+
+            // get previous children list from SharedViewModel
+            List<String> previousChildren = Arrays.asList(convertChildAllChildrenList());
+            if (previousChildren == null) {previousChildren = new ArrayList<>();}
+
+            // check for newly added child
+            for (String uid : newChildren) {
+                if (!previousChildren.contains(uid)) {
+                    getChildren();
+                    break;
+                }
+            }
+        });
     }
 
     private void getChildren(){
@@ -219,14 +244,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showChildPopup(List<Child> children) {
+    private void showChildPopup() {
         Integer value = sharedModel.getCurrentChild().getValue();
         AtomicInteger currentIndex = new AtomicInteger(value != null ? value : 0); // currently selected item
 
-        String [] childArray = new String[children.size()];
-        for(int i = 0; i < children.size(); i++){
-            childArray[i] = children.get(i).getName();
-        }
+        String [] childArray = convertChildAllChildrenList();
 
         new AlertDialog.Builder(this)
                 .setTitle("Switch Child")
@@ -238,8 +260,20 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private String [] convertChildAllChildrenList(){
+        List <Child> children = sharedModel.getAllChildren().getValue();
+        if(children == null){
+            return new String[0];
+        }
+        String [] childArray = new String[children.size()];
+        for(int i = 0; i < children.size(); i++){
+            childArray[i] = children.get(i).getName();
+        }
+        return childArray;
+    }
 
-    private void setUpButtonAccess(ImageButton switchChildButton, BottomNavigationView bottomNavigationView, MenuItem dailyCheckIn, MenuItem triage) {
+
+    private void setUpButtonAndListener(ImageButton switchChildButton, BottomNavigationView bottomNavigationView, MenuItem dailyCheckIn, MenuItem triage) {
         repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -267,6 +301,9 @@ public class MainActivity extends AppCompatActivity {
                             triage.setEnabled(true);
                             triage.setCheckable(true);
                             triage.setVisible(true);
+
+                            // update child switching list when new child is added / deleted
+                            listenerToParent(repo.getCurrentUser().getUid());
                         }
                         if(role.equals("provider")){
                             // show button
@@ -278,6 +315,9 @@ public class MainActivity extends AppCompatActivity {
                             triage.setEnabled(false);
                             triage.setCheckable(false);
                             triage.setVisible(false);
+
+                            // update child switching list when new child is added / deleted
+                            listenerToProvider();
                         }
                     }
                     else{
@@ -285,6 +325,21 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+    }
+
+    private void listenerToProvider() {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null) {return;}
+                        List <String> parentUids = user.getParentUid();
+                        for(String parentUid: parentUids){
+                            listenerToParent(parentUid);
+                        }
+
+                    }
+                });
     }
 
     private void convertToNames (List<String> uid) {
@@ -306,6 +361,10 @@ public class MainActivity extends AppCompatActivity {
 
                         if (counter.incrementAndGet() == uid.size()) {
                             children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
+                            int currentIndex = sharedModel.getCurrentChild().getValue();
+                            if(currentIndex >= children.size()){ // if last child gets deleted
+                                sharedModel.setCurrentChild(0);
+                            }
                             sharedModel.setChildren(children);
                         }
                     });
