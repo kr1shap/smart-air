@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.util.Log;
 
+import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -68,6 +70,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import androidx.annotation.Nullable;
+import androidx.lifecycle.ViewModelProvider;
 
 public class TriageFragment extends Fragment {
 
@@ -112,6 +115,7 @@ public class TriageFragment extends Fragment {
     private String selectedZone = "greenZone";
     private int currentStepCount = 0;
     String zonecolour;
+    private SharedChildViewModel sharedModel;
 
 
 
@@ -730,7 +734,6 @@ public class TriageFragment extends Fragment {
      */
     public void parentactionsession(View view) {
 
-        AutoCompleteTextView childDropdown = view.findViewById(R.id.autocompChild);
         MaterialButton btnGreen  = view.findViewById(R.id.btnZoneGreen);
         MaterialButton btnYellow = view.findViewById(R.id.btnZoneYellow);
         MaterialButton btnRed    = view.findViewById(R.id.btnZoneRed);
@@ -767,7 +770,7 @@ public class TriageFragment extends Fragment {
         btnYellow.setOnClickListener(zoneClick);
         btnRed.setOnClickListener(zoneClick);
         // store all childs
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, new ArrayList<>());
+       /* ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, new ArrayList<>());
         childDropdown.setAdapter(adapter);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null)
@@ -817,6 +820,30 @@ public class TriageFragment extends Fragment {
             selectedChildUid = childNameToUid.get(name);
             currentStepCount = 0;
             loadstepsforchildzone(selectedChildUid, selectedZone, stepsContainer);
+        });*/
+
+        // shared viewmodal
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
+            if (children != null && !children.isEmpty()) {
+                int currentIndex = sharedModel.getCurrentChild().getValue() != null
+                        ? sharedModel.getCurrentChild().getValue()
+                        : 0;
+
+                String currentChildUid = children.get(currentIndex).getChildUid();
+                this.selectedChildUid = currentChildUid;
+                currentStepCount = 0;
+                //loadstepsforchildzone(selectedChildUid, selectedZone, stepsContainer);
+            }
+        });
+
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
+            List<Child> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && currentIndex != null) {
+                selectedChildUid = children.get(currentIndex).getChildUid();
+                currentStepCount = 0;
+                loadstepsforchildzone(selectedChildUid, selectedZone, stepsContainer);
+            }
         });
 
         // add step button

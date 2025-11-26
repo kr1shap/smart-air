@@ -259,20 +259,6 @@
                     android:layout_weight="1"
                     android:text="Red" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/childDropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Select Child"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_marginBottom="16dp">
-
-                <AutoCompleteTextView
-                    android:id="@+id/autocompChild"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
