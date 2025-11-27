@@ -15,6 +15,7 @@
         android:textColor="@android:color/white"
         android:textStyle="bold"
         android:textSize="18sp"
+        android:font="@font/dm_sans_regular"
         android:layout_marginBottom="8dp" />
 
     <LinearLayout
@@ -34,7 +35,8 @@
             android:layout_marginStart="8dp"
             android:text="Can't speak full sentences"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:font="@font/dm_sans_regular"/>
     </LinearLayout>
 
     <LinearLayout
@@ -54,7 +56,8 @@
             android:layout_marginStart="8dp"
             android:text="Chest pulling"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:font="@font/dm_sans_regular"/>
     </LinearLayout>
 
     <LinearLayout
@@ -74,7 +77,8 @@
             android:layout_marginStart="8dp"
             android:text="In/Retractions"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:font="@font/dm_sans_regular"/>
     </LinearLayout>
 
     <LinearLayout
@@ -94,7 +98,8 @@
             android:layout_marginStart="8dp"
             android:text="Blue/Gray lips/Nails"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:font="@font/dm_sans_regular"/>
     </LinearLayout>
 
 </LinearLayout>

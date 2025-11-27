@@ -87,7 +87,6 @@
         <item name="android:textColor">@color/colour_indigo</item>
     </style>
 
-    <!-- style for the toggle button -->
     <style name="SmartAir.ToggleSelectedButton" parent="Widget.MaterialComponents.Button">
         <item name="cornerRadius">24dp</item>
         <item name="android:paddingTop">12dp</item>
@@ -105,10 +104,10 @@
 
     <style name="SmartAir.ToggleDefaultButton" parent="Widget.MaterialComponents.Button">
         <item name="cornerRadius">24dp</item>
-        <item name="android:paddingTop">0dp</item>
-        <item name="android:paddingBottom">0dp</item>
-        <item name="android:paddingStart">0dp</item>
-        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
         <item name="android:textColor">@color/colour_white</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textAllCaps">false</item>
