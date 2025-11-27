@@ -27,4 +27,14 @@ public class SharedChildViewModel extends ViewModel {
     public void setCurrentChild(int index) {
         currentChild.setValue(index);
     }
+
+    public String getCurrentChildName() {
+        List<Child> children = allChildren.getValue();
+        Integer index = currentChild.getValue();
+
+        if (children == null || children.isEmpty() || index == null || index < 0 || index >= children.size()) {
+            return "";
+        }
+        return children.get(index).getName();
+    }
 }

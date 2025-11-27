@@ -231,7 +231,8 @@ public class HistoryFragment extends Fragment {
     private void exportCSV() {
         try {
             List<HistoryItem> listToExport = adapter.getCurrentList();
-            String fileName = "historyLog.csv";
+            String childName = sharedModel.getCurrentChildName();
+            String fileName = "historyLog_"+childName+".csv";
 
             File csvFile = new File(requireContext().getExternalFilesDir(null), fileName);
             try (FileOutputStream fos = new FileOutputStream(csvFile);
@@ -315,27 +316,39 @@ public class HistoryFragment extends Fragment {
     }
 
     private void exportPDF() {
-        // TODO: potential add child name and stuff in pdf
-        List<HistoryItem> listToExport = adapter.getCurrentList();
+        List<HistoryItem> listToExport = adapter.getCurrentList(); // data from adapter
+
+        String childName = sharedModel.getCurrentChildName();
 
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         int pageWidth = 612;
         int pageHeight = 792;
-        int currentY = 50; // leave space for title
+        int currentY = 75; // leave space for title
 
         PdfDocument pdfDocument = new PdfDocument();
 
+        // title style
         Paint titlePaint = new Paint();
         titlePaint.setColor(Color.parseColor("#0473AE"));
         titlePaint.setTextSize(24f);
         titlePaint.setTypeface(Typeface.create("dm_sans", Typeface.BOLD));
         titlePaint.setTextAlign(Paint.Align.CENTER);
 
+        // child info style
+        Paint infoPaint = new Paint();
+        infoPaint.setColor(Color.BLACK);
+        infoPaint.setTextSize(12f);
+        infoPaint.setTypeface(Typeface.create("dm_sans", Typeface.NORMAL));
+        infoPaint.setTextAlign(Paint.Align.CENTER);
+
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
+        // draw title
         canvas.drawText("HISTORY LOG", pageWidth / 2f, 40, titlePaint);
+        // draw info
+        canvas.drawText("Name: " + childName, pageWidth / 2f, 70, infoPaint);
 
         for (HistoryItem card : listToExport) {
             if (card.passFilter && card.cardType != HistoryItem.typeOfCard.triage) {
@@ -480,7 +493,7 @@ public class HistoryFragment extends Fragment {
         // finish the last page
         pdfDocument.finishPage(page);
 
-        File pdfFile = new File(requireContext().getExternalFilesDir(null), "historyLog.pdf");
+        File pdfFile = new File(requireContext().getExternalFilesDir(null), "historyLog_"+childName+".pdf");
         try {
             pdfDocument.writeTo(new FileOutputStream(pdfFile));
             Toast.makeText(getContext(), "PDF saved: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
@@ -502,7 +515,7 @@ public class HistoryFragment extends Fragment {
     }
 
     public void exitScreen(){
-        //TODO: fix it
+        //meant to do nothing
     }
 
     private void setUpOneFilterUI(int type, String [] items){
