@@ -30,7 +30,9 @@ import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -259,31 +261,30 @@ public class MainActivity extends AppCompatActivity {
                             convertToNames(list);
                         }
                         if(role.equals("provider")){
-                            List<String> list = user.getParentUid();
-                            getParentsChildren(list);
+                            getParentsChildren();
                         }
                     }
                 });
     }
 
-    private void getParentsChildren(List<String> list) {
+    private void getParentsChildren() {
         List<String> allChildren = new ArrayList<>();
-        AtomicInteger processedCount = new AtomicInteger(0);
-        for(String parentId : list) {
-            repo.getUserDoc(parentId).addOnSuccessListener(doc -> {
-                if(doc.exists()) {
-                    User user = doc.toObject(User.class);
-                    if (user != null && user.getChildrenUid() != null) {
-                        allChildren.addAll(user.getChildrenUid());
-                    }
-                }
+        String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                if (processedCount.incrementAndGet() == list.size()) {
+        db.collection("children")
+                .whereArrayContains("allowedProviderUids",currentUid)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentSnapshot> docs = queryDocumentSnapshots.getDocuments();
+                    for (DocumentSnapshot doc : docs) {
+                        allChildren.add(doc.getId());
+                    }
+
                     convertToNames(allChildren);
-                }
-            });
-        }
+                    });
     }
+
 
     private void showChildPopup() {
         Integer value = sharedModel.getCurrentChild().getValue();
