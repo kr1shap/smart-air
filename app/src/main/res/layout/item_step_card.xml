@@ -15,6 +15,7 @@
         android:layout_marginTop="8dp"
         android:hint="Add Desc"
         android:minLines="2"
+        android:textColorHint="@color/colour_indigo"
         android:textColor="@color/colour_indigo"
         android:background="@android:color/transparent"
         android:fontFamily="@font/dm_sans_regular"/>
