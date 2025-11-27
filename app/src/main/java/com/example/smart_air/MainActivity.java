@@ -1,7 +1,17 @@
 package com.example.smart_air;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.util.TimerTask;
+import androidx.core.app.NotificationManagerCompat;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,6 +21,8 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -20,6 +32,14 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Fragments.CheckInFragment;
+import com.example.smart_air.fragments.TriageFragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
@@ -117,6 +137,11 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.home) {
                 // add fragment for dashboard
             } else if (id == R.id.triage) {
+                // switch page
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof TriageFragment)) {
+                    selectedFragment = new TriageFragment();
+                }
                 //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
@@ -408,7 +433,6 @@ public class MainActivity extends AppCompatActivity {
             badge.setVisibility(View.GONE);
         }
     }
-
     //Callback for main call in general, used to delete account
     private AuthContract.GeneralCallback deleteCallback() {
         return new AuthContract.GeneralCallback() {

@@ -27,6 +27,8 @@
     </string-array>
     <string name="child_email">_child@smartair.com</string>
     <string name="onboarding_illustration">Onboarding illustration</string>
+    <string name="save">Save</string>
+    <string name="set_start_home_steps">Set Start Home Steps</string>
 
     "
 </resources>
