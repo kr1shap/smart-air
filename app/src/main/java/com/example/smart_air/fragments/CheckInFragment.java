@@ -1,4 +1,4 @@
-package com.example.smart_air.Fragments;
+package com.example.smart_air.fragments;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
