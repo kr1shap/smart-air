@@ -23,21 +23,26 @@ import java.util.List;
 public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_TRIAGE = 1;
     private static final int VIEW_TYPE_DAILY = 2;
-    private List<HistoryItem> historyItems;
+    private List<HistoryItem> historyItems; // list with cards
 
+    // set array for HistoryAdapter
     public HistoryAdapter(List<HistoryItem> historyItems) {
         this.historyItems = historyItems;
     }
 
+    // update array for HistoryAdapter
     public void updateList(List<HistoryItem> newList) {
         this.historyItems.clear();
         this.historyItems.addAll(newList);
         notifyDataSetChanged();
     }
+
+    // get array for HistoryAdapter
     public List<HistoryItem> getCurrentList() {
         return new ArrayList<>(historyItems);
     }
 
+    // get type of card for HistoryItem
     @Override
     public int getItemViewType(int position) {
         HistoryItem item = historyItems.get(position);
@@ -48,6 +53,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
+    // creating the view holder for each card
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -63,6 +69,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
+    // call specifci function based on type of viewHolder
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
@@ -81,6 +88,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public static class DailyViewHolder extends RecyclerView.ViewHolder {
+        // setting up ui components
         TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus, nightTerror, activityLimit, coughingWheezing, trigger;
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
@@ -89,6 +97,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         public DailyViewHolder(@NonNull View itemView) {
             super(itemView);
 
+            // declaring ui components
             dateText = itemView.findViewById(R.id.dateText);
             childText = itemView.findViewById(R.id.childText);
             parentText = itemView.findViewById(R.id.parentText);
@@ -235,6 +244,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
         }
 
+        // return hexcode for zone colour
         private int getColour(String zone) {
             switch (zone) {
                 case "green": return Color.parseColor("#4CAF50");
@@ -244,6 +254,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
         }
 
+        // add chips to trigger group
         private void setChips(List<String> triggers) {
             triggersContainer.removeAllViews();
 
@@ -256,11 +267,13 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     static class TriageViewHolder extends RecyclerView.ViewHolder {
+        // setting up ui components
         ChipGroup flagsChipGroup;
         TextView pefValue, rescueAttemptsValue, emergencyButtonText, userResponseList, dateText, title;
 
         TriageViewHolder(@NonNull View itemView) {
             super(itemView);
+            // declaring ui components
             flagsChipGroup = itemView.findViewById(R.id.flagsChipGroup);
             pefValue = itemView.findViewById(R.id.pefValue);
             rescueAttemptsValue = itemView.findViewById(R.id.rescueAttemptsValue);
@@ -271,6 +284,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(HistoryItem item) {
+            // setting values based on card
             dateText.setText(item.time);
             title.setText(item.date + " INCIDENT LOG");
             userResponseList.setText(item.userBullets);
@@ -296,6 +310,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             setChips(item.flaglist);
         }
 
+        // add chips to flag group
         private void setChips(List<String> flags) {
             flagsChipGroup.removeAllViews();
             for (String flag : flags) {
