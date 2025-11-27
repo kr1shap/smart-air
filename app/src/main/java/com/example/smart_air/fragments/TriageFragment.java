@@ -965,7 +965,9 @@ public class TriageFragment extends Fragment {
                 .addOnFailureListener(e ->
                         Log.e("ActionPlan", "Failed to save step", e));
     }
-
+    /*
+    loads steps for child start home steps button
+     */
     public void loadstepsforchildzone(String childUid, String zoneCollection, LinearLayout stepsContainer) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1021,7 +1023,9 @@ public class TriageFragment extends Fragment {
     }
 
 
-
+    /*
+    delete steps function for parents action plan
+     */
     public void deleteStep(String childUid, String zoneCollection, String docId, LinearLayout stepsContainer) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1034,6 +1038,9 @@ public class TriageFragment extends Fragment {
                     loadstepsforchildzone(childUid, zoneCollection, stepsContainer);
                 });
     }
+    /*
+    app functionality when parent wants to edit step in action plan
+     */
     public void editstepdialog(String childUid, String zoneCollection, String docId, String currentDesc, LinearLayout stepsContainer) {
 
         EditText input = new EditText(requireContext());
@@ -1054,7 +1061,9 @@ public class TriageFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
+    /*
+    allows parent to edit step in action plan and save to firebase
+    */
     public void updateStepdesc(String childUid, String zoneCollection, String docId, String newDesc, LinearLayout stepsContainer) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1075,9 +1084,8 @@ public class TriageFragment extends Fragment {
         void onFound(String zoneColour);
     }
 
-    /**
-     * Reads the latest dailyCheckins entry for this child and returns zoneColour.
-     * Path: dailyCheckins/{childUid}/entries (ordered by "date" desc, limit 1)
+    /*
+    obtains current zone colour
      */
     public void getlatestcolour(String childUid, LatestZoneCallback cb) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1108,8 +1116,8 @@ public class TriageFragment extends Fragment {
                     cb.onFound(null);
                 });
     }
-    /**
-     * Switch from triage to the Start Home Steps screen and fill it.
+    /*
+    sets start home steps page from xml when clicked in triage session
      */
     public void openstarthomesteps(String childUid, String zoneColour) {
         if (isAdded()==false)
@@ -1121,16 +1129,16 @@ public class TriageFragment extends Fragment {
         {
             return;
         }
-        View triageContent      = root.findViewById(R.id.triageContent);
-        View childStepsContent  = root.findViewById(R.id.childStepsContent);
+        View triageContent = root.findViewById(R.id.triageContent);
+        View childStepsContent = root.findViewById(R.id.childStepsContent);
         triageContent.setVisibility(View.GONE);
         childStepsContent.setVisibility(View.VISIBLE);
         setupstarthomesteps(childStepsContent, childUid, zoneColour);
     }
 
-    /**
-     * Sets zone text, loads steps, and sets up the Back button.
-     */
+   /*
+   loads start home step screen features
+    */
     public void setupstarthomesteps(View childStepsContent, String childUid, String zoneColour) {
 
         LinearLayout root = childStepsContent.findViewById(R.id.childStepsRoot);
@@ -1161,7 +1169,7 @@ public class TriageFragment extends Fragment {
 
         txtZone.setText(zoneColour);
 
-        // --- background colour by zone ---
+        // background colour by zone
         int bg;
         if ("yellow".equals(zoneColour)) {
             bg = ContextCompat.getColor(requireContext(), R.color.zone_yellow_bg);
@@ -1179,7 +1187,9 @@ public class TriageFragment extends Fragment {
         zoneredflagactions(childStepsContent);
     }
 
-
+    /*
+    loads steps from parent action plan for child based on zone colour
+     */
     public void loadchildstepsforzone(String childUid, String zoneColour, LinearLayout container) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1222,6 +1232,9 @@ public class TriageFragment extends Fragment {
                     }
                 });
     }
+    /*
+    sends notifications when user has quick red flags in start home steps screen
+     */
     public void zoneredflagactions(View childStepsContent) {
 
         MaterialButton btnSentence = childStepsContent.findViewById(R.id.btn_flag_sentences);
