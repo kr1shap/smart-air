@@ -66,6 +66,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -74,7 +75,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
 
 public class TriageFragment extends Fragment {
-
     static final String CHANNEL_ID ="smartairnotif";
     private View view;
     ImageButton checktimerbutton;
@@ -88,39 +88,26 @@ public class TriageFragment extends Fragment {
     EditText pefTriText;
     boolean changedPEF=false;
     int optTriPEF=-1;
-    MaterialButton flgsentences;
-    boolean checkedsen;
-    MaterialButton flgchestpull;
-    boolean checkedpull;
-    MaterialButton flgretract;
-    boolean checkedretract;
-    MaterialButton flgBluelips;
-    boolean checkedbluelips;
-    Button emergcall;
+    boolean checkedsen, checkedpull, checkedretract, checkedbluelips;
     boolean emergcalled=false;
-    Button homestart;
+    Button emergcall, homestart;
     boolean homestartpressed=false;
     String decisioncardchoice;
     String[] stringflags;
     String [] guidance=new String[2];
     String [] userRes;
-    MaterialButton startTriageBtn;
-    MaterialButton endTriageBtn;
+    MaterialButton startTriageBtn, endTriageBtn, flgchestpull, flgBluelips, flgsentences, flgretract;
     boolean triageRunning = false;
     static final long TRIAGE_DURATION_MS =10*60*1000;
     String uid;
-    // keep these as fields in the fragment
-    private Map<String, String> childNameToUid = new HashMap<>();
     private String selectedChildUid = null;
     private String selectedZone = "greenZone";
     private int currentStepCount = 0;
     String zonecolour;
     private SharedChildViewModel sharedModel;
 
+    public TriageFragment() { }
 
-
-    public TriageFragment() {
-    }
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
@@ -183,8 +170,7 @@ public class TriageFragment extends Fragment {
 
 
 
-    public void triagesession(View view)
-    {
+    public void triagesession(View view) {
         //initialize pef
         initializeoptPEF();
         // timer setup
@@ -237,9 +223,6 @@ public class TriageFragment extends Fragment {
                 toggletimerdisplay();
             }
         });
-        // home start steps click
-        TextView txtChildZone = view.findViewById(R.id.txtChildZone);
-        LinearLayout childStepsContainer = view.findViewById(R.id.childStepsContainer);
         // inside triagesession(View view)
         homestart = view.findViewById(R.id.button4);
         homestart.setOnClickListener(v -> {
@@ -275,9 +258,7 @@ public class TriageFragment extends Fragment {
         pefTriText=view.findViewById(R.id.textpef);
         rraText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after)
-            {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String txt = s.toString().trim();
@@ -289,22 +270,15 @@ public class TriageFragment extends Fragment {
                         Log.e(TAG, "Invalid number in recent rescue attempts: " + txt, e);
                     }
                 }
-                else
-                {
-                    recentresattNum = -1;
-                }
+                else { recentresattNum = -1; }
             }
             @Override
-            public void afterTextChanged(Editable s)
-            {
-            }
+            public void afterTextChanged(Editable s)  {}
         });
 
         pefTriText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after)
-            {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String txt = s.toString().trim();
@@ -318,39 +292,32 @@ public class TriageFragment extends Fragment {
                         Log.e(TAG, "Invalid number in recent rescue attempts: " + txt, e);
                     }
                 }
-                else
-                {
+                else {
                     changedPEF=false;
                     initializeoptPEF();
                 }
             }
             @Override
-            public void afterTextChanged(Editable s)
-            {
-            }
+            public void afterTextChanged(Editable s) {}
         });
         // quick red flag checks on triage session
         flgsentences=view.findViewById(R.id.btn_flag_sentences);
-        flgsentences.setOnClickListener(v ->
-        {
+        flgsentences.setOnClickListener(v -> {
             checkedsen=!checkedsen;
             updateflgbtn(flgsentences,checkedsen);
         });
         flgchestpull=view.findViewById(R.id.btn_flag_chest);
-        flgchestpull.setOnClickListener(v ->
-        {
+        flgchestpull.setOnClickListener(v -> {
             checkedpull=!checkedpull;
             updateflgbtn(flgchestpull,checkedpull);
         });
         flgretract=view.findViewById(R.id.btn_flag_retractions);
-        flgretract.setOnClickListener(v ->
-        {
+        flgretract.setOnClickListener(v -> {
             checkedretract=!checkedretract;
             updateflgbtn(flgretract,checkedretract);
         });
         flgBluelips=view.findViewById(R.id.btn_flag_blue);
-        flgBluelips.setOnClickListener(v ->
-        {
+        flgBluelips.setOnClickListener(v -> {
             checkedbluelips=!checkedbluelips;
             updateflgbtn(flgBluelips,checkedbluelips);
         });
@@ -358,7 +325,7 @@ public class TriageFragment extends Fragment {
     }
     private void toggletimerdisplay()
     {
-        if (timervisible==true) {
+        if (timervisible) {
             timervisible=false;
             timertextview.setVisibility(View.GONE);
             if (timertask!=null) {
@@ -372,39 +339,29 @@ public class TriageFragment extends Fragment {
         }
     }
     // functions to manage 10 minute timer
-    public void showtimer()
-    {
-        if (isAdded()==false) {
-            return;
-        }
+    public void showtimer() {
+        if (!isAdded()) { return; }
+
         long now=System.currentTimeMillis();
         long diff= TriageState.triageendtime-now;
         if (diff<=0) {
-            if (timertextview!=null) {
-                timertextview.setText("00:00:00");
-            }
+            if (timertextview!=null) { timertextview.setText("00:00:00"); }
             return;
         }
-        if (timertask!=null) {
-            timertask.cancel();
-        }
+        if (timertask!=null) { timertask.cancel(); }
+
         time=diff/1000.0;
         timertask = new TimerTask()
         {
             @Override
             public void run()
             {
-                if (isAdded()==false) {
-                    return;
-                }
-                requireActivity().runOnUiThread(new Runnable()
-                {
+                if (!isAdded()) { return; }
+
+                requireActivity().runOnUiThread(new Runnable() {
                     @Override
-                    public void run()
-                    {
-                        if (timertextview==null) {
-                            return;
-                        }
+                    public void run() {
+                        if (timertextview==null) { return; }
                         if (time<=0) {
                             timertextview.setText("00:00:00");
                             timertask.cancel();
@@ -422,20 +379,18 @@ public class TriageFragment extends Fragment {
         }
         timer.scheduleAtFixedRate(timertask,0,1000);
     }
-    public String gettimertext()
-    {
+    public String gettimertext() {
         int round=(int)Math.round(time);
         int sec=((round%86400)%3600)%60;
         int min=((round%86400)%3600)/60;
         int hrs=((round%86400)/3600);
         return formatTime(sec,min,hrs);
     }
-    public String formatTime(int sec, int min, int hrs)
-    {
-        return String.format("%02d",hrs)+":"+String.format("%02d",min)+":"+String.format("%02d",sec);
+    public String formatTime(double sec, double min, double hrs) {
+        return String.format(Locale.US, "%02d",(int)hrs)+":"+String.format(Locale.US, "%02d",(int)min)+":"+String.format(Locale.US, "%02d",(int)sec);
     }
-    /* runs when fragment UI is destroyed, fragment is alive
 
+    /* runs when fragment UI is destroyed, fragment is alive
      */
     @Override
     public void onDestroyView() {
@@ -471,31 +426,22 @@ public class TriageFragment extends Fragment {
             btn.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.checkbox));
             btn.setIconTint(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), android.R.color.white)));
         }
-        else {
-            btn.setIcon(null);
-        }
+        else { btn.setIcon(null); }
     }
     /*
     records which buttons user presses in decision card
      */
     public void decisionpressed(boolean ecall, boolean hsteps)
     {
-        if (ecall==false&&hsteps==false) {
-            decisioncardchoice="None";
-        }
-        else if (ecall==true&&hsteps==false) {
-            decisioncardchoice="Call Emergency Now button clicked";
-        }
-        else if (ecall==false&&hsteps==true) {
-            decisioncardchoice="Start Home Steps button clicked";
-        }
-        else {
-            decisioncardchoice="Call Emergency Now and Start Home Steps buttons clicked";
-        }
+        if (!ecall && !hsteps) { decisioncardchoice="None"; }
+        else if (ecall && !hsteps) { decisioncardchoice="Call Emergency Now button clicked"; }
+        else if (!ecall && hsteps) { decisioncardchoice="Start Home Steps button clicked"; }
+        else { decisioncardchoice="Call Emergency Now and Start Home Steps buttons clicked"; }
     }
+
     /*
   if optional PEF isn't filled, use one from daily check-ins
-*/
+   */
     public void initializeoptPEF() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
@@ -539,56 +485,41 @@ public class TriageFragment extends Fragment {
     /*
     records which quick red flags in triage session are pressed
      */
-    public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails)
-    {
+    public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails) {
         ArrayList<String> flagslist=new ArrayList<>();
-        if (sen==true) { flagslist.add("Can't speak full sentences"); }
-        if (chtpull==true) { flagslist.add("Chest Pulling"); }
-        if (inretrt==true) { flagslist.add("In/Retractions"); }
-        if (clrnails==true) { flagslist.add("Blue/Gray lips/Nails"); }
+        if (sen) { flagslist.add("Can't speak full sentences"); }
+        if (chtpull) { flagslist.add("Chest Pulling"); }
+        if (inretrt) { flagslist.add("In/Retractions"); }
+        if (clrnails) { flagslist.add("Blue/Gray lips/Nails"); }
         stringflags = flagslist.toArray(new String[0]);
     }
     /*
     records guidance shown by app
      */
-    public void guidanceadd(String choice)
-    {
+    public void guidanceadd(String choice) {
         guidance[0]=choice;
         guidance[1]=zonecolour;
     }
     /*
     documents what user response is (by checking which buttons have been pressed during triage session)
      */
-    public void useresponseadd()
-    {
+    public void useresponseadd() {
         ArrayList<String> usereslist=new ArrayList<>();
         // check if any flags have been pressed
-        if (checkedsen==true||checkedpull==true||checkedretract==true||checkedbluelips==true) {
-            usereslist.add("Flags pressed");
-        }
+        if (checkedsen || checkedpull || checkedretract || checkedbluelips) {usereslist.add("Flags pressed");}
         // put in values
-        if (changedPEF==true) {
-            usereslist.add("Updated PEF");
-        }
-        if (recentresattNum!=-1) {
-            usereslist.add("Updated recent rescue attempts");
-        }
+        if (changedPEF) {usereslist.add("Updated PEF");}
+        if (recentresattNum!=-1) {usereslist.add("Updated recent rescue attempts");}
         // check what decision card has been pressed
-        if (emergcalled==true) {
-            usereslist.add("Emergency called");
-        }
-        if (homestartpressed==true) {
-            usereslist.add("Home start steps pressed");
-        }
+        if (emergcalled) { usereslist.add("Emergency called"); }
+        if (homestartpressed) {usereslist.add("Home start steps pressed");}
         userRes=usereslist.toArray(new String[0]);
     }
     /*
     runs timer and documents start of triage session
      */
     public void startTriage() {
-        if (triageRunning==true) {
-            return;
-        }
+        if (triageRunning) {return;}
         if (timertextview == null) {
             Log.e(TAG, "startTriageSession: timertextview is null");
             return;
@@ -606,9 +537,7 @@ public class TriageFragment extends Fragment {
     documents end of triage session and ends timer
      */
     public void endTriage() {
-        if (triageRunning==false) {
-            return;
-        }
+        if (!triageRunning) {return;}
         if (timertextview == null) {
             Log.e(TAG, "endTriageSession: timertextview is null");
             return;
@@ -628,47 +557,32 @@ public class TriageFragment extends Fragment {
     /*
     documents triage session information into Firebase database
      */
-    public void savetriagesession()
-    {
+    public void savetriagesession() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user==null) {
-            return;
-        }
+        if (user==null) { return; }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> tridata = new HashMap<>();
-        if (stringflags != null) {
-            tridata.put("flagList", Arrays.asList(stringflags));
-        }
-        else {
-            tridata.put("flagList",null);
-        }
+        if (stringflags != null) { tridata.put("flagList", Arrays.asList(stringflags)); }
+        else { tridata.put("flagList",null); }
+
         tridata.put("PEF",optTriPEF);
-        if (recentresattNum!=-1) {
-            tridata.put("rescueAttempts",recentresattNum);
-        }
-        else {
-            tridata.put("rescueAttempts",0);
-        }
+
+        if (recentresattNum!=-1) { tridata.put("rescueAttempts",recentresattNum); }
+        else { tridata.put("rescueAttempts",0); }
+
         tridata.put("date", new Timestamp(new Date()));
-        if (guidance != null) {
-            tridata.put("guidance", Arrays.asList(guidance));
-        }
-        else {
-            tridata.put("guidance",null);
-        }
-        if (user!=null) {
-            uid=user.getUid();
-        }
-        else{
-            uid=null;
-        }
+
+        if (guidance != null) { tridata.put("guidance", Arrays.asList(guidance)); }
+        else { tridata.put("guidance",null); }
+
+        if (user!=null) { uid=user.getUid(); }
+        else{ uid=null; }
+
         tridata.put("user", uid);
-        if (userRes != null) {
-            tridata.put("userRes", Arrays.asList(userRes));
-        }
-        else {
-            tridata.put("userRes",null);
-        }
+
+        if (userRes != null) { tridata.put("userRes", Arrays.asList(userRes)); }
+        else { tridata.put("userRes",null); }
+
         db.collection("incidentLog")
                 .document(uid)
                 .set(new HashMap<>())
@@ -771,15 +685,9 @@ public class TriageFragment extends Fragment {
         updatezonebutton(btnGreen, btnYellow, btnRed); //update selected zone button look
 
         View.OnClickListener zoneClick = v -> {
-            if (v == btnGreen) {
-                selectedZone = "greenZone";
-            }
-            else if (v == btnYellow) {
-                selectedZone = "yellowZone";
-            }
-            else if (v == btnRed) {
-                selectedZone = "redZone";
-            }
+            if (v == btnGreen) { selectedZone = "greenZone"; }
+            else if (v == btnYellow) { selectedZone = "yellowZone"; }
+            else if (v == btnRed) { selectedZone = "redZone"; }
             // recolor buttons
             updatezonebutton(btnGreen, btnYellow, btnRed);
             // load steps for this zone if a child is already selected
@@ -852,8 +760,7 @@ public class TriageFragment extends Fragment {
     /*
     to change colour of selected zone in parent action plan screen
      */
-    public void updatezonebutton(MaterialButton btnGreen, MaterialButton btnYellow, MaterialButton btnRed)
-    {
+    public void updatezonebutton(MaterialButton btnGreen, MaterialButton btnYellow, MaterialButton btnRed) {
         // colours of selected/non selected zone type
         int selected = ContextCompat.getColor(requireContext(), R.color.colour_blue);
         int normal = ContextCompat.getColor(requireContext(), android.R.color.darker_gray);
@@ -873,8 +780,7 @@ public class TriageFragment extends Fragment {
         }
 
     }
-    public interface StepSaveCallback
-    {
+    public interface StepSaveCallback {
         void onSaved();
     }
     /*
@@ -1053,13 +959,12 @@ public class TriageFragment extends Fragment {
     sets start home steps page from xml when clicked in triage session
      */
     public void openstarthomesteps(String childUid, String zoneColour) {
-        if (isAdded()==false) {
-            return;
-        }
+        if (isAdded()==false) { return; }
+
         View root = getView();
-        if (root == null) {
-            return;
-        }
+
+        if (root == null) { return; }
+
         View triageContent = root.findViewById(R.id.triageContent);
         View childStepsContent = root.findViewById(R.id.childStepsContent);
         triageContent.setVisibility(View.GONE);
@@ -1078,36 +983,27 @@ public class TriageFragment extends Fragment {
         ImageButton btnBack = childStepsContent.findViewById(R.id.btnBackToTriage);
         // back button action
         btnBack.setOnClickListener(v -> {
-            if (isAdded()==false) {
-                return;
-            }
+            if (isAdded()==false) { return; }
+
             View rootView = getView();
-            if (rootView == null) {
-                return;
-            }
+
+            if (rootView == null) { return; }
+
             View triageContent = rootView.findViewById(R.id.triageContent);
             View childContent  = rootView.findViewById(R.id.childStepsContent);
             childContent.setVisibility(View.GONE);
             triageContent.setVisibility(View.VISIBLE);
         });
 
-        if (zoneColour == null) {
-            zoneColour = "green";
-        }
+        if (zoneColour == null) { zoneColour = "green"; }
 
         txtZone.setText(zoneColour);
 
         // background colour by zone
         int bg;
-        if ("yellow".equals(zoneColour)) {
-            bg = ContextCompat.getColor(requireContext(), R.color.zone_yellow_bg);
-        }
-        else if ("red".equals(zoneColour)) {
-            bg = ContextCompat.getColor(requireContext(), R.color.zone_red_bg);
-        }
-        else {
-            bg = ContextCompat.getColor(requireContext(), R.color.zone_green_bg);
-        }
+        if ("yellow".equals(zoneColour)) { bg = ContextCompat.getColor(requireContext(), R.color.zone_yellow_bg); }
+        else if ("red".equals(zoneColour)) { bg = ContextCompat.getColor(requireContext(), R.color.zone_red_bg); }
+        else { bg = ContextCompat.getColor(requireContext(), R.color.zone_green_bg); }
         root.setBackgroundColor(bg);
         // load the home steps for this child + zone
         loadchildstepsforzone(childUid, zoneColour, steps);
@@ -1142,12 +1038,8 @@ public class TriageFragment extends Fragment {
 
                     for (DocumentSnapshot doc : snap.getDocuments()) {
 
-                        int stepNum = doc.getLong("stepnum").intValue();
                         String desc = doc.getString("desc");
-                        if (desc == null)
-                        {
-                            desc = "";
-                        }
+                        if (desc == null) { desc = "";}
                         View card = LayoutInflater.from(requireContext()).inflate(R.layout.item_child_step, container, false);
                         TextView text  = card.findViewById(R.id.txtStepDesc);
                         text.setText(desc);

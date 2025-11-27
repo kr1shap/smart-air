@@ -15,5 +15,6 @@
         android:layout_marginTop="4dp"
         android:text="Step description goes here"
         android:textSize="14sp"
+        android:textColor="@color/colour_indigo"
         android:fontFamily="@font/dm_sans_regular"/>
 </LinearLayout>

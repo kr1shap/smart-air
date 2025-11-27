@@ -15,14 +15,16 @@
         android:layout_marginTop="8dp"
         android:hint="Add Desc"
         android:minLines="2"
+        android:textColor="@color/colour_indigo"
         android:background="@android:color/transparent"
         android:fontFamily="@font/dm_sans_regular"/>
 
     <Button
         android:id="@+id/btnSaveStep"
+        style="@style/SmartAir.Button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Save"
+        android:text="@string/save"
         android:fontFamily="@font/dm_sans_regular"/>
 </LinearLayout>

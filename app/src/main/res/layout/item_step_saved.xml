@@ -15,7 +15,7 @@
         android:layout_marginTop="4dp"
         android:text="Add Desc"
         android:textSize="14sp"
-        android:textColor="#555555"
+        android:textColor="@color/colour_indigo"
         android:fontFamily="@font/dm_sans_regular"/>
 
     <LinearLayout
@@ -31,8 +31,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
             android:text="Edit"
             android:fontFamily="@font/dm_sans_regular"/>
 
@@ -41,8 +39,6 @@
             style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
             android:text="-" />
     </LinearLayout>
 

@@ -4,8 +4,11 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#C86E6E"
-    android:layout_margin="16dp">
+    android:backgroundTint="#C86E6E"
+    android:layout_margin="16dp"
+    android:paddingBottom="15dp"
+    android:background="@drawable/circular_text_field_background"
+    >
 
     <TextView
         android:id="@+id/red_flag_title"
