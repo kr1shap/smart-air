@@ -1,5 +1,6 @@
 package com.example.smart_air.modelClasses;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ public class Child {
     private Map<String, Object> techniqueStats;
     private Map<String, Object> controllerStats;
     private Map<String, Integer> thresholds;
+    private ArrayList<String> allowedProviderUids; //list of all provider uids
 
 
     // made for dropdown
@@ -77,6 +79,9 @@ public class Child {
 
         //TODO: fill it in with the right stuff after
         this.controllerStats = new HashMap<>();
+
+        //array list
+        this.allowedProviderUids = new ArrayList<>();
 
         // thresholds
         this.thresholds = new HashMap<>();
@@ -158,4 +163,8 @@ public class Child {
     public Map<String, Boolean> getWeeklySchedule() { return weeklySchedule; }
 
     public void setWeeklySchedule(Map<String, Boolean> weeklySchedule) { this.weeklySchedule = weeklySchedule; }
+
+    public ArrayList<String> getAllowedProviderUids() { return allowedProviderUids; }
+
+    public void setAllowedProviderUids(ArrayList<String> allowedProviderUids) { this.allowedProviderUids = allowedProviderUids; }
 }
