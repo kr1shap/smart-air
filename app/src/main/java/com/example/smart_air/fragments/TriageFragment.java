@@ -690,51 +690,70 @@ public class TriageFragment extends Fragment {
                 });
     }
     /*
+    get child's name
+     */
+    public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("children")
+                .document(childUid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String childName = doc.getString("name");
+                        onSuccess.onSuccess(childName);
+                    }
+                    else {
+                        onFailure.onFailure(new Exception("Child document not found"));
+                    }
+                })
+                .addOnFailureListener(onFailure);
+    }
+
+    /*
     Used to send notifications to parent
      */
     public void sendtriageAlert() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return;
         }
         String cUid = user.getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users")
-                .document(cUid)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists() == false) {
-                        Log.e("Triage", "User document missing");
-                        return;
-                    }
-                    List<String> parentUids = (List<String>) doc.get("parentUid");
-                    if (parentUids == null || parentUids.isEmpty()) {
-                        Log.e("Triage", "No parentUid array found");
-                        return;
-                    }
-                    NotificationRepository notifRepo = new NotificationRepository();
-                    for (String pUid : parentUids) {
-                        if (pUid == null){
-                            continue;
+        getchildname(cUid, childName -> {
+            db.collection("users")
+                    .document(cUid)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (!doc.exists()) {
+                            Log.e("Triage", "Child user document missing");
+                            return;
                         }
-                        Notification notif = new Notification(
-                                pUid,
-                                false,
-                                Timestamp.now(),
-                                NotifType.TRIAGE
-                        );
-                        notifRepo.createNotification(pUid, notif)
-                                .addOnSuccessListener(aVoid ->
-                                        Log.d("NotificationRepo", "Notification created for parent " + pUid))
-                                .addOnFailureListener(e ->
-                                        Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
-                    }
+                        List<String> parentUids = (List<String>) doc.get("parentUid");
+                        if (parentUids == null || parentUids.isEmpty()) {
+                            Log.e("Triage", "No parentUid array found");
+                            return;
+                        }
+                        NotificationRepository notifRepo = new NotificationRepository();
+                        for (String pUid : parentUids) {
+                            if (pUid == null){
+                                continue;
+                            }
+                            Notification notif = new Notification(cUid, false, Timestamp.now(), NotifType.TRIAGE, childName);
+                            notifRepo.createNotification(pUid, notif)
+                                    .addOnSuccessListener(aVoid ->
+                                            Log.d("NotificationRepo", "Notification created for parent " + pUid))
+                                    .addOnFailureListener(e ->
+                                            Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
+                        }
 
-                })
-                .addOnFailureListener(e ->
-                        Log.e("Triage", "Failed to load child document", e)
-                );
+                    })
+                    .addOnFailureListener(e ->
+                            Log.e("Triage", "Failed to load child document", e)
+                    );
+
+        }, error -> {
+            Log.e("Triage", "Failed to fetch child name", error);
+        });
     }
     /*
     Sets up page for parents to make action plan
@@ -803,10 +822,8 @@ public class TriageFragment extends Fragment {
             }
             currentStepCount++;
             View card = LayoutInflater.from(requireContext()).inflate(R.layout.item_step_card, stepsContainer, false);
-            TextView title = card.findViewById(R.id.txtStepTitle);
             EditText desc  = card.findViewById(R.id.edtStepDesc);
             Button save    = card.findViewById(R.id.btnSaveStep);
-            title.setText("Step " + currentStepCount);
             int stepNumForThisCard = currentStepCount;
             save.setOnClickListener(btn -> {
                 String text = desc.getText().toString().trim();
@@ -871,16 +888,23 @@ public class TriageFragment extends Fragment {
         data.put("stepnum", stepNum);
         db.collection("actionPlan")
                 .document(childUid)
-                .collection(zoneCollection)
-                .add(data)
-                .addOnSuccessListener(ref -> {
-                    Log.d("ActionPlan", "Saved step " + stepNum);
-                    if (cb != null) {
-                        cb.onSaved();
-                    }
+                .set(new HashMap<>())
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("actionPlan")
+                            .document(childUid)
+                            .collection(zoneCollection)
+                            .add(data)
+                            .addOnSuccessListener(ref -> {
+                                Log.d("ActionPlan", "Saved step " + stepNum);
+                                if (cb != null) {
+                                    cb.onSaved();
+                                }
+                            })
+                            .addOnFailureListener(e ->
+                                    Log.e("ActionPlan", "Failed to save step", e));
                 })
                 .addOnFailureListener(e ->
-                        Log.e("ActionPlan", "Failed to save step", e));
+                        Log.e("ActionPlan", "Error creating parent actionPlan doc", e));
     }
     /*
     loads steps for child start home steps button
@@ -913,11 +937,9 @@ public class TriageFragment extends Fragment {
 
                         String docId = doc.getId();
                         View card = LayoutInflater.from(requireContext()).inflate(R.layout.item_step_saved, stepsContainer, false);
-                        TextView title   = card.findViewById(R.id.txtSavedStepTitle);
                         TextView txtDesc = card.findViewById(R.id.txtSavedStepDesc);
                         Button btnEdit   = card.findViewById(R.id.btnEditStep);
                         Button btnDelete = card.findViewById(R.id.btnDeleteStep);
-                        title.setText("Step " + stepNum);
                         txtDesc.setText(desc);
                         String finalDesc = desc;
                         btnEdit.setOnClickListener(v ->
@@ -1127,9 +1149,7 @@ public class TriageFragment extends Fragment {
                             desc = "";
                         }
                         View card = LayoutInflater.from(requireContext()).inflate(R.layout.item_child_step, container, false);
-                        TextView title = card.findViewById(R.id.txtStepNum);
                         TextView text  = card.findViewById(R.id.txtStepDesc);
-                        title.setText("Step " + stepNum);
                         text.setText(desc);
                         container.addView(card);
                     }
@@ -1176,5 +1196,4 @@ public class TriageFragment extends Fragment {
             }
         });
     }
-
 }

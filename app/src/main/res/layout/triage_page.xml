@@ -28,7 +28,7 @@
             android:textColor="#007CBE"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:font="@font/dm_sans_regular" />
+            android:fontFamily="@font/dm_sans_regular" />
 
         <TextView
             android:layout_width="match_parent"
@@ -39,7 +39,7 @@
             android:textColor="@android:color/black"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:font="@font/dm_sans_regular"/>
+            android:fontFamily="@font/dm_sans_regular"/>
             <include
                 android:id="@+id/redFlagInclude"
                 layout="@layout/quick_red_flags" />
@@ -82,7 +82,7 @@
                     android:layout_height="24dp"
                     android:layout_marginStart="8dp"
                     android:background="#EAF4FF"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
             </LinearLayout>
 
             <LinearLayout
@@ -106,7 +106,7 @@
                     android:layout_height="24dp"
                     android:layout_marginStart="8dp"
                     android:background="#EAF4FF"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <View
                     android:layout_width="0dp"
@@ -178,20 +178,23 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/startriage"
+                    style="@style/SmartAir.Button2"
                     android:layout_width="0dp"
-                    android:layout_height="75dp"
+                    android:layout_height="100dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="12dp"
                     android:backgroundTint="@android:color/holo_blue_light"
                     android:text="HAVING TROUBLE BREATHING?"
                     android:textColor="@android:color/white"
                     android:textAllCaps="false"
-                    android:font="@font/dm_sans_regular"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:icon="@drawable/timer"
                     app:iconGravity="textStart" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/endtriage"
+                    style="@style/SmartAir.Button2"
                     android:layout_width="0dp"
                     android:layout_height="60dp"
                     android:layout_weight="1"
@@ -199,7 +202,8 @@
                     android:text="BETTER"
                     android:textColor="@android:color/white"
                     android:textAllCaps="false"
-                    android:font="@font/dm_sans_regular"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:icon="@drawable/timer"
                     app:iconGravity="textStart" />
 
@@ -227,7 +231,7 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="#007CBE"
-                android:font="@font/dm_sans_regular"
+                android:fontFamily="@font/dm_sans_regular"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="16dp" />
 
@@ -251,7 +255,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Green"
-                    android:font="@font/dm_sans_regular"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:checked="true" />
 
                 <com.google.android.material.button.MaterialButton
@@ -260,7 +264,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Yellow"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnZoneRed"
@@ -268,7 +272,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Red"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <LinearLayout
@@ -343,7 +347,7 @@
                     android:layout_marginStart="12dp"
                     android:textColor="#007CBE"
                     android:text="Start Home Steps"
-                    android:font="@font/dm_sans_regular"
+                    android:fontFamily="@font/dm_sans_regular"
                     android:textSize="24sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -364,7 +368,7 @@
                     android:text="Zone:"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <TextView
                     android:id="@+id/txtChildZone"
@@ -374,7 +378,7 @@
                     android:text="--"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:font="@font/dm_sans_regular"/>
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <View
                     android:layout_width="0dp"
@@ -385,7 +389,16 @@
             <include
                 android:id="@+id/redFlagInclude"
                 layout="@layout/quick_red_flags" />
-
+            <TextView
+                android:id="@+id/stepstitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:textColor="#007CBE"
+                android:text="Steps"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textSize="24sp"
+                android:textStyle="bold" />
             <LinearLayout
                 android:id="@+id/childStepsContainer"
                 android:layout_width="match_parent"

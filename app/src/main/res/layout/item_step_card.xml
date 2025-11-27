@@ -7,15 +7,6 @@
     android:background="#F4F4F4"
     android:layout_marginBottom="12dp">
 
-    <TextView
-        android:id="@+id/txtStepTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:font="@font/dm_sans_regular"
-        android:text="Step X"
-        android:textColor="@android:color/holo_blue_dark"
-        android:textSize="17sp"
-        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/edtStepDesc"
@@ -25,7 +16,7 @@
         android:hint="Add Desc"
         android:minLines="2"
         android:background="@android:color/transparent"
-        android:font="@font/dm_sans_regular"/>
+        android:fontFamily="@font/dm_sans_regular"/>
 
     <Button
         android:id="@+id/btnSaveStep"
@@ -33,5 +24,5 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Save"
-        android:font="@font/dm_sans_regular"/>
+        android:fontFamily="@font/dm_sans_regular"/>
 </LinearLayout>
