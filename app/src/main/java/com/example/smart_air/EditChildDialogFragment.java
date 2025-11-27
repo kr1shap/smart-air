@@ -111,7 +111,7 @@ public class EditChildDialogFragment extends DialogFragment {
         llProvidersList = view.findViewById(R.id.ll_providers_list);
         tvNoProviders = view.findViewById(R.id.tv_no_providers);
         providerCheckboxes = new ArrayList<>();
-//FJF3bxcFoyasVnLIh2jjP14rYYR2
+
         //toggle buttons
         chipMon = view.findViewById(R.id.chipMon);
         chipTues = view.findViewById(R.id.chipTues);
@@ -120,7 +120,6 @@ public class EditChildDialogFragment extends DialogFragment {
         chipFri = view.findViewById(R.id.chipFri);
         chipSat = view.findViewById(R.id.chipSat);
         chipSun = view.findViewById(R.id.chipSun);
-
 
         switchRescue = view.findViewById(R.id.switch_rescue);
         switchController = view.findViewById(R.id.switch_controller);
@@ -170,7 +169,7 @@ public class EditChildDialogFragment extends DialogFragment {
                 Log.w(TAG, "Weekly map is null, defaulting to false");
             }
 
-            // Load sharing toggles - FIXED
+            // Load sharing toggles
             Map<String, Boolean> sharing = child.getSharing();
             if (sharing != null) {
                 Log.d(TAG, "Loading toggles from sharing map:");
@@ -373,7 +372,7 @@ public class EditChildDialogFragment extends DialogFragment {
         child.setSharing(editSharing());
         //set the allowed providers
         child.setAllowedProviderUids(editProviderUid());
-
+        //update child info
         childRepo.updateChild(child,
                 aVoid -> {
                     Log.d(TAG, "Child updated successfully");
@@ -393,14 +392,10 @@ public class EditChildDialogFragment extends DialogFragment {
         this.listener = listener;
     }
 
-
     private ArrayList<String> editProviderUid() {
         ArrayList<String> allowedProviders = new ArrayList<>();
         for (CheckBox checkBox : providerCheckboxes) {
-            if (checkBox.isChecked()) {
-                String providerUid = (String) checkBox.getTag();
-                allowedProviders.add(providerUid);
-            }
+            if (checkBox.isChecked()) { allowedProviders.add((String) checkBox.getTag()); }
         }
         return allowedProviders;
     }
