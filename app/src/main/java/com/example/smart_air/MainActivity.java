@@ -248,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
                                 dailyCheckIn.setEnabled(false);
                                 dailyCheckIn.setCheckable(false);
                                 dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                                // TODO: go back to home fragment if on check in fragment
                             }
                             else{
                                 dailyCheckIn.setEnabled(true);
@@ -339,6 +340,7 @@ public class MainActivity extends AppCompatActivity {
                                 dailyCheckIn.setEnabled(false);
                                 dailyCheckIn.setCheckable(false);
                                 dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                                // TODO: go back to home fragment if on check in fragment
                             }
                             else{
                                 dailyCheckIn.setEnabled(true);
