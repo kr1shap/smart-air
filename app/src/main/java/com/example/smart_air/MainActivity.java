@@ -56,9 +56,9 @@ public class MainActivity extends AppCompatActivity {
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
-    private ListenerRegistration parentListener;
-    private ListenerRegistration providerChildrenListener;
-    private boolean removeDailyCheckIn = true;
+    private ListenerRegistration parentListener; // listener for when parent gets new child
+    private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
+    private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
 
 
     @Override
@@ -225,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // calls right function to get children based on role
     private void getChildren(){
         repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
@@ -239,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("parent") ){
                             List<String> list = user.getChildrenUid();
+                            // if list is empty now removes daily check in
                             if(list.isEmpty()){
                                 removeDailyCheckIn = true;
                             }
@@ -262,13 +264,14 @@ public class MainActivity extends AppCompatActivity {
                             convertToNames(list);
                         }
                         if(role.equals("provider")){
-                            getParentsChildren();
+                            getProviderChildren();
                         }
                     }
                 });
     }
 
-    private void getParentsChildren() {
+    // gets providers children from "children" collection
+    private void getProviderChildren() {
         List<String> allChildren = new ArrayList<>();
         String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -288,6 +291,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // show popup with all children
     private void showChildPopup() {
         Integer value = sharedModel.getCurrentChild().getValue();
         AtomicInteger currentIndex = new AtomicInteger(value != null ? value : 0); // currently selected item
@@ -304,6 +308,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    // convert array list to array
     private String [] convertChildAllChildrenList(){
         List <Child> children = sharedModel.getAllChildren().getValue();
         if(children == null){
@@ -317,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
         repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
@@ -371,8 +377,6 @@ public class MainActivity extends AppCompatActivity {
                             triage.setCheckable(false);
                             triage.setVisible(false);
 
-                            // update child switching list when new child is added / deleted
-                            listenerToProvider();
                         }
                     }
                     else{
@@ -382,21 +386,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void listenerToProvider() {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user == null) {return;}
-                        List <String> parentUids = user.getParentUid();
-                        for(String parentUid: parentUids){
-                            listenerToParent(parentUid, false);
-                        }
-
-                    }
-                });
-    }
-
+    // takes children uid and gives a Child list with it's uid and name to sharemodel
     private void convertToNames (List<String> uid) {
         List<Child> children = new ArrayList<>();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -484,6 +474,7 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    // checks children to see if current providers list has changed
     private void startChildrenListener() {
         String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
