@@ -542,18 +542,10 @@ public class TriageFragment extends Fragment {
     public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails)
     {
         ArrayList<String> flagslist=new ArrayList<>();
-        if (sen==true) {
-            flagslist.add("Can't speak full sentences");
-        }
-        if (chtpull==true) {
-            flagslist.add("Chest Pulling");
-        }
-        if (inretrt==true) {
-            flagslist.add("In/Retractions");
-        }
-        if (clrnails==true) {
-            flagslist.add("Blue/Gray lips/Nails");
-        }
+        if (sen==true) { flagslist.add("Can't speak full sentences"); }
+        if (chtpull==true) { flagslist.add("Chest Pulling"); }
+        if (inretrt==true) { flagslist.add("In/Retractions"); }
+        if (clrnails==true) { flagslist.add("Blue/Gray lips/Nails"); }
         stringflags = flagslist.toArray(new String[0]);
     }
     /*
