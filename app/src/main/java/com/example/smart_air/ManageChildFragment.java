@@ -24,6 +24,7 @@ import com.example.smart_air.Repository.ChildRepository;
 import com.example.smart_air.adapter.ChildAdapter;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
+import com.example.smart_air.modelClasses.User;
 import com.google.firebase.auth.FirebaseUser;
 
 
@@ -47,6 +48,8 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
     private LinearLayout inviteCodeSection;
     private Child selectedChild;
     private View view;
+    //list of providers and their checkboxes
+    private List<User> providersList; //to hold all providers
 
     @Nullable
     @Override
@@ -63,10 +66,12 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         childRepo = new ChildRepository();
         authRepo = new AuthRepository();
         childrenList = new ArrayList<>();
+        providersList = new ArrayList<>(); //initalize
 
         //check if user is authenticated
         if (authRepo.getCurrentUser() == null) { redirectToLogin(); return; }
 
+        //rest of buttons
         rvChildren = view.findViewById(R.id.rv_children);
         tvNoChildren = view.findViewById(R.id.tv_no_children);
         inviteCodeSection = view.findViewById(R.id.invite_code_section);
@@ -77,6 +82,7 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
 
         setupRecyclerView();
         loadChildren();
+        loadProviders(); // load providers
 
         btnGenerateCode.setOnClickListener(v -> generateInviteCode());
     }
@@ -86,6 +92,30 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
         childAdapter = new ChildAdapter(childrenList, this);
         rvChildren.setLayoutManager(new LinearLayoutManager(getContext()));
         rvChildren.setAdapter(childAdapter);
+    }
+
+    //Function loads all providers
+    private void loadProviders() {
+        FirebaseUser currentUser = authRepo.getCurrentUser();
+        if (currentUser == null) {
+            Log.e(TAG, "No current user found");
+            return;
+        }
+        Log.d(TAG, "Loading providers for parent: " + currentUser.getUid());
+        childRepo.getProvidersUserForParent(currentUser.getUid(),
+                providers -> {
+                    if (getContext() == null) return;
+                    providersList.clear();
+                    if (providers != null) providersList.addAll(providers);
+                    Log.d(TAG, "Loaded " + providers.size() + " providers");
+                },
+                e -> {
+                    if (getContext() == null) return;
+                    Log.e(TAG, "Error loading providers", e);
+                    Toast.makeText(getContext(), "Error loading providers: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+        );
     }
 
 
@@ -209,10 +239,15 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
 
     @Override
     public void onChildEdit(Child child) {
+        if (providersList == null) {
+            providersList = new ArrayList<>(); //avoid null ptr
+        }
         Log.d(TAG, "Editing child: " + child.getName());
-        EditChildDialogFragment editDialog = EditChildDialogFragment.newInstance(child);
+        EditChildDialogFragment editDialog = EditChildDialogFragment.newInstance(child,  new ArrayList<>(providersList));
         editDialog.setOnChildUpdatedListener(this::loadChildren);
-        editDialog.show(getParentFragmentManager(), "EditChildDialog");
+        if (isAdded()) {
+            editDialog.show(getParentFragmentManager(), "EditChildDialog");
+        }
     }
 
     //TODO: delete the child account
@@ -241,8 +276,9 @@ public class ManageChildFragment extends Fragment implements ChildAdapter.OnChil
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh data when fragment becomes visible
+        //load all children and provdiers again on resume
         loadChildren();
+        loadProviders();
     }
 
     //redirect if user unauth, invalid
