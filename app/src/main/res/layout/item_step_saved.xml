@@ -27,15 +27,22 @@
 
         <Button
             android:id="@+id/btnEditStep"
+            style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
             android:text="Edit"
             android:fontFamily="@font/dm_sans_regular"/>
 
         <Button
             android:id="@+id/btnDeleteStep"
+            style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
             android:text="-" />
     </LinearLayout>
 
