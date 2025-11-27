@@ -26,6 +26,7 @@ import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.io.File;
 import java.io.OutputStreamWriter;
@@ -579,6 +580,8 @@ public class HistoryFragment extends Fragment {
         selectTriage.setClickable(options[3]);
         selectTriage.setFocusable(options[3]);
         selectTriage.setFocusableInTouchMode(options[3]);
+
+        repo.getCards(childUid,this);
 
     }
 }

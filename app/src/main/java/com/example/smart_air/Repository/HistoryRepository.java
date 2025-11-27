@@ -11,6 +11,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -26,6 +27,7 @@ import java.util.Calendar;
 
 public class HistoryRepository {
     private FirebaseFirestore db;
+    private ListenerRegistration childListener;
 
     public HistoryRepository() {
         db = FirebaseFirestore.getInstance();
@@ -276,6 +278,10 @@ public class HistoryRepository {
     }
 
     public void updateToggles(String childUid, HistoryFragment activity){
+        if (childListener != null) {
+            childListener.remove(); // remove previous ones
+        }
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user == null) {
@@ -299,12 +305,14 @@ public class HistoryRepository {
                     }
 
                     DocumentReference childrenDoc = db.collection("children").document(childUid);
-                    childrenDoc.get().addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()){
-                            Map<String, Boolean> sharing = (Map<String, Boolean>) documentSnapshot.get("sharing");
-                            if (sharing != null) {
-                                activity.fixToggles(sharing,false);
-                            }
+                    childListener = childrenDoc.addSnapshotListener((snapshot, e) -> {
+                        if (e != null || snapshot == null || !snapshot.exists()) return;
+
+                        Map<String, Boolean> sharing =
+                                (Map<String, Boolean>) snapshot.get("sharing");
+
+                        if (sharing != null) {
+                            activity.fixToggles(sharing, false);
                         }
                     });
                 });
