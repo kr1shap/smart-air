@@ -6,10 +6,12 @@ import android.widget.LinearLayout;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -25,11 +27,13 @@ import java.util.Calendar;
 
 public class HistoryRepository {
     private FirebaseFirestore db;
+    private ListenerRegistration childListener;
 
     public HistoryRepository() {
         db = FirebaseFirestore.getInstance();
     }
 
+    // if child gets it's own uid
     public void getChildUid(HistoryFragment activity) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         String currentUid = auth.getCurrentUser().getUid();
@@ -58,13 +62,13 @@ public class HistoryRepository {
 
 
 
+    // get's current cards
     public void getCards(String childUid, HistoryFragment activity){
-        DocumentReference userDocRef = db.collection("dailyCheckIns").document(childUid);
-        CollectionReference entriesRef = userDocRef.collection("entries");
-
+        // queries for both child and parent based on filters
         Query childQuery = filterQuery(activity, childUid,"child");
         Query parentQuery = filterQuery(activity, childUid,"parent");
 
+        // array list with new cards
         List<HistoryItem> results = new ArrayList<>();
 
         childQuery.get().addOnSuccessListener(dailyChild -> {
@@ -90,27 +94,61 @@ public class HistoryRepository {
                                                                 results.add(triageItem);
                                                             }
 
+                                                            removeProviderInfo(results, activity);
                                                             removeUnPassed(results,activity);
-                                                            Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
+                                                            Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate)); // sort results
 
-                                                            activity.createRecycleView(results);
+                                                            activity.createRecycleView(results); // create cards on screen
                                                         });
             });
         });
     }
 
+    // goes through provider toggles and edits
+    private void removeProviderInfo(List<HistoryItem> results, HistoryFragment activity) {
+        // booleans based on toggle arrays
+        boolean removeSymptoms = !activity.options[2];
+        boolean removeTriageCard = !activity.options[3];
+        boolean removeRescueOnly = !activity.options[1];
+        boolean removePefTriage = !removeTriageCard && !activity.options[0];
+        boolean removeTriggers = !activity.options[4];
+
+        // update each card accordingly
+        for(HistoryItem card: results){
+            if(card.cardType == HistoryItem.typeOfCard.triage){
+                if(removeTriageCard){ card.passFilter = false; }
+                else {
+                    if (removePefTriage) {
+                        card.pef = -10; // implies n/a
+                    }
+                    if (removeRescueOnly){
+                        card.rescueAttempts = -10; // implies n/a
+                    }
+                }
+            }
+            else{
+                // set booleans to fix other stuff in adapter
+                if(removeSymptoms){ card.removeSymptoms = true;}
+                if(removeTriggers){ card.removeTrigger = true;}
+            }
+        }
+    }
+
+
+    // removes cards based on filter
     private void removeUnPassed(List<HistoryItem> results, HistoryFragment activity) {
-        Map<String, List<HistoryItem>> historyMap = new HashMap<>();
+        Map<String, List<HistoryItem>> historyMap = new HashMap<>(); // a map to sort cards by date
         for(HistoryItem result:results){
-            if((result.date).compareTo(activity.filters[4]) < 0){
+            if((result.date).compareTo(activity.filters[4]) < 0){ // checks to see if card is within date range
                 continue;
             }
-            if(!historyMap.containsKey(result.date)){
+            if(!historyMap.containsKey(result.date)){ // adds to map
                 historyMap.put(result.date, new ArrayList<>());
             }
             historyMap.get(result.date).add(result);
         }
-        if(!activity.filters[5].equals("")){
+        // keeps cards based on triage filter
+        if(!activity.filters[5].equals("") && activity.options[3]){
             boolean setTriage = activity.filters[5].equals("Days with Triage");
             for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
                 List<HistoryItem> cards = entry.getValue();
@@ -128,30 +166,35 @@ public class HistoryRepository {
                 }
             }
         }
-        for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
-            List<HistoryItem> cards = entry.getValue();
-            boolean passFilter = false;
-            for(HistoryItem card: cards){
-                if(card.cardType != HistoryItem.typeOfCard.triage){
-                    passFilter = true;
-                    break;
+        if(activity.options[3]) {
+            for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
+                List<HistoryItem> cards = entry.getValue();
+                boolean passFilter = false;
+                for (HistoryItem card : cards) {
+                    if (card.cardType != HistoryItem.typeOfCard.triage) {
+                        passFilter = true;
+                        break;
+                    }
                 }
-            }
-            if(!passFilter){
-                for(HistoryItem card: cards){
-                    card.passFilter = false;
+                if (!passFilter) {
+                    for (HistoryItem card : cards) {
+                        card.passFilter = false;
+                    }
                 }
             }
         }
 
+        // re adds cards back into results
         results.clear();
         for (List<HistoryItem> items : historyMap.values()) {
             results.addAll(items);
         }
 
+        // remove cards that didn't pass
         results.removeIf(result -> !result.passFilter);
     }
 
+    // given triage info builds HistoryItem triage card
     private HistoryItem builtTriageItem(DocumentSnapshot doc) {
         Timestamp ts = doc.getTimestamp("date");
         Date accDate = ts != null ? ts.toDate() : null;
@@ -180,6 +223,7 @@ public class HistoryRepository {
         return test;
     }
 
+    // given daily info builds a HistoryItem for a daily info card
     private HistoryItem buildDailyItem(DocumentSnapshot doc) {
         String date = doc.getId(); // the date document ID
         boolean nightWakingChild = doc.contains("nightWakingchild") && doc.getBoolean("nightWakingchild");
@@ -205,15 +249,18 @@ public class HistoryRepository {
         return test;
     }
 
+    // queries based on filters
     public Query filterQuery(HistoryFragment activity, String childUid, String role){
-        Query q = db.collection("dailyCheckins")
+        Query q = db.collection("dailyCheckins") // goes to collection
                 .document(childUid)
                 .collection("entries");
 
-        if(!activity.filters[0].equals("")) {
+        // query based on nightWaking
+        if(!activity.filters[0].equals("") && activity.options[2] == true) {
             q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
         }
-        if(!activity.filters[1].equals("")){
+        // query based on activity
+        if(!activity.filters[1].equals("") && activity.options[2] == true){
             if(activity.filters[1].length() == 2){
                 q = q.whereEqualTo("activityLimits"+role,10);
             }
@@ -226,7 +273,8 @@ public class HistoryRepository {
                         .whereLessThanOrEqualTo("activityLimits" + role, max);
             }
         }
-        if(!activity.filters[2].equals("")){
+        // query based on coughing
+        if(!activity.filters[2].equals("") && activity.options[2] == true){
             if(activity.filters[2].equals("No Coughing")){
                 q = q.whereEqualTo("coughingWheezing"+role,0);
             }
@@ -240,10 +288,56 @@ public class HistoryRepository {
                 q = q.whereEqualTo("coughingWheezing"+role,3);
             }
         }
-        if(!activity.filters[3].equals("")){
+        // query based on triggers
+        if(!activity.filters[3].equals("") && activity.options[4] == true){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
         return q;
     }
+
+    // listener to update toggles
+    public void updateToggles(String childUid, HistoryFragment activity){
+        if (childListener != null) {
+            childListener.remove(); // remove previous ones
+        }
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            return;
+        }
+
+        String uid = user.getUid();
+
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(document -> {
+
+                    if (!document.exists()) {
+                        return;
+                    }
+
+                    String role = document.getString("role");
+
+                    if ("child".equals(role) || "parent".equals(role)) { // if not provider call fixToggles to return all true
+                        activity.fixToggles(null, true);
+                        return;
+                    }
+
+                    DocumentReference childrenDoc = db.collection("children").document(childUid); // check children to find specific toggles for them
+                    childListener = childrenDoc.addSnapshotListener((snapshot, e) -> { // listener to check for change
+                        if (e != null || snapshot == null || !snapshot.exists()) return;
+
+                        Map<String, Boolean> sharing =
+                                (Map<String, Boolean>) snapshot.get("sharing");
+
+                        if (sharing != null) {
+                            activity.fixToggles(sharing, false); // update list
+                        }
+                    });
+                });
+
+    }
+
+
 
 }

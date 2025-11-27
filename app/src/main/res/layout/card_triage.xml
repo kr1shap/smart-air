@@ -154,7 +154,7 @@
 
                 <TextView
                     android:id="@+id/rescueAttemptsValue"
-                    android:layout_width="41dp"
+                    android:layout_width="45dp"
                     android:layout_height="wrap_content"
                     android:text="67"
                     android:textSize="14sp"
