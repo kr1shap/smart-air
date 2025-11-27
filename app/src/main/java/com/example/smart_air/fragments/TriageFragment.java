@@ -10,6 +10,7 @@ import android.util.Log;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -86,6 +87,7 @@ public class TriageFragment extends Fragment {
     EditText rraText;
     int recentresattNum=-1;
     EditText pefTriText;
+    boolean changedPEF=false;
     int optTriPEF=-1;
     MaterialButton flgsentences;
     boolean checkedsen;
@@ -135,9 +137,9 @@ public class TriageFragment extends Fragment {
         View triageContent      = view.findViewById(R.id.triageContent);
         View parentContent      = view.findViewById(R.id.parentContent);
         View childStepsContent  = view.findViewById(R.id.childStepsContent);
-        View loadingView        = view.findViewById(R.id.loadingView); // e.g. a ProgressBar or “Loading…” layout
+        View loadingView        = view.findViewById(R.id.loadingView);
 
-        // 1. Hide everything first
+        // hide everything first
         triageContent.setVisibility(View.GONE);
         parentContent.setVisibility(View.GONE);
         childStepsContent.setVisibility(View.GONE);
@@ -145,7 +147,7 @@ public class TriageFragment extends Fragment {
         {
             loadingView.setVisibility(View.VISIBLE);
         }
-
+        // getting role to put correct view
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null)
         {
@@ -157,18 +159,25 @@ public class TriageFragment extends Fragment {
         db.collection("users").document(user.getUid())
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
-
+                    if (doc.exists()==false)
+                    {
+                        return;
+                    }
                     String role = doc.getString("role");
 
-                    if (loadingView != null) loadingView.setVisibility(View.GONE);
-
+                    if (loadingView != null)
+                    {
+                        loadingView.setVisibility(View.GONE);
+                    }
+                    // child view
                     if ("child".equals(role)) {
                         parentContent.setVisibility(View.GONE);
                         childStepsContent.setVisibility(View.GONE);
                         triageContent.setVisibility(View.VISIBLE);
                         triagesession(view);
-                    } else {
+                    }
+                    //parent view
+                    else {
                         triageContent.setVisibility(View.GONE);
                         childStepsContent.setVisibility(View.GONE);
                         parentContent.setVisibility(View.VISIBLE);
@@ -183,6 +192,8 @@ public class TriageFragment extends Fragment {
 
     public void triagesession(View view)
     {
+        //initialize pef
+        initializeoptPEF();
         // timer setup
         checktimerbutton = view.findViewById(R.id.timer);
         timertextview = view.findViewById(R.id.timerTextV);
@@ -264,7 +275,7 @@ public class TriageFragment extends Fragment {
             public void onClick(View v) {
                 emergcalled=true;
                 Intent intentcall = new Intent(Intent.ACTION_DIAL);
-                intentcall.setData(Uri.parse("tel:6767676767")); //change to 911
+                intentcall.setData(Uri.parse("tel:911"));
                 startActivity(intentcall);
             }
         });
@@ -307,23 +318,26 @@ public class TriageFragment extends Fragment {
             {
 
             }
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String txt = s.toString().trim();
                 if (txt.isEmpty()==false) {
+                    changedPEF=true;
                     try
                     {
                         optTriPEF = Integer.parseInt(txt);
                     }
                     catch (NumberFormatException e)
                     {
-                        recentresattNum = -1;
+                        initializeoptPEF();
                         Log.e(TAG, "Invalid number in recent rescue attempts: " + txt, e);
                     }
                 }
                 else
                 {
-                    optTriPEF = -1;
+                    changedPEF=false;
+                    initializeoptPEF();
                 }
             }
             @Override
@@ -332,7 +346,7 @@ public class TriageFragment extends Fragment {
 
             }
         });
-        // quick red flag checks
+        // quick red flag checks on triage session
         flgsentences=view.findViewById(R.id.btn_flag_sentences);
         flgsentences.setOnClickListener(v ->
         {
@@ -359,7 +373,6 @@ public class TriageFragment extends Fragment {
         });
 
     }
-
     private void toggletimerdisplay()
     {
         if (timervisible==true)
@@ -378,6 +391,7 @@ public class TriageFragment extends Fragment {
             showtimer();
         }
     }
+    // functions to manage 10 minute timer
     public void showtimer()
     {
         if (isAdded()==false)
@@ -448,6 +462,9 @@ public class TriageFragment extends Fragment {
     {
         return String.format("%02d",hrs)+":"+String.format("%02d",min)+":"+String.format("%02d",sec);
     }
+    /* runs when fragment UI is destroyed, fragment is alive
+
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -474,7 +491,9 @@ public class TriageFragment extends Fragment {
         startTriageBtn=null;
         endTriageBtn=null;
     }
-
+    /*
+    changes button when checked in quick red flags
+     */
     public void updateflgbtn(MaterialButton btn, boolean checked) {
         if (checked==true)
         {
@@ -486,6 +505,9 @@ public class TriageFragment extends Fragment {
             btn.setIcon(null);
         }
     }
+    /*
+    records which buttons user presses in decision card
+     */
     public void decisionpressed(boolean ecall, boolean hsteps)
     {
         if (ecall==false&&hsteps==false)
@@ -505,6 +527,57 @@ public class TriageFragment extends Fragment {
             decisioncardchoice="Call Emergency Now and Start Home Steps buttons clicked";
         }
     }
+    /*
+  if optional PEF isn't filled, use one from daily check-ins
+*/
+    public void initializeoptPEF() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Log.e(TAG, "initializeoptPEF: User not logged in");
+            optTriPEF = -1;
+            return;
+        }
+
+        String childUid = user.getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("dailyCheckins")              // ✅ matches your structure
+                .document(childUid)
+                .collection("entries")
+                .orderBy("date", Query.Direction.DESCENDING)  // ✅ same as getlatestcolour()
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    Log.d(TAG, "initializeoptPEF: snapshot size = " + snap.size());
+                    if (snap.isEmpty()) {
+                        optTriPEF = -1;
+                        Log.d(TAG, "initializeoptPEF: No daily check-in entries found for child");
+                        return;
+                    }
+
+                    DocumentSnapshot doc = snap.getDocuments().get(0);
+                    Log.d(TAG, "initializeoptPEF: latest entry id = " + doc.getId());
+
+                    // read "pef" as generic Number so it works for int/long/double
+                    Number pefNumber = (Number) doc.get("pef");   // 👈 make sure your field is really called "pef"
+                    if (pefNumber != null) {
+                        optTriPEF = pefNumber.intValue();
+                        Log.d(TAG, "initializeoptPEF: Fetched latest daily PEF = " + optTriPEF);
+                    } else {
+                        optTriPEF = -1;
+                        Log.d(TAG, "initializeoptPEF: Latest daily check-in had no 'pef' field");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    optTriPEF = -1;
+                    Log.e(TAG, "initializeoptPEF: Error fetching latest daily check-in PEF", e);
+                });
+    }
+
+
+    /*
+    records which quick red flags in triage session are pressed
+     */
     public void flagschecked(boolean chtpull, boolean sen, boolean inretrt, boolean clrnails)
     {
         ArrayList<String> flagslist=new ArrayList<>();
@@ -526,11 +599,17 @@ public class TriageFragment extends Fragment {
         }
         stringflags = flagslist.toArray(new String[0]);
     }
+    /*
+    records guidance shown by app
+     */
     public void guidanceadd(String choice)
     {
         guidance[0]=choice;
         guidance[1]=zonecolour;
     }
+    /*
+    documents what user response is (by checking which buttons have been pressed during triage session)
+     */
     public void useresponseadd()
     {
         ArrayList<String> usereslist=new ArrayList<>();
@@ -540,7 +619,7 @@ public class TriageFragment extends Fragment {
             usereslist.add("Flags pressed");
         }
         // put in values
-        if (optTriPEF!=-1)
+        if (changedPEF==true)
         {
             usereslist.add("Updated PEF");
         }
@@ -559,6 +638,9 @@ public class TriageFragment extends Fragment {
         }
         userRes=usereslist.toArray(new String[0]);
     }
+    /*
+    runs timer and documents start of triage session
+     */
     public void startTriage() {
         if (triageRunning==true)
         {
@@ -577,7 +659,9 @@ public class TriageFragment extends Fragment {
         startTriageBtn.setEnabled(false);
         endTriageBtn.setEnabled(true);
     }
-
+    /*
+    documents end of triage session and ends timer
+     */
     public void endTriage() {
         if (triageRunning==false)
         {
@@ -599,6 +683,9 @@ public class TriageFragment extends Fragment {
         startTriageBtn.setEnabled(true);
         endTriageBtn.setEnabled(false);
     }
+    /*
+    documents triage session information into Firebase database
+     */
     public void savetriagesession()
     {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -616,15 +703,7 @@ public class TriageFragment extends Fragment {
         {
             tridata.put("flagList",null);
         }
-        // do not need this if, uses old pef when it has
-        if (optTriPEF!=-1)
-        {
-            tridata.put("PEF",optTriPEF);
-        }
-        else
-        {
-            tridata.put("PEF",null);
-        }
+        tridata.put("PEF",optTriPEF);
         if (recentresattNum!=-1)
         {
             tridata.put("rescueAttempts",recentresattNum);
@@ -771,7 +850,7 @@ public class TriageFragment extends Fragment {
         btnRed.setOnClickListener(zoneClick);
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
-        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up initial child
             if (children != null && !children.isEmpty()) {
                 int currentIndex = sharedModel.getCurrentChild().getValue() != null
                         ? sharedModel.getCurrentChild().getValue()
