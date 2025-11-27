@@ -81,7 +81,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public static class DailyViewHolder extends RecyclerView.ViewHolder {
-        TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus;
+        TextView dateText, childText, parentText, nightTerrorsStatus, activityLimitsStatus, coughingStatus, zoneStatus, nightTerror, activityLimit, coughingWheezing, trigger;
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
         View colourBox;
@@ -97,6 +97,10 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             coughingStatus = itemView.findViewById(R.id.coughingStatus);
             colourBox = itemView.findViewById(R.id.colourBox);
             zoneStatus = itemView.findViewById(R.id.zoneStatus);
+            nightTerror = itemView.findViewById(R.id.nightTerror);
+            activityLimit = itemView.findViewById(R.id.activityLimit);
+            coughingWheezing = itemView.findViewById(R.id.coughingWheezing);
+            trigger = itemView.findViewById(R.id.trigger);
 
             childActivityLimitsBar = itemView.findViewById(R.id.childActivityLimitsBar);
             parentActivityLimitsBar = itemView.findViewById(R.id.parentActivityLimitsBar);
@@ -192,6 +196,43 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
             // triggers
             setChips(card.triggers);
+
+            if(card.removeSymptoms){
+                childText.setVisibility(View.GONE);
+                parentText.setVisibility(View.GONE);
+                childActivityLimitsBar.setVisibility(View.GONE);
+                parentActivityLimitsBar.setVisibility(View.GONE);
+                childCoughingBar.setVisibility(View.GONE);
+                parentCoughingBar.setVisibility(View.GONE);
+                nightTerror.setVisibility(View.GONE);
+                activityLimit.setVisibility(View.GONE);
+                coughingWheezing.setVisibility(View.GONE);
+                nightTerrorsStatus.setVisibility(View.GONE);
+                activityLimitsStatus.setVisibility(View.GONE);
+                coughingStatus.setVisibility(View.GONE);
+            }
+            else{
+                childText.setVisibility(View.VISIBLE);
+                parentText.setVisibility(View.VISIBLE);
+                childActivityLimitsBar.setVisibility(View.VISIBLE);
+                parentActivityLimitsBar.setVisibility(View.VISIBLE);
+                childCoughingBar.setVisibility(View.VISIBLE);
+                parentCoughingBar.setVisibility(View.VISIBLE);
+                nightTerror.setVisibility(View.VISIBLE);
+                activityLimit.setVisibility(View.VISIBLE);
+                coughingWheezing.setVisibility(View.VISIBLE);
+                nightTerrorsStatus.setVisibility(View.VISIBLE);
+                activityLimitsStatus.setVisibility(View.VISIBLE);
+                coughingStatus.setVisibility(View.VISIBLE);
+            }
+            if(card.removeTrigger){
+                trigger.setVisibility(View.GONE);
+                triggersContainer.setVisibility(View.GONE);
+            }
+            else{
+                trigger.setVisibility(View.VISIBLE);
+                triggersContainer.setVisibility(View.VISIBLE);
+            }
         }
 
         private int getColour(String zone) {
@@ -205,6 +246,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         private void setChips(List<String> triggers) {
             triggersContainer.removeAllViews();
+
             for (String trigger : triggers) {
                 Chip chip = new Chip(itemView.getContext());
                 chip.setText(trigger);
@@ -235,11 +277,17 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             if(item.pef == -5){
                 pefValue.setText("not entered");
             }
+            else if(item.pef == -10){
+                pefValue.setText("not available");
+            }
             else{
                 pefValue.setText(String.valueOf(item.pef));
             }
             if(item.rescueAttempts == -5){
                 rescueAttemptsValue.setText("0");
+            }
+            else if(item.rescueAttempts == -10){
+                rescueAttemptsValue.setText("n/a");
             }
             else{
                 rescueAttemptsValue.setText(String.valueOf(item.rescueAttempts));

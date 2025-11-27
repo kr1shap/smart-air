@@ -6,6 +6,7 @@ import android.widget.LinearLayout;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -90,6 +91,7 @@ public class HistoryRepository {
                                                                 results.add(triageItem);
                                                             }
 
+                                                            removeProviderInfo(results, activity);
                                                             removeUnPassed(results,activity);
                                                             Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate));
 
@@ -98,6 +100,31 @@ public class HistoryRepository {
             });
         });
     }
+
+    private void removeProviderInfo(List<HistoryItem> results, HistoryFragment activity) {
+        boolean removeSymptoms = !activity.options[2];
+        boolean removeTriageCard = !activity.options[3];
+        boolean removeRescueOnly = !activity.options[1];
+        boolean removePefTriage = !removeTriageCard && !activity.options[0];
+        for(HistoryItem card: results){
+            if(card.cardType == HistoryItem.typeOfCard.triage){
+                if(removeTriageCard){ card.passFilter = false; }
+                else {
+                    if (removePefTriage) {
+                        card.pef = -10;
+                    }
+                    if (removeRescueOnly){
+                        card.rescueAttempts = -10;
+                    }
+                }
+            }
+            else{
+                if(removeSymptoms){ card.removeSymptoms = true;}
+                if(!activity.options[4]){ card.removeTrigger = true;}
+            }
+        }
+    }
+
 
     private void removeUnPassed(List<HistoryItem> results, HistoryFragment activity) {
         Map<String, List<HistoryItem>> historyMap = new HashMap<>();
@@ -110,7 +137,7 @@ public class HistoryRepository {
             }
             historyMap.get(result.date).add(result);
         }
-        if(!activity.filters[5].equals("")){
+        if(!activity.filters[5].equals("") && activity.options[3]){
             boolean setTriage = activity.filters[5].equals("Days with Triage");
             for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
                 List<HistoryItem> cards = entry.getValue();
@@ -128,18 +155,20 @@ public class HistoryRepository {
                 }
             }
         }
-        for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
-            List<HistoryItem> cards = entry.getValue();
-            boolean passFilter = false;
-            for(HistoryItem card: cards){
-                if(card.cardType != HistoryItem.typeOfCard.triage){
-                    passFilter = true;
-                    break;
+        if(activity.options[3]) {
+            for (Map.Entry<String, List<HistoryItem>> entry : historyMap.entrySet()) {
+                List<HistoryItem> cards = entry.getValue();
+                boolean passFilter = false;
+                for (HistoryItem card : cards) {
+                    if (card.cardType != HistoryItem.typeOfCard.triage) {
+                        passFilter = true;
+                        break;
+                    }
                 }
-            }
-            if(!passFilter){
-                for(HistoryItem card: cards){
-                    card.passFilter = false;
+                if (!passFilter) {
+                    for (HistoryItem card : cards) {
+                        card.passFilter = false;
+                    }
                 }
             }
         }
@@ -210,10 +239,10 @@ public class HistoryRepository {
                 .document(childUid)
                 .collection("entries");
 
-        if(!activity.filters[0].equals("")) {
+        if(!activity.filters[0].equals("") && activity.options[2] == true) {
             q = q.whereEqualTo("nightWaking"+role,Boolean.parseBoolean(activity.filters[0]));
         }
-        if(!activity.filters[1].equals("")){
+        if(!activity.filters[1].equals("") && activity.options[2] == true){
             if(activity.filters[1].length() == 2){
                 q = q.whereEqualTo("activityLimits"+role,10);
             }
@@ -226,7 +255,7 @@ public class HistoryRepository {
                         .whereLessThanOrEqualTo("activityLimits" + role, max);
             }
         }
-        if(!activity.filters[2].equals("")){
+        if(!activity.filters[2].equals("") && activity.options[2] == true){
             if(activity.filters[2].equals("No Coughing")){
                 q = q.whereEqualTo("coughingWheezing"+role,0);
             }
@@ -240,10 +269,48 @@ public class HistoryRepository {
                 q = q.whereEqualTo("coughingWheezing"+role,3);
             }
         }
-        if(!activity.filters[3].equals("")){
+        if(!activity.filters[3].equals("") && activity.options[4] == true){
             q = q.whereArrayContains("triggers"+role, activity.filters[3]);
         }
         return q;
     }
+
+    public void updateToggles(String childUid, HistoryFragment activity){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            return;
+        }
+
+        String uid = user.getUid();
+
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(document -> {
+
+                    if (!document.exists()) {
+                        return;
+                    }
+
+                    String role = document.getString("role");
+
+                    if ("child".equals(role) || "parent".equals(role)) {
+                        activity.fixToggles(null, true);
+                        return;
+                    }
+
+                    DocumentReference childrenDoc = db.collection("children").document(childUid);
+                    childrenDoc.get().addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()){
+                            Map<String, Boolean> sharing = (Map<String, Boolean>) documentSnapshot.get("sharing");
+                            if (sharing != null) {
+                                activity.fixToggles(sharing,false);
+                            }
+                        }
+                    });
+                });
+
+    }
+
+
 
 }

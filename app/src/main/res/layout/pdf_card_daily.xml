@@ -65,6 +65,7 @@
             android:paddingBottom="0dp">
 
             <TextView
+                android:id="@+id/night"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -92,6 +93,7 @@
             android:paddingBottom="0dp">
 
             <TextView
+                android:id="@+id/activity"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -119,6 +121,7 @@
             android:paddingBottom="0dp">
 
             <TextView
+                android:id="@+id/cough"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -139,6 +142,7 @@
 
         <!-- triggers -->
         <TextView
+            android:id="@+id/trigger"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Triggers:"

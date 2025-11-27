@@ -39,6 +39,8 @@ public class HistoryItem {
     public String nightChildText;
     public String nightParentText;
     public String zone;
+    public boolean removeSymptoms = false;
+    public boolean removeTrigger = false;
 
     // triage only stuff
     public List<String> flaglist;
@@ -96,6 +98,9 @@ public class HistoryItem {
             if(!(triggers.contains(parentTriggers.get(i)))){
                 triggers.add(parentTriggers.get(i));
             }
+        }
+        if(triggers.isEmpty()){
+            triggers.add("None");
         }
 
         switch(activityAvg){
