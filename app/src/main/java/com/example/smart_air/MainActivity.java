@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     // children tracking variables
     private SharedChildViewModel sharedModel;
     private ListenerRegistration parentListener;
+    private ListenerRegistration providerChildrenListener;
     private boolean removeDailyCheckIn = true;
 
 
@@ -282,6 +283,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     convertToNames(allChildren);
+                    startChildrenListener();
                     });
     }
 
@@ -480,5 +482,27 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
             }
         };
+    }
+
+    private void startChildrenListener() {
+        String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        providerChildrenListener = db.collection("children")
+                .whereArrayContains("allowedProviderUids", currentUid)
+                .addSnapshotListener((querySnapshot, e) -> {
+                    if (e != null) {
+                        return;
+                    }
+
+                    if (querySnapshot == null) return;
+
+                    List<String> allChildren = new ArrayList<>();
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        allChildren.add(doc.getId());
+                    }
+
+                    convertToNames(allChildren);
+                });
     }
 }
