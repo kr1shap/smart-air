@@ -23,6 +23,7 @@ import androidx.fragment.app.FragmentManager;
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -215,8 +216,11 @@ public class TechniqueHelperFragment extends Fragment {
             int totalCompleted = 0;
             String lastDateStr = null;
             String today = getToday();
+            boolean controllerBadge = false;
+            int quality_thresh = 10; //default value
+            Map<String, Boolean> badges = new HashMap<>(); //for badges
 
-            //get technique map if it exists
+            //get technique map if it exists & threshold, badge map
             if (snap.exists()) {
                 Map<String, Object> techniqueStats = (Map<String, Object>) snap.get("techniqueStats");
                 if (techniqueStats != null) {
@@ -227,6 +231,15 @@ public class TechniqueHelperFragment extends Fragment {
                     totalCompleted = techniqueStats.get("totalCompletedSessions") != null ?
                             ((Number) techniqueStats.get("totalCompletedSessions")).intValue() : 0;
                     lastDateStr = (String) techniqueStats.get("lastSessionDate");
+                }
+                badges = (Map<String, Boolean>) snap.get("badges");
+                if (badges != null) {
+                    controllerBadge = badges.get("controllerBadge") != null ? (Boolean) badges.get("controllerBadge") : false;
+                } else { badges = Child.initalizeBadges(); }
+
+                Map<String, Object> thresholds = (Map<String, Object>) snap.get("thresholds");
+                if (thresholds != null) {
+                    quality_thresh = thresholds.get("quality_thresh") != null ? ((Number) thresholds.get("quality_thresh")).intValue() : 10;
                 }
             }
 
@@ -239,6 +252,12 @@ public class TechniqueHelperFragment extends Fragment {
             if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
             totalCompleted++; //add 1 to completed technique sessions
 
+            //check if badge should be earned (num perfect sessions >= threshold)
+            if (totalPerfect >= quality_thresh && !controllerBadge) { controllerBadge = true; } //get badge
+            //reset badge if needed
+            if(totalPerfect < quality_thresh && controllerBadge) { controllerBadge = false;} //revoke badge
+            badges.put("controllerBadge", controllerBadge);
+
             //create the map again
             Map<String, Object> techniqueStatsMap = new HashMap<>();
             techniqueStatsMap.put("currentStreak", currentStreak);
@@ -248,6 +267,7 @@ public class TechniqueHelperFragment extends Fragment {
 
             Map<String, Object> data = new HashMap<>();
             data.put("techniqueStats", techniqueStatsMap);
+            data.put("badges", badges);
             transaction.set(childRef, data, SetOptions.merge()); //merge; preserves other fields
             return null;
 
