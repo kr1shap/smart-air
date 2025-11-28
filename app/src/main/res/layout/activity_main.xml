@@ -19,6 +19,7 @@
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
            >
 
             <!-- Notification Icon -->
@@ -28,6 +29,7 @@
                 android:layout_height="30dp"
                 android:background="@drawable/outline_circle_notifications_24"
                 android:padding="8dp"
+                android:layout_marginEnd="20dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone"/>
@@ -48,6 +50,16 @@
                 android:textColor="@android:color/white"
                 android:visibility="gone"/>
         </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/switchChildButton"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/switch_child_button"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
 
 
         <TextView

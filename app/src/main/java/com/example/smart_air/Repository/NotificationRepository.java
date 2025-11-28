@@ -46,8 +46,30 @@ public class NotificationRepository {
                 .delete();
     }
 
-    //create notif to add
+    //adds notif with preliminary check
     public Task<Void> createNotification(String parentUid, Notification notificationObj) {
+        DocumentReference parentDocRef = db.collection("notifications").document(parentUid);
+        //check if parent document exists
+        return parentDocRef.get().continueWithTask(task -> {
+            if (!task.isSuccessful()) {
+                throw task.getException();
+            }
+
+            DocumentSnapshot snapshot = task.getResult();
+
+            //if it doesnt exist then create one
+            if (!snapshot.exists()) {
+                return parentDocRef.set(new HashMap<>())   // empty doc
+                        .continueWithTask(t -> writeNotif(parentUid, notificationObj));
+                        //continue with task of adding to db
+            }
+            //write notif regularly
+            return writeNotif(parentUid, notificationObj);
+        });
+    }
+
+    //create notif to add
+    public Task<Void> writeNotif(String parentUid, Notification notificationObj) {
 
         //generate reference for uid
         DocumentReference docRef = db.collection("notifications")
