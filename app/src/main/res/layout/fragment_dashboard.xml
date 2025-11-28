@@ -16,10 +16,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="John Doe’s Dashboard"
+            android:fontFamily="@font/dm_sans_bold"
             android:layout_gravity="center"
             android:textSize="32sp"
             android:textColor="@color/colour_blue"
-            android:textStyle="bold"
             android:layout_marginBottom="20dp" />
 
         <!-- Today's Zone -->
@@ -36,6 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Today's Zone"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textColor="@color/colour_blue_dark"
                 android:textStyle="bold"
                 android:textSize="18sp" />
@@ -89,6 +90,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Weekly Rescues"
+                    android:fontFamily="@font/dm_sans_bold"
                     android:textSize="16sp"
                     android:textColor="@color/colour_blue_dark"
                     android:textStyle="bold" />
@@ -106,6 +108,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="@color/colour_blue_dark"/>
@@ -126,6 +129,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Last Rescue"
+                    android:fontFamily="@font/dm_sans_bold"
                     android:textSize="16sp"
                     android:textColor="@color/colour_blue_dark"
                     android:textStyle="bold" />
@@ -144,6 +148,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:text="6 days ago"
+                    android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/colour_blue_dark"/>
@@ -164,7 +169,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Inventory"
-                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textSize="18sp"
                 android:textColor="@color/colour_blue_dark"
                 android:layout_marginBottom="12dp"/>
@@ -196,6 +201,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Controller:"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textSize="16sp"
                 android:textColor="@color/colour_blue_dark"/>
 
@@ -218,6 +224,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Last Purchase:"
+                    android:fontFamily="@font/dm_sans_bold"
                     android:textColor="@color/colour_blue_dark"/>
 
                 <TextView
@@ -225,6 +232,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Expires in:"
+                    android:fontFamily="@font/dm_sans_bold"
                     android:textColor="@color/colour_blue_dark"/>
             </LinearLayout>
 
@@ -244,6 +252,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Trends"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textStyle="bold"
                 android:textSize="18sp"
                 android:textColor="@color/colour_blue_dark"/>
@@ -276,15 +285,6 @@
                     android:layout_height="250dp"
                     android:layout_margin="16dp" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#CEE4F5"/>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#BBD6E8"/>
             </ViewFlipper>
 
             <LinearLayout
@@ -309,14 +309,6 @@
                     android:background="@drawable/dot_inactive"
                     android:layout_margin="4dp"/>
 
-                <View
-                    android:id="@+id/dot3"
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/dot_inactive"
-                    android:layout_margin="4dp"/>
-
-
             </LinearLayout>
 
         </LinearLayout>
@@ -325,11 +317,12 @@
             android:id="@+id/btnProviderReport"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/rounded_button"
+            android:background="@drawable/btn_rounded"
             android:backgroundTint="@null"
             android:text="Generate Report"
+            android:fontFamily="@font/dm_sans_bold"
             android:textSize="18sp"
-            android:textColor="@color/colour_blue_dark"
+            android:textColor="@color/colour_white"
             android:textStyle="bold"
             android:layout_marginTop="8dp"/>
 
@@ -337,11 +330,12 @@
             android:id="@+id/btnManageChildren"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/rounded_button"
+            android:background="@drawable/btn_rounded"
             android:backgroundTint="@null"
             android:text="Manage"
+            android:fontFamily="@font/dm_sans_bold"
             android:textSize="18sp"
-            android:textColor="@color/colour_blue_dark"
+            android:textColor="@color/colour_white"
             android:textStyle="bold"
             android:layout_marginTop="8dp"/>
 

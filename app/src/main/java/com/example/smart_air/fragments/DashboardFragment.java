@@ -274,7 +274,6 @@ public class DashboardFragment extends Fragment {
         updateWeeklyRescuesUI(weeklyTotal, lastRescueDate);
 
         drawWeeklyRescueChart(counts);
-        drawWeeklyRescueChart(counts);
     }
 
     private void updateWeeklyRescuesUI(int weeklyTotal, String lastRescueDate) {
@@ -291,68 +290,9 @@ public class DashboardFragment extends Fragment {
 
         View dot1 = view.findViewById(R.id.dot1);
         View dot2 = view.findViewById(R.id.dot2);
-        View dot3 = view.findViewById(R.id.dot3);
 
         dot1.setBackgroundResource(index == 0 ? R.drawable.dot_active : R.drawable.dot_inactive);
         dot2.setBackgroundResource(index == 1 ? R.drawable.dot_active : R.drawable.dot_inactive);
-        dot3.setBackgroundResource(index == 2 ? R.drawable.dot_active : R.drawable.dot_inactive);
-    }
-
-    private void loadUserRole() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("users")
-                .document(uid)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
-
-                    String role = doc.getString("role");
-                    if (role != null) {
-                        applyRoleUI(role.toLowerCase());
-                    }
-                });
-    }
-
-    private void applyRoleUI(String role) {
-
-        View todaysZoneWidget = getView().findViewById(R.id.zoneSection);
-        View sevenDayChart = getView().findViewById(R.id.trendSection);
-        View providerReportButton = getView().findViewById(R.id.btnProviderReport);
-        View manageChildrenButton = getView().findViewById(R.id.btnManageChildren);
-
-        switch (role) {
-
-            case "parent":
-                todaysZoneWidget.setVisibility(View.VISIBLE);
-                sevenDayChart.setVisibility(View.VISIBLE);
-                providerReportButton.setVisibility(View.VISIBLE);
-                manageChildrenButton.setVisibility(View.VISIBLE);
-                break;
-
-            case "child":
-                todaysZoneWidget.setVisibility(View.VISIBLE);
-                sevenDayChart.setVisibility(View.VISIBLE);
-                providerReportButton.setVisibility(View.GONE);
-                manageChildrenButton.setVisibility(View.GONE);
-                break;
-
-            case "provider":
-                todaysZoneWidget.setVisibility(View.GONE);
-                sevenDayChart.setVisibility(View.VISIBLE);
-                providerReportButton.setVisibility(View.VISIBLE);
-                manageChildrenButton.setVisibility(View.GONE);
-                break;
-
-            default:
-                todaysZoneWidget.setVisibility(View.GONE);
-                sevenDayChart.setVisibility(View.GONE);
-                providerReportButton.setVisibility(View.GONE);
-                manageChildrenButton.setVisibility(View.GONE);
-        }
     }
 
     private void loadZoneHistory() {
@@ -688,6 +628,10 @@ public class DashboardFragment extends Fragment {
 
         paint.setTextAlign(Paint.Align.LEFT);
         y += 40;
+
+        paint.setTextSize(16);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        canvas.drawText("Child Name: CHILDNAME", 40, y, paint);
 
         paint.setTextSize(16);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
