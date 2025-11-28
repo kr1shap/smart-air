@@ -63,6 +63,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.example.smart_air.fragments.MedicineTabFragment;
 
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
@@ -156,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
+                selectedFragment = new MedicineTabFragment();
                 // add fragment for medicine
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
