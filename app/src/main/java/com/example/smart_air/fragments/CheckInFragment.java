@@ -503,7 +503,7 @@ public class CheckInFragment extends Fragment {
             toggleGroup.check(R.id.buttonChild);
             buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
             buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
-            nightPrompt.setText("Did you experience any night walking last night?");
+            nightPrompt.setText("Did you experience any night waking last night?");
             activityPrompt.setText("How limited was your activity level today?");
             coughingPrompt.setText("How often we’re you coughing or wheezing today?");
             PEFCard.setVisibility(View.INVISIBLE);
@@ -513,7 +513,7 @@ public class CheckInFragment extends Fragment {
             toggleGroup.check(R.id.buttonParent);
             buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
             buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
-            nightPrompt.setText("Did your child experience any night walking last night?");
+            nightPrompt.setText("Did your child experience any night waking last night?");
             activityPrompt.setText("How limited was your child's activity level today?");
             coughingPrompt.setText("How often was your child coughing or wheezing today?");
             PEFCard.setVisibility(View.VISIBLE);
