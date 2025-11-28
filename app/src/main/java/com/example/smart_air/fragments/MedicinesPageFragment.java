@@ -52,12 +52,12 @@ public class MedicinesPageFragment extends Fragment {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (user != null) {
-            String uid = user.getUid();
+            String childId = user.getUid();  // This is the key under /children
 
             // Load controller name
-            db.collection("users")
-                    .document(uid)
-                    .collection("medications")
+            db.collection("children")
+                    .document(childId)
+                    .collection("inventory")
                     .document("controller")
                     .get()
                     .addOnSuccessListener(document -> {
@@ -68,9 +68,9 @@ public class MedicinesPageFragment extends Fragment {
                     });
 
             // Load rescue name
-            db.collection("users")
-                    .document(uid)
-                    .collection("medications")
+            db.collection("children")
+                    .document(childId)
+                    .collection("inventory")
                     .document("rescue")
                     .get()
                     .addOnSuccessListener(document -> {
@@ -84,9 +84,9 @@ public class MedicinesPageFragment extends Fragment {
             saveControllerBtn.setOnClickListener(v -> {
                 String newName = controllerInput.getText().toString().trim();
                 if (!newName.isEmpty()) {
-                    db.collection("users")
-                            .document(uid)
-                            .collection("medications")
+                    db.collection("children")
+                            .document(childId)
+                            .collection("inventory")
                             .document("controller")
                             .update("name", newName)
                             .addOnSuccessListener(unused -> Toast.makeText(requireContext(), "Controller name updated!", Toast.LENGTH_SHORT).show())
@@ -100,9 +100,9 @@ public class MedicinesPageFragment extends Fragment {
             saveRescueBtn.setOnClickListener(v -> {
                 String newName = rescueInput.getText().toString().trim();
                 if (!newName.isEmpty()) {
-                    db.collection("users")
-                            .document(uid)
-                            .collection("medications")
+                    db.collection("children")
+                            .document(childId)
+                            .collection("inventory")
                             .document("rescue")
                             .update("name", newName)
                             .addOnSuccessListener(unused -> Toast.makeText(requireContext(), "Rescue name updated!", Toast.LENGTH_SHORT).show())

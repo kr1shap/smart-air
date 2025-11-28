@@ -40,7 +40,7 @@ public class MedicineTabFragment extends Fragment {
             );
         }
 
-        View medicinesButton = view.findViewById(R.id.btn_medicines);
+        Button medicinesButton = view.findViewById(R.id.btn_medicines);
         if (medicinesButton != null) {
             medicinesButton.setOnClickListener(v -> {
                 requireActivity()
@@ -51,6 +51,19 @@ public class MedicineTabFragment extends Fragment {
                         .commit();
             });
         }
+
+        Button logDoseButton = view.findViewById(R.id.btn_log_dose);
+        if (logDoseButton != null) {
+            logDoseButton.setOnClickListener(v -> {
+                requireActivity()
+                        .getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new LogDoseFragment())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
     }
+
 
 }
