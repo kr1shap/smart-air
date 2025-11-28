@@ -474,21 +474,6 @@ public class MainActivity extends AppCompatActivity {
             badge.setVisibility(View.GONE);
         }
     }
-    //Callback for main call in general, used to delete account
-    private AuthContract.GeneralCallback deleteCallback() {
-        return new AuthContract.GeneralCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
-                finish();
-            }
-            @Override
-            public void onFailure(String error) {
-                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
-            }
-        };
-    }
 
     // checks children to see if current providers list has changed
     private void startChildrenListener() {
@@ -511,5 +496,21 @@ public class MainActivity extends AppCompatActivity {
 
                     convertToNames(allChildren);
                 });
+    }
+
+    //Callback for main call in general, used to delete account
+    private AuthContract.GeneralCallback deleteCallback() {
+        return new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
+                finish();
+            }
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
+            }
+        };
     }
 }
