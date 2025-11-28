@@ -140,4 +140,12 @@
 
     </style>
 
+    <!-- Alert dialog  -->
+    <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:background">@color/white</item>
+        <item name="android:textColorPrimary">@color/colour_indigo</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
+    </style>
+
+
 </resources>
