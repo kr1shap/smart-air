@@ -40,8 +40,8 @@ public class CheckInFragment extends Fragment {
     String currentTriggers = "Tap to Select";
     String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
     private SharedChildViewModel sharedModel;
-    @Nullable
 
+    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,

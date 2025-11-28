@@ -34,6 +34,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 
+import com.example.smart_air.fragments.BadgeFragment;
 import com.example.smart_air.fragments.TechniqueHelperFragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
@@ -154,6 +155,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (id == R.id.medicine) {
                 // add fragment for medicine
+                //TODO: remove after
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof BadgeFragment)) {
+                    selectedFragment = new BadgeFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {

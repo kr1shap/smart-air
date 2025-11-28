@@ -1,6 +1,319 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/colour_white">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">
+
+        <!-- header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Achievements"
+            android:textSize="28sp"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_indigo"
+            android:layout_marginBottom="15dp"/>
+
+        <!-- Streak Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/streakCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@color/colour_blue">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="24dp"
+                android:gravity="center_vertical">
+
+                <!-- streak for controller weeks ? -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <!-- type of streak Label -->
+                    <TextView
+                        android:id="@+id/typeofController"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Controller"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@android:color/white"
+                        />
+
+                    <!-- streak Number -->
+                    <TextView
+                        android:id="@+id/controllerStreakNum"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="56sp"
+                        android:textColor="@android:color/white"/>
+
+                    <!-- streak Label -->
+                    <TextView
+                        android:id="@+id/controllerStreakLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="day streak"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@android:color/white" />
+
+                </LinearLayout>
+
+                <!-- streak for technique -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <!-- type of streak Label -->
+                    <TextView
+                        android:id="@+id/typeofTechnique"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Technique"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@android:color/white"
+                        />
+
+                    <!-- streak Number -->
+                    <TextView
+                        android:id="@+id/techniqueStreakNum"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="56sp"
+                        android:textColor="@android:color/white"/>
+
+                    <!-- streak Label -->
+                    <TextView
+                        android:id="@+id/techniqueStreakLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="day streak"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@android:color/white" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Badges Section Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Badges"
+            android:textSize="22sp"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_indigo"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- badge 1: technique master -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/badge1Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/colour_white"
+            app:cardElevation="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivBadge1"
+                    android:src="@drawable/badge"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:contentDescription="Technique badge"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBadge1Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Technique Master"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@color/colour_indigo"
+                        />
+                    <TextView
+                        android:id="@+id/tvBadge1Status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_regular"
+                        android:text="Complete a certain amount of high-quality sessions!"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- badge 2: controller crazy  -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/badge2Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/colour_white"
+            app:cardElevation="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivBadge2"
+                    android:src="@drawable/badge"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:contentDescription="Technique badge"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBadge2Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Controller crazy"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@color/colour_indigo"
+                        />
+                    <TextView
+                        android:id="@+id/tvBadge2Status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_regular"
+                        android:text="Adhere to your controller usage for a week!"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- badge 3: low rescue month -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/badge3Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/colour_white"
+            app:cardElevation="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivBadge3"
+                    android:src="@drawable/badge"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:contentDescription="Technique badge"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBadge3Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rescue God"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textColor="@color/colour_indigo"
+                        />
+                    <TextView
+                        android:id="@+id/tvBadge3Status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_regular"
+                        android:text="Have a low number of rescue inhaler usages for any month!"
+                        android:textSize="14sp"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- close btn -->
+        <Button
+            android:id="@+id/btnClose"
+            style="@style/SmartAir.Button1"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Close"
+            android:textColor="@android:color/white"/>
+
+    </LinearLayout>
+
+</ScrollView>

@@ -216,7 +216,7 @@ public class TechniqueHelperFragment extends Fragment {
             int totalCompleted = 0;
             String lastDateStr = null;
             String today = getToday();
-            boolean controllerBadge = false;
+            boolean techniqueBadge = false;
             int quality_thresh = 10; //default value
             Map<String, Boolean> badges = new HashMap<>(); //for badges
 
@@ -234,7 +234,7 @@ public class TechniqueHelperFragment extends Fragment {
                 }
                 badges = (Map<String, Boolean>) snap.get("badges");
                 if (badges != null) {
-                    controllerBadge = badges.get("controllerBadge") != null ? (Boolean) badges.get("controllerBadge") : false;
+                    techniqueBadge = badges.get("techniqueBadge") != null ? (Boolean) badges.get("techniqueBadge") : false;
                 } else { badges = Child.initalizeBadges(); }
 
                 Map<String, Object> thresholds = (Map<String, Object>) snap.get("thresholds");
@@ -253,10 +253,10 @@ public class TechniqueHelperFragment extends Fragment {
             totalCompleted++; //add 1 to completed technique sessions
 
             //check if badge should be earned (num perfect sessions >= threshold)
-            if (totalPerfect >= quality_thresh && !controllerBadge) { controllerBadge = true; } //get badge
+            if (totalPerfect >= quality_thresh && !techniqueBadge) { techniqueBadge = true; } //get badge
             //reset badge if needed
-            if(totalPerfect < quality_thresh && controllerBadge) { controllerBadge = false;} //revoke badge
-            badges.put("controllerBadge", controllerBadge);
+            if(totalPerfect < quality_thresh && techniqueBadge) { techniqueBadge = false;} //revoke badge
+            badges.put("techniqueBadge", techniqueBadge);
 
             //create the map again
             Map<String, Object> techniqueStatsMap = new HashMap<>();
