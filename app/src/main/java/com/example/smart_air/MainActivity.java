@@ -105,6 +105,10 @@ public class MainActivity extends AppCompatActivity {
         //check if child account is useless, then delete
         checkChildDeletion();
 
+        //get user role
+        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
+        getUserRole();
+
         //notif button
         notification = findViewById(R.id.notificationButton);
         setupNotificationIcon(); //checks current user and role
@@ -180,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
 
         // switch child button
-        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
         getChildren(); // fill array list of children in share modal
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
         setUpButtonAndListener(switchChildButton, dailyCheckIn, triage); // set up button
@@ -189,6 +192,20 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
+
+    private void getUserRole() {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        sharedModel.setCurrentRole(role);
+                    }
+                });
     }
 
     private void checkChildDeletion() {

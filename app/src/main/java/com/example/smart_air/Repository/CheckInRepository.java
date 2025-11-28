@@ -62,7 +62,7 @@ public class CheckInRepository {
                         activity.noUserFound();
                         return;
                     }
-                    activity.userInfoLoaded(role,correspondingUid);
+                    activity.userInfoLoaded(correspondingUid);
                 })
                 .addOnFailureListener(e -> {
                     activity.noUserFound();

@@ -57,10 +57,15 @@ public class CheckInFragment extends Fragment {
         this.personalBest = 400; //TODO: get personal best from parent's original set up
 
         CheckInRepository repo = new CheckInRepository();
-        repo.getUserInfo(this);
 
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                this.userRole = role;
+            }
+        });
+
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
             if (children != null && !children.isEmpty()) {
                 int currentIndex = sharedModel.getCurrentChild().getValue() != null
@@ -71,7 +76,6 @@ public class CheckInFragment extends Fragment {
                 this.correspondingUid = currentChildUid;
             }
         });
-
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
             List<Child> children = sharedModel.getAllChildren().getValue();
             if (children != null && !children.isEmpty() && currentIndex != null) {
@@ -79,6 +83,9 @@ public class CheckInFragment extends Fragment {
                 refreshUINewChild(repo);
             }
         });
+
+        // get corresponding uid if child
+        repo.getUserInfo(this);
 
         // setting date
         TextView textView3 = view.findViewById(R.id.textView3);
@@ -474,11 +481,9 @@ public class CheckInFragment extends Fragment {
 
     /**
      * a method that loads info about the user into variables
-     * @param role, stores what type of user it is
      */
-    public void userInfoLoaded(String role, String correspondingUid){
-        userRole = role;
-        updateUIBasedOnRole(role);
+    public void userInfoLoaded(String correspondingUid){
+        updateUIBasedOnRole(userRole);
         if(correspondingUid.equals("")){
             return;
         }
@@ -489,7 +494,7 @@ public class CheckInFragment extends Fragment {
      * changes the text prompts based on type of user
      * @param userRole is the current type of user
      */
-    public void updateUIBasedOnRole(String userRole ){
+    public void updateUIBasedOnRole(String userRole){
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);  // which form
         MaterialButton buttonParent = view.findViewById(R.id.buttonParent);          // which form
         MaterialButton buttonChild = view.findViewById(R.id.buttonChild);            // which form
