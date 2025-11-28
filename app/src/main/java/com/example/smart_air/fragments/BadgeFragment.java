@@ -19,11 +19,13 @@ import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Repository.ChildRepository;
+import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -37,6 +39,8 @@ public class BadgeFragment extends Fragment {
     private CardView badge3Card, badge2Card, badge1Card; //[technique, controller, and rescue]
     private TextView controllerStreakNum, techniqueStreakNum;
     String childUid;
+    //cache for badge data
+    HashMap<String, BadgeData> badgeDataCache = new HashMap<>();
 
     @Nullable
     @Override
@@ -104,8 +108,15 @@ public class BadgeFragment extends Fragment {
     * Method gets the badge streak info to update
     */
     private void getBadgeStreakInfo() {
+        if(badgeDataCache.get(childUid) != null) {
+            BadgeData data = badgeDataCache.get(childUid);
+            updateBadgeUI(data.isControllerBadge(), data.isTechniqueBadge(), data.isLowRescueBadge(),
+                    data.getTechniqueStreak(), data.getControllerStreak());
+            return;
+        }
         childRepo.getBadgeData(childUid)
                 .addOnSuccessListener(data -> {
+                    badgeDataCache.put(childUid, data);
                     updateBadgeUI(data.isControllerBadge(), data.isTechniqueBadge(), data.isLowRescueBadge(),
                             data.getTechniqueStreak(), data.getControllerStreak());
                 })
