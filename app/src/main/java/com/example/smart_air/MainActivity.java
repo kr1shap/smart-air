@@ -107,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
 
         //notif button
         notification = findViewById(R.id.notificationButton);
-        setupNotificationIcon(); //checks current user and role
 
         //add listen on click
         notification.setOnClickListener(new View.OnClickListener() {
@@ -365,6 +364,8 @@ public class MainActivity extends AppCompatActivity {
                             triage.setEnabled(true);
                             triage.setCheckable(true);
                             triage.setVisible(true);
+                            //disable notification
+                            notification.setVisibility(View.GONE);
                             return;
                         }
                         if(role.equals("parent") ){
@@ -390,6 +391,9 @@ public class MainActivity extends AppCompatActivity {
 
                             // update child switching list when new child is added / deleted
                             listenerToParent(repo.getCurrentUser().getUid(), true);
+                            //setup notification listener and icon
+                            notification.setVisibility(View.VISIBLE);
+                            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
                         }
                         if(role.equals("provider")){
                             // show button
@@ -401,6 +405,8 @@ public class MainActivity extends AppCompatActivity {
                             triage.setEnabled(false);
                             triage.setCheckable(false);
                             triage.setVisible(false);
+                            //disable notification
+                            notification.setVisibility(View.GONE);
 
                         }
                     }
@@ -447,20 +453,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupNotificationIcon() {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user != null && !user.getRole().equals("parent")) {
-                            notification.setVisibility(View.GONE);
-                        } else {
-                            notification.setVisibility(View.VISIBLE);
-                            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
-                        }
-                    }
-                });
-    }
     private void setupUnreadNotificationsBadge(String uid) {
          unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
             if (error != null || value == null) return;
