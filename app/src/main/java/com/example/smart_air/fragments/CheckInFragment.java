@@ -66,6 +66,7 @@ public class CheckInFragment extends Fragment {
             }
         });
 
+        // getting current children for parents/providers
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
             if (children != null && !children.isEmpty()) {
                 int currentIndex = sharedModel.getCurrentChild().getValue() != null
@@ -141,6 +142,7 @@ public class CheckInFragment extends Fragment {
         });
 
 
+        // getting toggle buttons for parent/child
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);  // which form
         MaterialButton buttonParent = view.findViewById(R.id.buttonParent);          // which form
         MaterialButton buttonChild = view.findViewById(R.id.buttonChild);            // which form
@@ -171,6 +173,7 @@ public class CheckInFragment extends Fragment {
         });
     }
 
+    // change screen for new children based on toggle
     private void refreshUINewChild(CheckInRepository repo) {
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
         int checkedId = toggleGroup.getCheckedButtonId();
@@ -194,6 +197,7 @@ public class CheckInFragment extends Fragment {
         }
     }
 
+    // get info from database and update ui
     public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef, int pre, int post) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -243,6 +247,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // update ui with default values
     public void updateInfoInputWithoutValues() {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -260,7 +265,7 @@ public class CheckInFragment extends Fragment {
 
         // set default values
         SeekBar seekbar = view.findViewById(R.id.seekBar);
-        seekbar.setProgress(Math.toIntExact(5));
+        seekbar.setProgress(Math.toIntExact(0));
 
         Slider slider = view.findViewById(R.id.sliderCough);
         slider.setValue(0);
@@ -278,6 +283,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // get info from database for other person and update ui
     public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -321,6 +327,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // update ui with default values for other
     public void updateInfoInputOtherWithoutValues() {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -347,6 +354,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // set up ui for cards
     public void setCardCurrent(){
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -529,6 +537,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // set up triggers pop up
     private boolean [] setUpTriggers(String currentTriggers){
         TextView multiSelectTriggers = view.findViewById(R.id.multiSelect);
         boolean [] selectedTriggers = new boolean[triggers.length];
@@ -557,6 +566,7 @@ public class CheckInFragment extends Fragment {
         return selectedTriggers;
     }
 
+    // return zone colour based on percentage
     public String zoneColour(int pef) {
         int percent = (int) Math.round((pef * 100.0) / personalBest);
         if(percent >= 80){
@@ -568,6 +578,8 @@ public class CheckInFragment extends Fragment {
         return "red";
 
     }
+
+    // return zone number based on pef
     public int zoneNumber(int pef){
         return (int) Math.round((pef * 100.0) / personalBest);
     }

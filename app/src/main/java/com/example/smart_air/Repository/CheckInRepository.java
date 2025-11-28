@@ -24,6 +24,8 @@ public class CheckInRepository {
     public CheckInRepository() {
         db = FirebaseFirestore.getInstance();
     }
+
+    // function gets parent's uid if it's a child
     public void getUserInfo(CheckInFragment activity) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -71,6 +73,7 @@ public class CheckInRepository {
 
     }
 
+    // function saves data into a map to be but into db
     public void saveUserData(CheckInFragment context, String userRole, String [] triggers, boolean [] selectedTriggers, String correspondingUid, boolean nightWaking, int activityLevel, int coughingValue, int pef,int pre, int post) {
         // getting user
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -90,6 +93,7 @@ public class CheckInRepository {
             }
         }
 
+        // putting info into a map
         Map<String, Object> data = new HashMap<>();
         data.put("nightWaking"+userRole, nightWaking);
         data.put("activityLimits"+userRole, activityLevel);
@@ -112,6 +116,7 @@ public class CheckInRepository {
         }
         String childUidFinal = childUid;
 
+        // creating document for child in dailyCheckIns if they don't already have one
         DocumentReference userInfo = db.collection("dailyCheckins").document(childUid); // getting the uid
         userInfo.get().addOnSuccessListener(doc -> {
             if (!doc.exists()) {
@@ -137,6 +142,7 @@ public class CheckInRepository {
         });
     }
 
+    // adding data map into dailyCheckIns collection for that child
     private void addDataUser(Map<String, Object> data, CheckInFragment context, String childUid) {
         // create document id
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -157,6 +163,7 @@ public class CheckInRepository {
 
     }
 
+    // get's user input to update form with previous submission for the day
     public void getUserInput(CheckInFragment activity, String userRole, String correspondingUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -207,6 +214,7 @@ public class CheckInRepository {
         });
     }
 
+    // get's other user input to update form with previous submission for the day
     public void getUserInputOther(CheckInFragment activity, String otherUid, String userRole){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -259,6 +267,7 @@ public class CheckInRepository {
         void onResult(int maxPef);
     }
 
+    // getting max pef so pef is only updated with higher number
     public void maxPef(String correspondingUid, String userRole, int inputPef, PefCallback callback) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
