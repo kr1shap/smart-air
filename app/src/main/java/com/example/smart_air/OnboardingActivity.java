@@ -11,10 +11,11 @@ import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.adapter.OnboardingAdapter;
 import com.example.smart_air.modelClasses.OnboardingItem;
 import com.example.smart_air.modelClasses.User;
-import com.google.gson.Gson;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,22 +27,31 @@ public class OnboardingActivity extends AppCompatActivity {
     private OnboardingAdapter adapter;
     private List<OnboardingItem> onboardingItems;
     private User user;
+    AuthRepository authRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_onboarding);
 
-        //user passed from intent
-        String userJson = getIntent().getStringExtra("user");
-        user = new Gson().fromJson(userJson, User.class);
+        authRepository = new AuthRepository();
+
+//        //user passed from intent
+//        String userJson = getIntent().getStringExtra("user");
+//        user = new Gson().fromJson(userJson, User.class);
 
         //get all views
         viewPager = findViewById(R.id.viewPager);
         btnNext = findViewById(R.id.nextBtn);
         btnSkip = findViewById(R.id.skipBtn);
         dotsLayout = findViewById(R.id.dotsLayout);
+        //to see if auth and not null
+        checkCurrentUser( () -> {
+            setupOnboarding();
+        });
+    }
 
+    private void setupOnboarding() {
         //choose setup based on role (different pages shown)
         setupOnboardingPages();
 
@@ -84,8 +94,63 @@ public class OnboardingActivity extends AppCompatActivity {
             }
         });
 
-        //completely skips everything and goes to onboarding
+        //skips everything and goes to onboarding
         btnSkip.setOnClickListener(v -> finishOnboarding());
+    }
+
+    private void setupDotsIndicator(int position) {
+        dotsLayout.removeAllViews(); //remove all dots
+        ImageView[] dots = new ImageView[onboardingItems.size()];
+
+        for (int i = 0; i < dots.length; i++) {
+            dots[i] = new ImageView(this); //new dot
+            dots[i].setImageDrawable(getDrawable(R.drawable.dot_inactive)); //set as inactive
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ); //linear layout for dot
+            params.setMargins(8, 0, 8, 0);
+            dotsLayout.addView(dots[i], params); //add it
+        }
+
+        if (dots.length > 0) {
+            dots[position].setImageDrawable(getDrawable(R.drawable.dot_active));
+        }
+    }
+
+    //completed onboarding!
+    private void finishOnboarding() {
+        if (user == null) return; // in case
+        //mark onboarding for device
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        prefs.edit().putBoolean("onboarding_completed_" + user.getUid(), true).apply();
+
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish(); //finish current activity
+    }
+
+    //checks to see if auth
+    private void checkCurrentUser(Runnable onReady) {
+        //if current user invalid
+        if(authRepository.getCurrentUser() == null) { redirectSignout(); }
+        else {
+            authRepository.getUserDoc(authRepository.getCurrentUser().getUid())
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            user = doc.toObject(User.class);
+                            onReady.run(); //only continue when user loaded (async fxn)
+                        }
+                        else redirectSignout();
+                    })
+                    .addOnFailureListener(e -> redirectSignout());
+        }
+    }
+    //redirect if unauth, not found
+    private void redirectSignout() {
+        Intent intent = new Intent(this, LandingPageActivity.class);
+        startActivity(intent);
+        finish(); //finish current activity
     }
 
     private void setupOnboardingPages() {
@@ -105,8 +170,6 @@ public class OnboardingActivity extends AppCompatActivity {
                 "We respect your privacy and keep your data secure. Your information is encrypted and never shared without permission.",
                 "#f2f7fc"
         ));
-
-
 
         //ROLE-SPECFIC
         String role = user.getRole().toLowerCase(); //precautionary should alr be lowercase
@@ -203,35 +266,4 @@ public class OnboardingActivity extends AppCompatActivity {
         }
     }
 
-    private void setupDotsIndicator(int position) {
-        dotsLayout.removeAllViews(); //remove all dots
-        ImageView[] dots = new ImageView[onboardingItems.size()];
-
-        for (int i = 0; i < dots.length; i++) {
-            dots[i] = new ImageView(this); //new dot
-            dots[i].setImageDrawable(getDrawable(R.drawable.dot_inactive)); //set as inactive
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            ); //linear layout for dot
-            params.setMargins(8, 0, 8, 0);
-            dotsLayout.addView(dots[i], params); //add it
-        }
-
-        if (dots.length > 0) {
-            dots[position].setImageDrawable(getDrawable(R.drawable.dot_active));
-        }
-    }
-
-    private void finishOnboarding() {
-        //mark onboarding completed (for device)
-        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        prefs.edit().putBoolean("onboarding_completed_" + user.getUid(), true).apply();
-
-
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("user", new Gson().toJson(user));
-        startActivity(intent);
-        finish(); //finish current activity
-    }
 }

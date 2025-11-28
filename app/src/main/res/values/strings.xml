@@ -21,10 +21,14 @@
     <string name="username_placeholder">Enter your username...</string>
     <string name="dummyDomain">\@smartAir.com</string>
     <string name="forgot_password">Forgot password?</string>
+    <string-array name="role_options">
+        <item>Parent</item>
+        <item>Child</item>
+    </string-array>
     <string name="child_email">_child@smartair.com</string>
     <string name="onboarding_illustration">Onboarding illustration</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="save">Save</string>
+    <string name="set_start_home_steps">Set Start Home Steps</string>
 
     "
 </resources>

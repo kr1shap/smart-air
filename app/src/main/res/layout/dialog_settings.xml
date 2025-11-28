@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/white">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Manage Settings"
+        android:textSize="20sp"
+        android:fontFamily="@font/dm_sans_bold"
+        android:layout_marginBottom="16dp"
+        android:textColor="@android:color/black" />
+
+
+    <Button
+        android:id="@+id/btn_manage_provider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Manage Provider"
+        android:textAllCaps="false"
+        android:layout_marginBottom="8dp"
+        style="@style/SmartAir.Button1" />
+
+
+    <Button
+        android:id="@+id/btn_manage_child"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Manage Child"
+        android:textAllCaps="false"
+        style="@style/SmartAir.Button1" />
+
+
+</LinearLayout>
+

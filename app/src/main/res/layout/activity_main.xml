@@ -16,6 +16,52 @@
         android:background="?attr/colorPrimary"
         android:theme="?attr/actionBarTheme">
 
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+           >
+
+            <!-- Notification Icon -->
+            <ImageButton
+                android:id="@+id/notificationButton"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/outline_circle_notifications_24"
+                android:padding="8dp"
+                android:layout_marginEnd="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"/>
+
+            <!-- Badge Bubble -->
+            <TextView
+                android:id="@+id/badge_text"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:background="@drawable/badge_circle"
+                android:layout_alignTop="@id/notificationButton"
+                android:layout_alignEnd="@id/notificationButton"
+                android:layout_marginTop="-4dp"
+                android:layout_marginEnd="-4dp"
+                android:gravity="center"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="@android:color/white"
+                android:visibility="gone"/>
+        </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/switchChildButton"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/switch_child_button"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
+
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -33,7 +79,6 @@
             android:src="@drawable/transparentlog"
             android:layout_gravity="center"
             android:contentDescription="Logo" />
-
 
         <!-- sign out button -->
         <Button
