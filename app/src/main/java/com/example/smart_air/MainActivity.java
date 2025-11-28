@@ -375,6 +375,8 @@ public class MainActivity extends AppCompatActivity {
              triage.setEnabled(true);
              triage.setCheckable(true);
              triage.setVisible(true);
+             //disable notification
+             notification.setVisibility(View.GONE);
              return;
         }
         else if(userRole.equals("parent")){
@@ -399,6 +401,9 @@ public class MainActivity extends AppCompatActivity {
             triage.setVisible(true);
             // update child switching list when new child is added / deleted
             listenerToParent(repo.getCurrentUser().getUid(), true);
+            //setup notification listener and icon
+            notification.setVisibility(View.VISIBLE);
+            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
         }
         else if(userRole.equals("provider")) {
             // show button
@@ -410,6 +415,8 @@ public class MainActivity extends AppCompatActivity {
             triage.setEnabled(false);
             triage.setCheckable(false);
             triage.setVisible(false);
+            //disable notification
+            notification.setVisibility(View.GONE);
         }
 
     }
