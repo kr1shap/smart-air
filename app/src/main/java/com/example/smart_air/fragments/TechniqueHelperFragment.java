@@ -1,5 +1,6 @@
 package com.example.smart_air.fragments;
 
+import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,9 +23,11 @@ import androidx.fragment.app.FragmentManager;
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.modelClasses.User;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -92,6 +95,17 @@ public class TechniqueHelperFragment extends Fragment {
         repo = new AuthRepository();
         //check if user is authenticated
         if (repo.getCurrentUser() == null) { destroyFragment(); return; }
+        //extra check just to ensure role is child
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        User user = doc.toObject(User.class);
+                        if (user == null) { return; }
+                        String role = user.getRole();
+                        if (!role.equals("child")) { destroyFragment(); return; }
+                    }
+                });
+
         //TODO: CODE ASSUMES CURRENT USER IS A CHILD!
         //get all other info
         tvTips = view.findViewById(R.id.tvTip);
@@ -115,6 +129,7 @@ public class TechniqueHelperFragment extends Fragment {
      * pre: N/A
      * post: N/A
      */
+    @SuppressLint("SetTextI18n") //suppress text warning
     private void loadStep() {
         //animate the card
         stepCard.animate().alpha(0f).setDuration(150).withEndAction(() -> {
@@ -184,55 +199,110 @@ public class TechniqueHelperFragment extends Fragment {
     }
 
     /*
-     * function: UPDATE data or POST data (stats for technique)
+     * function: UPDATE data or POST data (stats for technique) [considers when the technique map doesnt exist as well]
      * pre: String childUid, boolean perfectSession
      * post: N/A
      */
     private void updateTechniqueStats(String childUid, boolean perfectSession) {
+        //children document
+        DocumentReference childRef = db.collection("children").document(childUid);
 
-        //get document, or generate one if it doesn't exist
-        DocumentReference statsRef = db.collection("techniqueStats").document(childUid);
-
-        //use transaction to ensure no one else modifies the data at the same time
+        // transaction so no one else modifies the data at the same time (b/c streak)
         db.runTransaction(transaction -> {
-            DocumentSnapshot snap = transaction.get(statsRef);
+            DocumentSnapshot snap = transaction.get(childRef);
             int currentStreak = 1;
             int totalPerfect = 0;
             int totalCompleted = 0;
             String lastDateStr = null;
             String today = getToday();
 
-            //get the snap if it exists. if not, then we will use the null default values above
+            //get technique map if it exists
             if (snap.exists()) {
-                currentStreak = snap.getLong("currentStreak") != null ? snap.getLong("currentStreak").intValue() : 1;
-                totalPerfect = snap.getLong("totalPerfectSessions") != null ? snap.getLong("totalPerfectSessions").intValue() : 0;
-                totalCompleted = snap.getLong("totalCompletedSessions") != null ? snap.getLong("totalCompletedSessions").intValue() : 0;
-                lastDateStr = snap.getString("lastSessionDate");
+                Map<String, Object> techniqueStats = (Map<String, Object>) snap.get("techniqueStats");
+                if (techniqueStats != null) {
+                    currentStreak = techniqueStats.get("currentStreak") != null ?
+                            ((Number) techniqueStats.get("currentStreak")).intValue() : 1;
+                    totalPerfect = techniqueStats.get("totalPerfectSessions") != null ?
+                            ((Number) techniqueStats.get("totalPerfectSessions")).intValue() : 0;
+                    totalCompleted = techniqueStats.get("totalCompletedSessions") != null ?
+                            ((Number) techniqueStats.get("totalCompletedSessions")).intValue() : 0;
+                    lastDateStr = (String) techniqueStats.get("lastSessionDate");
+                }
             }
 
-            //UPDATE CURRENT STREAK
-            if (lastDateStr == null) currentStreak = 1; //no last date - new streak
+            //update the current streak
+            if (lastDateStr == null || lastDateStr.isEmpty()) currentStreak = 1; //no last date; new streak
             else if (today.equals(lastDateStr)) { } //no change if today equals the last day
             else if (getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
             else { currentStreak = 1; } //reset streak for some other case
-            if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
-            totalCompleted++;                       //add 1 to compelted technique sessions
-            Map<String, Object> data = new HashMap<>();
-            data.put("currentStreak", currentStreak);
-            data.put("totalPerfectSessions", totalPerfect);
-            data.put("totalCompletedSessions", totalCompleted); //add 1 to completed, as we completed session
-            data.put("lastSessionDate", today); //keeps it in the YYYY-MM-DD format
 
-            transaction.set(statsRef, data); //set data
+            if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
+            totalCompleted++; //add 1 to completed technique sessions
+
+            //create the map again
+            Map<String, Object> techniqueStatsMap = new HashMap<>();
+            techniqueStatsMap.put("currentStreak", currentStreak);
+            techniqueStatsMap.put("totalPerfectSessions", totalPerfect);
+            techniqueStatsMap.put("totalCompletedSessions", totalCompleted);
+            techniqueStatsMap.put("lastSessionDate", today);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("techniqueStats", techniqueStatsMap);
+            transaction.set(childRef, data, SetOptions.merge()); //merge; preserves other fields
             return null;
 
         }).addOnSuccessListener(aVoid -> {
             Toast.makeText(getActivity(), "Saved your technique session!", Toast.LENGTH_SHORT).show();
         }).addOnFailureListener(e -> {
-            Log.e("TechniqueStats", "Failed to update technique stats", e);
-            Toast.makeText(getActivity(), "Could not save session. Progress will be retried.", Toast.LENGTH_SHORT).show();
+            Log.e("TechniqueStats", "Failed to update your technique stats.", e);
+            Toast.makeText(getActivity(), "Could not save session :( ", Toast.LENGTH_SHORT).show();
         });
     }
+//    private void updateTechniqueStats(String childUid, boolean perfectSession) {
+//
+//        //get document, or generate one if it doesn't exist
+//        DocumentReference statsRef = db.collection("techniqueStats").document(childUid);
+//
+//        //use transaction to ensure no one else modifies the data at the same time
+//        db.runTransaction(transaction -> {
+//            DocumentSnapshot snap = transaction.get(statsRef);
+//            int currentStreak = 1;
+//            int totalPerfect = 0;
+//            int totalCompleted = 0;
+//            String lastDateStr = null;
+//            String today = getToday();
+//
+//            //get the snap if it exists. if not, then we will use the null default values above
+//            if (snap.exists()) {
+//                currentStreak = snap.getLong("currentStreak") != null ? snap.getLong("currentStreak").intValue() : 1;
+//                totalPerfect = snap.getLong("totalPerfectSessions") != null ? snap.getLong("totalPerfectSessions").intValue() : 0;
+//                totalCompleted = snap.getLong("totalCompletedSessions") != null ? snap.getLong("totalCompletedSessions").intValue() : 0;
+//                lastDateStr = snap.getString("lastSessionDate");
+//            }
+//
+//            //UPDATE CURRENT STREAK
+//            if (lastDateStr == null) currentStreak = 1; //no last date - new streak
+//            else if (today.equals(lastDateStr)) { } //no change if today equals the last day
+//            else if (getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
+//            else { currentStreak = 1; } //reset streak for some other case
+//            if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
+//            totalCompleted++;                       //add 1 to compelted technique sessions
+//            Map<String, Object> data = new HashMap<>();
+//            data.put("currentStreak", currentStreak);
+//            data.put("totalPerfectSessions", totalPerfect);
+//            data.put("totalCompletedSessions", totalCompleted); //add 1 to completed, as we completed session
+//            data.put("lastSessionDate", today); //keeps it in the YYYY-MM-DD format
+//
+//            transaction.set(statsRef, data); //set data
+//            return null;
+//
+//        }).addOnSuccessListener(aVoid -> {
+//            Toast.makeText(getActivity(), "Saved your technique session!", Toast.LENGTH_SHORT).show();
+//        }).addOnFailureListener(e -> {
+//            Log.e("TechniqueStats", "Failed to update technique stats", e);
+//            Toast.makeText(getActivity(), "Could not save session. Progress will be retried.", Toast.LENGTH_SHORT).show();
+//        });
+//    }
 
     /*
     * pre: N/A
