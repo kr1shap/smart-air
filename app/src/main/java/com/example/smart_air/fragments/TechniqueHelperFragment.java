@@ -283,7 +283,6 @@ public class TechniqueHelperFragment extends Fragment {
     public void destroyFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
         Fragment fragment = fm.findFragmentById(R.id.fragment_container);
-
         if (fragment instanceof TechniqueHelperFragment) {
             fm.beginTransaction()
                     .remove(fragment)

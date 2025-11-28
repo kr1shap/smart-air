@@ -154,11 +154,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (id == R.id.medicine) {
                 // add fragment for medicine
-                //TODO: REMOVE THIS FRAGMENT, PURELY FOR TESTING!
-                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof TechniqueHelperFragment)) {
-                    selectedFragment = new TechniqueHelperFragment();
-                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
