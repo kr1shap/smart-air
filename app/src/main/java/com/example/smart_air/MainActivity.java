@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
     User user;
+    private String userRole;
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
@@ -105,9 +106,27 @@ public class MainActivity extends AppCompatActivity {
         //check if child account is useless, then delete
         checkChildDeletion();
 
+        // get menu item to disable/enable and switch child button
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+
         //get user role
         sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
         getUserRole();
+        sharedModel.getCurrentRole().observe(this, role -> {
+            if (role != null) {
+                this.userRole = role;
+                setUpButtonAndListener(switchChildButton, dailyCheckIn, triage); // set up button
+                getChildren();
+            }
+        });
+
+        // showing child dropdown pop up
+        switchChildButton.setOnClickListener(v -> {
+            showChildPopup();
+        });
 
         //notif button
         notification = findViewById(R.id.notificationButton);
@@ -137,7 +156,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //bottom nav view
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.home);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
@@ -177,18 +195,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             return true;
-        });
-
-        // get menu item to disable/enable
-        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
-
-        // switch child button
-        getChildren(); // fill array list of children in share modal
-        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
-        setUpButtonAndListener(switchChildButton, dailyCheckIn, triage); // set up button
-        switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
         });
 
 
@@ -269,47 +275,45 @@ public class MainActivity extends AppCompatActivity {
 
     // calls right function to get children based on role
     private void getChildren(){
-        repo.getUserDoc(repo.getCurrentUser().getUid())
+        if(userRole.equals("child")){
+            return;
+        }
+        else if(userRole.equals("parent")){
+            repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         user = doc.toObject(User.class);
-                        if (user == null){
+                        if (user == null) {
                             return;
                         }
-                        String role = user.getRole();
-                        if(role.equals("child")){
-                            return;
+                        List<String> list = user.getChildrenUid();
+                        // if list is empty now removes daily check in
+                        if (list.isEmpty()) {
+                            removeDailyCheckIn = true;
+                        } else {
+                            removeDailyCheckIn = false;
                         }
-                        if(role.equals("parent") ){
-                            List<String> list = user.getChildrenUid();
-                            // if list is empty now removes daily check in
-                            if(list.isEmpty()){
-                                removeDailyCheckIn = true;
-                            }
-                            else{
-                                removeDailyCheckIn = false;
-                            }
-                            BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-                            MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-                            if(removeDailyCheckIn) {
-                                dailyCheckIn.setEnabled(false);
-                                dailyCheckIn.setCheckable(false);
-                                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                                // TODO: go back to home fragment if on check in fragment
-                            }
-                            else{
-                                dailyCheckIn.setEnabled(true);
-                                dailyCheckIn.setCheckable(true);
-                                dailyCheckIn.setIcon(R.drawable.checkin);
-                            }
-                            dailyCheckIn.setVisible(true);
-                            convertToNames(list);
+                        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+                        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+                        if (removeDailyCheckIn) {
+                            dailyCheckIn.setEnabled(false);
+                            dailyCheckIn.setCheckable(false);
+                            dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                            // TODO: go back to home fragment if on check in fragment
+                        } else {
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setIcon(R.drawable.checkin);
                         }
-                        if(role.equals("provider")){
-                            getProviderChildren();
-                        }
+                        dailyCheckIn.setVisible(true);
+                        convertToNames(list);
                     }
                 });
+
+        }
+        else if(userRole.equals("provider")){
+            getProviderChildren();
+        }
     }
 
     // gets providers children from "children" collection
@@ -366,65 +370,50 @@ public class MainActivity extends AppCompatActivity {
 
     // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user == null){
-                            return;
-                        }
-                        String role = user.getRole();
-                        if(role.equals("child")){
-                            // enable dailycheckin and triage
-                            dailyCheckIn.setEnabled(true);
-                            dailyCheckIn.setCheckable(true);
-                            dailyCheckIn.setVisible(true);
-                            triage.setEnabled(true);
-                            triage.setCheckable(true);
-                            triage.setVisible(true);
-                            return;
-                        }
-                        if(role.equals("parent") ){
-                            switchChildButton.setVisibility(View.VISIBLE);
-                            // enable dailycheckin
-                            if(removeDailyCheckIn) {
-                                dailyCheckIn.setEnabled(false);
-                                dailyCheckIn.setCheckable(false);
-                                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                                // TODO: go back to home fragment if on check in fragment
-                            }
-                            else{
-                                dailyCheckIn.setEnabled(true);
-                                dailyCheckIn.setCheckable(true);
-                                dailyCheckIn.setIcon(R.drawable.checkin);
-                            }
-                            dailyCheckIn.setVisible(true);
+        if(userRole.equals("child")){
+            // enable dailycheckin and triage
+             dailyCheckIn.setEnabled(true);
+             dailyCheckIn.setCheckable(true);
+             dailyCheckIn.setVisible(true);
+             triage.setEnabled(true);
+             triage.setCheckable(true);
+             triage.setVisible(true);
+             return;
+        }
+        else if(userRole.equals("parent")){
+            switchChildButton.setVisibility(View.VISIBLE);
+            // enable dailycheckin
+            if (removeDailyCheckIn) {
+                dailyCheckIn.setEnabled(false);
+                dailyCheckIn.setCheckable(false);
+                dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                // TODO: go back to home fragment if on check in fragment
+            } else {
+                dailyCheckIn.setEnabled(true);
+                dailyCheckIn.setCheckable(true);
+                dailyCheckIn.setIcon(R.drawable.checkin);
+            }
+            dailyCheckIn.setVisible(true);
 
-                            // enable triage
-                            triage.setEnabled(true);
-                            triage.setCheckable(true);
-                            triage.setVisible(true);
+            // enable triage
+            triage.setEnabled(true);
+            triage.setCheckable(true);
+            triage.setVisible(true);
 
-                            // update child switching list when new child is added / deleted
-                            listenerToParent(repo.getCurrentUser().getUid(), true);
-                        }
-                        if(role.equals("provider")){
-                            // show button
-                            switchChildButton.setVisibility(View.VISIBLE);
-                            // disable dailycheckin and triage
-                            dailyCheckIn.setEnabled(false);
-                            dailyCheckIn.setCheckable(false);
-                            dailyCheckIn.setVisible(false);
-                            triage.setEnabled(false);
-                            triage.setCheckable(false);
-                            triage.setVisible(false);
-
-                        }
-                    }
-                    else{
-                        return;
-                    }
-                });
+            // update child switching list when new child is added / deleted
+            listenerToParent(repo.getCurrentUser().getUid(), true);
+        }
+        else if(userRole.equals("provider")){
+            // show button
+            switchChildButton.setVisibility(View.VISIBLE);
+            // disable dailycheckin and triage
+            dailyCheckIn.setEnabled(false);
+            dailyCheckIn.setCheckable(false);
+            dailyCheckIn.setVisible(false);
+            triage.setEnabled(false);
+            triage.setCheckable(false);
+            triage.setVisible(false);
+        }
 
     }
 
