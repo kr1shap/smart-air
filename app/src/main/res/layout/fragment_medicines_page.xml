@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
+    android:fillViewport="true"
     tools:context=".fragments.MedicineTabFragment">
 
     <LinearLayout
@@ -12,6 +13,17 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
+
+        <Button
+            android:id="@+id/btn_back_meds"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← Back"
+            android:textAllCaps="false"
+            android:background="@android:color/transparent"
+            android:textColor="@color/colour_blue"
+            android:textSize="16sp"
+            android:padding="8dp" />
 
         <!-- Title -->
         <TextView
@@ -23,6 +35,7 @@
             android:textStyle="bold"
             android:textColor="@android:color/black"
             android:paddingBottom="16dp" />
+
 
         <!-- CONTROLLER SECTION -->
 
@@ -53,15 +66,27 @@
                 android:padding="16dp">
 
                 <!-- Medicine name (controller) -->
-                <TextView
-                    android:id="@+id/text_controller_name"
-                    android:layout_width="wrap_content"
+                <EditText
+                    android:id="@+id/edit_controller_name"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ventolin"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="12dp" />
+                    android:background="@android:color/transparent"
+                    android:inputType="textPersonName"
+                    android:paddingBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_save_controller_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Save"
+                    android:textSize="14sp"
+                    android:backgroundTint="@color/colour_blue"
+                    android:textColor="@android:color/white" />
+
 
                 <!-- Today's usages -->
                 <TextView
@@ -95,26 +120,14 @@
                     android:paddingBottom="8dp" />
 
                 <!-- Reminder buttons -->
-                <LinearLayout
+                <TextView
+                    android:id="@+id/text_controller_reminders_value"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btn_controller_reminder_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="12:00 PM"
-                        android:textAllCaps="false" />
-
-                    <Button
-                        android:id="@+id/btn_controller_reminder_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="6:00 PM"
-                        android:textAllCaps="false" />
-                </LinearLayout>
+                    android:text="Once per day"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/white"
+                    android:paddingBottom="8dp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -148,25 +161,28 @@
                 android:padding="16dp">
 
                 <!-- Medicine name (rescue) -->
-                <TextView
-                    android:id="@+id/text_rescue_name"
-                    android:layout_width="wrap_content"
+                <EditText
+                    android:id="@+id/edit_rescue_name"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Flovent"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="12dp" />
+                    android:background="@android:color/transparent"
+                    android:inputType="textPersonName"
+                    android:paddingBottom="8dp" />
 
-                <!-- Today's usages -->
-                <TextView
-                    android:id="@+id/text_rescue_today"
+                <Button
+                    android:id="@+id/btn_save_rescue_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Today’s usages: 1"
+                    android:text="Save"
                     android:textSize="14sp"
+                    android:backgroundTint="@color/colour_blue"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="4dp" />
+                    android:layout_marginBottom="8dp" />
+
 
                 <!-- Usages left -->
                 <TextView
