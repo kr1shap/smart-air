@@ -33,6 +33,10 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
+
+import com.example.smart_air.fragments.BadgeFragment;
+import com.example.smart_air.fragments.TechniqueHelperFragment;
+import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
@@ -40,20 +44,14 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
@@ -130,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
 
         //notif button
         notification = findViewById(R.id.notificationButton);
-        setupNotificationIcon(); //checks current user and role
 
         //add listen on click
         notification.setOnClickListener(new View.OnClickListener() {
@@ -395,15 +392,15 @@ public class MainActivity extends AppCompatActivity {
             }
             dailyCheckIn.setVisible(true);
 
+
             // enable triage
             triage.setEnabled(true);
             triage.setCheckable(true);
             triage.setVisible(true);
-
             // update child switching list when new child is added / deleted
             listenerToParent(repo.getCurrentUser().getUid(), true);
         }
-        else if(userRole.equals("provider")){
+        else if(userRole.equals("provider")) {
             // show button
             switchChildButton.setVisibility(View.VISIBLE);
             // disable dailycheckin and triage
@@ -453,20 +450,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupNotificationIcon() {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user != null && !user.getRole().equals("parent")) {
-                            notification.setVisibility(View.GONE);
-                        } else {
-                            notification.setVisibility(View.VISIBLE);
-                            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
-                        }
-                    }
-                });
-    }
     private void setupUnreadNotificationsBadge(String uid) {
          unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
             if (error != null || value == null) return;
@@ -487,21 +470,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             badge.setVisibility(View.GONE);
         }
-    }
-    //Callback for main call in general, used to delete account
-    private AuthContract.GeneralCallback deleteCallback() {
-        return new AuthContract.GeneralCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
-                finish();
-            }
-            @Override
-            public void onFailure(String error) {
-                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
-            }
-        };
     }
 
     // checks children to see if current providers list has changed
@@ -525,5 +493,21 @@ public class MainActivity extends AppCompatActivity {
 
                     convertToNames(allChildren);
                 });
+    }
+
+    //Callback for main call in general, used to delete account
+    private AuthContract.GeneralCallback deleteCallback() {
+        return new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
+                finish();
+            }
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
+            }
+        };
     }
 }

@@ -56,19 +56,9 @@ public class Child {
     //initalize defaults
 
     private void initializeDefaults() {
-        this.weeklySchedule = new HashMap<>();
-        weeklySchedule.put("Monday", false);
-        weeklySchedule.put("Tuesday", false);
-        weeklySchedule.put("Wednesday", false);
-        weeklySchedule.put("Thursday", false);
-        weeklySchedule.put("Friday", false);
-        weeklySchedule.put("Saturday", false);
-        weeklySchedule.put("Sunday", false);
+        this.weeklySchedule = initalizeDays();
         // badges
-        this.badges = new HashMap<>();
-        badges.put("techniqueBadge", false);
-        badges.put("controllerBadge", false);
-        badges.put("lowRescueBadge", false);
+        this.badges = initalizeBadges();
 
         // techniqueStats
         this.techniqueStats = new HashMap<>();
@@ -89,7 +79,25 @@ public class Child {
         thresholds.put("rescue_thresh", 0);
     }
 
+    public static HashMap<String, Boolean> initalizeBadges() {
+        HashMap<String, Boolean> badges = new HashMap<>();
+        badges.put("techniqueBadge", false);
+        badges.put("controllerBadge", false);
+        badges.put("lowRescueBadge", false);
+        return badges;
+    }
 
+    public static HashMap<String, Boolean> initalizeDays() {
+        HashMap<String, Boolean> weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", false);
+        weeklySchedule.put("Tuesday", false);
+        weeklySchedule.put("Wednesday", false);
+        weeklySchedule.put("Thursday", false);
+        weeklySchedule.put("Friday", false);
+        weeklySchedule.put("Saturday", false);
+        weeklySchedule.put("Sunday", false);
+        return weeklySchedule;
+    }
 
     // get and set !
 

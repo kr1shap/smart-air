@@ -3,12 +3,14 @@ package com.example.smart_air.Repository;
 import android.util.Log;
 
 import com.example.smart_air.FirebaseInitalizer;
+import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -21,6 +23,7 @@ import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class ChildRepository {
@@ -444,6 +447,53 @@ public class ChildRepository {
                     onSuccess.onSuccess(providers);
                 })
                 .addOnFailureListener(onFailure);
+    }
+
+    //Get badge information from a child (return as task)
+    public Task<BadgeData> getBadgeData(String childUid) {
+        TaskCompletionSource<BadgeData> taskSource = new TaskCompletionSource<>();
+        db.collection("children").document(childUid).get()
+                .addOnSuccessListener(snap -> {
+                    //default
+                    boolean controllerBadge = false;
+                    boolean techniqueBadge = false;
+                    boolean rescueBadge = false;
+                    int techniqueStreak = 0;
+                    int controllerStreak = 0;
+
+                    if (snap.exists()) {
+                        // badges map
+                        Map<String, Object> badges = (Map<String, Object>) snap.get("badges");
+                        if (badges != null) {
+                            controllerBadge = badges.get("controllerBadge") != null ?
+                                    (Boolean) badges.get("controllerBadge") : false;
+                            techniqueBadge = badges.get("techniqueBadge") != null ?
+                                    (Boolean) badges.get("techniqueBadge") : false;
+                            rescueBadge = badges.get("lowRescueBadge") != null ?
+                                    (Boolean) badges.get("lowRescueBadge") : false;
+                        }
+
+                        // techniqueStats map
+                        Map<String, Object> techniqueStats = (Map<String, Object>) snap.get("techniqueStats");
+                        if (techniqueStats != null) {
+                            techniqueStreak = techniqueStats.get("currentStreak") != null ?
+                                    ((Number) techniqueStats.get("currentStreak")).intValue() : 0;
+                        }
+
+                        // controllerStats map
+                        //TODO: uncomment and make it work based on teammates work
+//                        Map<String, Object> controllerStats = (Map<String, Object>) snap.get("controllerStats");
+//                        if (controllerStats != null) {
+//                            controllerStreak = controllerStats.get("currentStreak") != null ?
+//                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
+//                        }
+                    }
+                    BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
+                    taskSource.setResult(data);
+                })
+                .addOnFailureListener(taskSource::setException);
+
+        return taskSource.getTask();
     }
 
     //PRIVATE HELPER FUNCTIONS
