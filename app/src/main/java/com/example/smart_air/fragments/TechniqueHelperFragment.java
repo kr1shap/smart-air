@@ -258,51 +258,6 @@ public class TechniqueHelperFragment extends Fragment {
             Toast.makeText(getActivity(), "Could not save session :( ", Toast.LENGTH_SHORT).show();
         });
     }
-//    private void updateTechniqueStats(String childUid, boolean perfectSession) {
-//
-//        //get document, or generate one if it doesn't exist
-//        DocumentReference statsRef = db.collection("techniqueStats").document(childUid);
-//
-//        //use transaction to ensure no one else modifies the data at the same time
-//        db.runTransaction(transaction -> {
-//            DocumentSnapshot snap = transaction.get(statsRef);
-//            int currentStreak = 1;
-//            int totalPerfect = 0;
-//            int totalCompleted = 0;
-//            String lastDateStr = null;
-//            String today = getToday();
-//
-//            //get the snap if it exists. if not, then we will use the null default values above
-//            if (snap.exists()) {
-//                currentStreak = snap.getLong("currentStreak") != null ? snap.getLong("currentStreak").intValue() : 1;
-//                totalPerfect = snap.getLong("totalPerfectSessions") != null ? snap.getLong("totalPerfectSessions").intValue() : 0;
-//                totalCompleted = snap.getLong("totalCompletedSessions") != null ? snap.getLong("totalCompletedSessions").intValue() : 0;
-//                lastDateStr = snap.getString("lastSessionDate");
-//            }
-//
-//            //UPDATE CURRENT STREAK
-//            if (lastDateStr == null) currentStreak = 1; //no last date - new streak
-//            else if (today.equals(lastDateStr)) { } //no change if today equals the last day
-//            else if (getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
-//            else { currentStreak = 1; } //reset streak for some other case
-//            if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
-//            totalCompleted++;                       //add 1 to compelted technique sessions
-//            Map<String, Object> data = new HashMap<>();
-//            data.put("currentStreak", currentStreak);
-//            data.put("totalPerfectSessions", totalPerfect);
-//            data.put("totalCompletedSessions", totalCompleted); //add 1 to completed, as we completed session
-//            data.put("lastSessionDate", today); //keeps it in the YYYY-MM-DD format
-//
-//            transaction.set(statsRef, data); //set data
-//            return null;
-//
-//        }).addOnSuccessListener(aVoid -> {
-//            Toast.makeText(getActivity(), "Saved your technique session!", Toast.LENGTH_SHORT).show();
-//        }).addOnFailureListener(e -> {
-//            Log.e("TechniqueStats", "Failed to update technique stats", e);
-//            Toast.makeText(getActivity(), "Could not save session. Progress will be retried.", Toast.LENGTH_SHORT).show();
-//        });
-//    }
 
     /*
     * pre: N/A
