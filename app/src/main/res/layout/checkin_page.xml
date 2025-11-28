@@ -483,7 +483,7 @@
                 android:layout_height="wrap_content"
                 android:ems="6"
                 android:inputType="number"
-                android:text="400"
+                android:text="0"
                 app:layout_constraintTop_toBottomOf="@id/textView91"
                 app:layout_constraintStart_toStartOf="parent"/>
 
