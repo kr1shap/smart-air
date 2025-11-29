@@ -1,8 +1,4 @@
-<<<<<<< HEAD:app/src/main/java/com/example/smart_air/fragments/CheckInFragment.java
 package com.example.smart_air.fragments;
-=======
-package com.example.smart_air.Fragment;
->>>>>>> 8442c5cac9fc9f9d94a1eb231b8210804819e71a:app/src/main/java/com/example/smart_air/Fragment/CheckInFragment.java
 
 import android.app.AlertDialog;
 import android.os.Bundle;
