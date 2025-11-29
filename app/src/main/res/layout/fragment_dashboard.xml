@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colour_white"
@@ -17,10 +18,11 @@
             android:layout_height="wrap_content"
             android:text="Dashboard"
             android:fontFamily="@font/dm_sans_bold"
-            android:layout_gravity="center"
+            android:gravity="center_horizontal"
             android:textSize="32sp"
             android:textColor="@color/colour_blue"
             android:layout_marginBottom="20dp" />
+
 
         <!-- Today's Zone -->
         <LinearLayout
@@ -105,13 +107,16 @@
 
                 <TextView
                     android:id="@+id/tvWeeklyRescues"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    android:text="Loading..."
                     android:fontFamily="@font/dm_sans_medium"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/colour_darkBlue"/>
+                    android:textSize="18sp"
+                    android:textColor="@color/colour_darkBlue"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
             </LinearLayout>
 
             <!-- Last Rescue -->
@@ -248,22 +253,31 @@
             android:orientation="vertical"
             android:layout_marginBottom="20dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Trends"
-                android:fontFamily="@font/dm_sans_bold"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:textColor="@color/colour_darkBlue"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp">
 
-            <Spinner
-                android:id="@+id/spinnerTrendRange"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:padding="6dp"
-                android:spinnerMode="dropdown" />
+                <TextView
+                    android:id="@+id/tvTrendsTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Trends"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="@color/colour_darkBlue"/>
+
+                <Spinner
+                    android:id="@+id/spinnerTrendRange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="3dp"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
 
 
             <View
@@ -278,23 +292,37 @@
             <ViewFlipper
                 android:id="@+id/trendsCarousel"
                 android:layout_width="match_parent"
-                android:layout_height="250dp"
-                android:layout_marginTop="16dp"
-                android:autoStart="false">
+                android:layout_height="wrap_content"
+                android:inAnimation="@anim/slide_in_right"
+                android:outAnimation="@anim/slide_out_left">
 
-                <com.github.mikephil.charting.charts.BarChart
-                    android:id="@+id/rescueChart"
-                    android:layout_width="match_parent"
-                    android:layout_height="250dp"
-                    android:layout_margin="16dp" />
 
-                <com.github.mikephil.charting.charts.LineChart
-                    android:id="@+id/pefChart"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="250dp"
-                    android:layout_margin="16dp" />
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp">
+
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/rescueChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="260dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp">
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/pefChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="260dp"/>
+                </LinearLayout>
 
             </ViewFlipper>
+
 
             <LinearLayout
                 android:id="@+id/carouselDots"

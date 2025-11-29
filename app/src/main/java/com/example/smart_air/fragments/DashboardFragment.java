@@ -41,9 +41,11 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -51,26 +53,25 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Locale;
+import java.util.Map;
 
 public class DashboardFragment extends Fragment {
-
     private float x1, x2;
     private static final int MIN_DISTANCE = 150;
     private View zoneBar;
     private View barContainer;
-
     private LineChart pefChart;
     private BarChart rescueChart;
-
     private String zoneColour = "none";
     private String parentId;
     private String childId;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-
     private boolean isChildUser = false;
-
+    private TextView tvWeeklyRescues;
 
     private void loadUserAndChildIds(TextView titleView, @Nullable Runnable onComplete) {
         String uid = FirebaseAuth.getInstance().getUid();
@@ -126,7 +127,6 @@ public class DashboardFragment extends Fragment {
                 });
     }
 
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -148,6 +148,8 @@ public class DashboardFragment extends Fragment {
         barContainer = view.findViewById(R.id.barContainer);
         rescueChart = view.findViewById(R.id.rescueChart);
         pefChart = view.findViewById(R.id.pefChart);
+        tvWeeklyRescues = view.findViewById(R.id.tvWeeklyRescues);
+
         Button btnManage = view.findViewById(R.id.btnManageChildren);
         Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
 
@@ -163,10 +165,9 @@ public class DashboardFragment extends Fragment {
             loadTodayZone();
             loadZoneHistory();
             loadWeeklyRescues(7);
+            loadLatestRescueDate();
             loadPEFTrend(7);
         });
-
-
 
         Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -220,14 +221,21 @@ public class DashboardFragment extends Fragment {
                             float deltaX = x2 - x1;
 
                             if (Math.abs(deltaX) > MIN_DISTANCE) {
+
                                 if (deltaX > 0) {
+                                    flipper.setInAnimation(requireContext(), R.anim.slide_in_left);
+                                    flipper.setOutAnimation(requireContext(), R.anim.slide_out_right);
                                     flipper.showPrevious();
                                 } else {
+                                    flipper.setInAnimation(requireContext(), R.anim.slide_in_right);
+                                    flipper.setOutAnimation(requireContext(), R.anim.slide_out_left);
                                     flipper.showNext();
                                 }
+
                                 updateDots(flipper.getDisplayedChild(), view);
                             }
                             return true;
+
                     }
                     return false;
                 });
@@ -236,7 +244,6 @@ public class DashboardFragment extends Fragment {
             });
         }
     }
-
 
     private void loadTodayZone() {
         if (childId == null) return;
@@ -266,7 +273,6 @@ public class DashboardFragment extends Fragment {
                 })
                 .addOnFailureListener(e -> updateZoneBar("none", 0));
     }
-
 
     private void updateZoneBar(String zoneColour, int zoneNum) {
         if (barContainer == null || zoneBar == null) return;
@@ -312,13 +318,28 @@ public class DashboardFragment extends Fragment {
                 .collection("triageSessions")
                 .get()
                 .addOnSuccessListener(snap -> {
+
                     int[] counts = new int[days];
 
                     for (DocumentSnapshot doc : snap) {
-                        Long rescueCount = doc.getLong("rescueAttempts");
-                        Timestamp ts = doc.getTimestamp("date");
 
-                        if (rescueCount == null || ts == null) continue;
+                        Object rawRescue = doc.get("rescueAttempts");
+                        int rescueCount = 0;
+
+                        if (rawRescue instanceof Number) {
+                            rescueCount = ((Number) rawRescue).intValue();
+                        } else if (rawRescue instanceof String) {
+                            try {
+                                rescueCount = Integer.parseInt((String) rawRescue);
+                            } catch (Exception ignored) {}
+                        }
+
+                        if (rescueCount <= 0) continue;
+
+
+                        Timestamp ts = doc.getTimestamp("date");
+                        if (ts == null) continue;
+
 
                         LocalDate rescueDate = ts.toDate()
                                 .toInstant()
@@ -327,13 +348,62 @@ public class DashboardFragment extends Fragment {
 
                         if (rescueDate.isBefore(cutoff)) continue;
 
+
                         int index = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
+
                         if (index >= 0 && index < days) {
-                            counts[index] += rescueCount.intValue();
+                            counts[index] += rescueCount;
                         }
                     }
 
                     drawRescueChartDynamic(counts, days);
+
+                    int total = 0;
+                    for (int c : counts) total += c;
+
+                    if (tvWeeklyRescues != null) {
+                        tvWeeklyRescues.setText(total + " rescues");
+                    }
+
+                });
+    }
+
+    private void loadLatestRescueDate() {
+        if (childId == null) return;
+
+        db.collection("incidentLog")
+                .document(childId)
+                .collection("triageSessions")
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
+
+                    if (snapshot.isEmpty()) {
+                        tvLatestRescue.setText("No rescues yet");
+                        return;
+                    }
+
+                    DocumentSnapshot doc = snapshot.getDocuments().get(0);
+
+                    Long count = doc.getLong("rescueAttempts");
+                    Timestamp ts = doc.getTimestamp("date");
+
+                    if (count == null || ts == null || count == 0) {
+                        tvLatestRescue.setText("No rescues yet");
+                        return;
+                    }
+
+                    Date date = ts.toDate();
+                    String formatted = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                            .format(date);
+
+                    tvLatestRescue.setText(formatted);
+                })
+                .addOnFailureListener(e -> {
+                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
+                    tvLatestRescue.setText("Error loading");
                 });
     }
 
@@ -376,31 +446,46 @@ public class DashboardFragment extends Fragment {
         rescueChart.invalidate();
     }
 
-
     private void loadPEFTrend(int days) {
         if (childId == null) return;
 
         LocalDate today = LocalDate.now();
-        int[] pefValues = new int[days];
-        Arrays.fill(pefValues, 0);
+        LocalDate startDate = today.minusDays(days - 1);
 
-        db.collection("dailyCheckins")
+        Map<LocalDate, Integer> pefByDate = new HashMap<>();
+
+        FirebaseFirestore.getInstance()
+                .collection("dailyCheckins")
                 .document(childId)
                 .collection("entries")
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    for (DocumentSnapshot dayDoc : snapshot) {
-                        String dateKey = dayDoc.getId();
-                        LocalDate entryDate = LocalDate.parse(dateKey);
 
-                        long diff = ChronoUnit.DAYS.between(entryDate, today);
-                        if (diff >= 0 && diff < days) {
-                            int index = (int) (days - 1 - diff);
-                            Long pef = dayDoc.getLong("pef");
-                            if (pef != null) {
-                                pefValues[index] = pef.intValue();
-                            }
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String dateKey = doc.getId();
+                        LocalDate entryDate;
+
+                        try {
+                            entryDate = LocalDate.parse(dateKey);
+                        } catch (Exception e) {
+                            continue;
                         }
+
+                        if (entryDate.isBefore(startDate) || entryDate.isAfter(today)) {
+                            continue;
+                        }
+
+                        Long pef = doc.getLong("pef");
+                        if (pef != null) {
+                            pefByDate.put(entryDate, pef.intValue());
+                        }
+                    }
+
+                    int[] pefValues = new int[days];
+                    for (int i = 0; i < days; i++) {
+                        LocalDate d = startDate.plusDays(i);
+                        Integer val = pefByDate.get(d);
+                        pefValues[i] = (val != null) ? val : 0;
                     }
 
                     drawPEFLineChart(pefValues, days);
@@ -421,33 +506,47 @@ public class DashboardFragment extends Fragment {
         dataSet.setLineWidth(2.5f);
         dataSet.setCircleRadius(4f);
         dataSet.setDrawValues(false);
+        dataSet.setMode(LineDataSet.Mode.LINEAR);
 
-        LineData lineData = new LineData(dataSet);
-        pefChart.setData(lineData);
+        pefChart.setData(new LineData(dataSet));
+
 
         XAxis xAxis = pefChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f);
         xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
 
-        if (days == 7) {
-            String[] labels = {"S", "M", "T", "W", "T", "F", "S"};
-            xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
-            xAxis.setLabelCount(7);
-            xAxis.setEnabled(true);
-        } else {
-            xAxis.setLabelCount(0, false);
-            xAxis.setValueFormatter(new IndexAxisValueFormatter(new String[]{}));
-            xAxis.setEnabled(false);
+        LocalDate today = LocalDate.now();
+        LocalDate start = today.minusDays(days - 1);
+
+        String[] xLabels = new String[days];
+        for (int i = 0; i < days; i++) {
+            LocalDate d = start.plusDays(i);
+            xLabels[i] = d.getMonthValue() + "/" + d.getDayOfMonth();
         }
 
+        if (days == 7) {
+
+            xAxis.setEnabled(true);
+            xAxis.setValueFormatter(new IndexAxisValueFormatter(xLabels));
+            xAxis.setLabelCount(7, true);
+        } else {
+
+            xAxis.setEnabled(true);
+            xAxis.setValueFormatter(new IndexAxisValueFormatter(xLabels));
+            xAxis.setLabelCount(6, true);
+        }
+
+        YAxis yAxis = pefChart.getAxisLeft();
         pefChart.getAxisRight().setEnabled(false);
-        pefChart.getAxisLeft().setAxisMinimum(0);
-        pefChart.getAxisLeft().setDrawGridLines(true);
+
+        yAxis.setAxisMinimum(0f);
+        yAxis.setAxisMaximum(500f);
+        yAxis.setGranularity(100f);
+        yAxis.setLabelCount(6, true);
 
         pefChart.invalidate();
     }
-
 
     private void updateDots(int index, View root) {
         View dot1 = root.findViewById(R.id.dot1);
@@ -588,7 +687,6 @@ public class DashboardFragment extends Fragment {
 
         return counts;
     }
-
 
     public void generateProviderReport(int months) {
         // TODO: fetch real values from Firestore
