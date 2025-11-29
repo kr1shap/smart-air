@@ -1,5 +1,18 @@
 package com.example.smart_air;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.security.CodeSigner;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimerTask;
+import androidx.core.app.NotificationManagerCompat;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -24,6 +37,7 @@ import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -320,9 +334,55 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                     startChildrenListener();
                     });
+    }
+
+    private void convertToNamesAndDob(List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        if(uid.isEmpty()){
+            sharedModel.setChildren(children);
+            return;
+        }
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        String dob = "";
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                            if (doc.contains("dob")){
+                                Timestamp dobTimestamp = doc.getTimestamp("dob");
+                                Date date = dobTimestamp.toDate();
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                dob = sdf.format(date);
+                            }
+                        }
+                        if(!dob.isEmpty()){
+                            name = name + " [" + dob + "]";
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
+                            int currentIndex = sharedModel.getCurrentChild().getValue();
+                            if(currentIndex >= children.size()){ // if last child gets deleted
+                                sharedModel.setCurrentChild(0);
+                            }
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
     }
 
 
@@ -500,7 +560,7 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                 });
     }
 
