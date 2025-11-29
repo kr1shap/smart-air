@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/colour_white"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter parent code"
+        android:textSize="22sp"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textColor="#4A90E2"
+        android:paddingBottom="12dp" />
+
+    <LinearLayout
+        style="@style/TextFieldGroup"
+        android:id="@+id/userLayout">
+
+        <TextView
+            style="@style/TextFieldLabel"
+            android:text="Enter the code given by the caregiver." />
+
+        <EditText
+            android:id="@+id/providerParentCode"
+            style="@style/RoundedTextField"
+            android:hint="Enter 6-8 digit code..."
+            android:textColor="@color/colour_indigo"
+            android:inputType="text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:paddingTop="10dp">
+        <Button
+            android:id="@+id/btn_connect_provider"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Connect"
+            android:textAllCaps="false"
+            android:layout_marginBottom="8dp"
+            style="@style/SmartAir.Button1" />
+        <Button
+            android:id="@+id/btn_cancel_provider"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Cancel"
+            android:textAllCaps="false"
+            android:layout_marginBottom="8dp"
+            style="@style/SmartAir.Button1" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

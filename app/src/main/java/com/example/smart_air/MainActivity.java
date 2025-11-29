@@ -1,19 +1,7 @@
 package com.example.smart_air;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import java.util.TimerTask;
-import androidx.core.app.NotificationManagerCompat;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,10 +11,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -34,10 +19,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 
-import com.example.smart_air.fragments.BadgeFragment;
-import com.example.smart_air.fragments.TechniqueHelperFragment;
-import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -65,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
-    ImageButton notification;
+    ImageButton notification, providerCodeBtn;
     private ListenerRegistration unreadNotifListener;
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
@@ -96,7 +79,6 @@ public class MainActivity extends AppCompatActivity {
         notifRepo = new NotificationRepository();
 
         //if no user signed in
-        repo = new AuthRepository();
         if(repo.getCurrentUser() == null) {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
@@ -109,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
         MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        //add code button for provider
+        providerCodeBtn = findViewById(R.id.providerCodeBtn);
 
         //get user role
         sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
@@ -152,6 +136,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //providerCodeBtn button
+        providerCodeBtn.setOnClickListener(v -> {
+            if(userRole != null && userRole.equals("provider")) {
+                DialogCodeFragment dialog = new DialogCodeFragment();
+                dialog.show(getSupportFragmentManager(), "DialogCodeFragment");
+            }
+        });
+
         //bottom nav view
         bottomNavigationView.setSelectedItemId(R.id.home);
 
@@ -175,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                // add fragment for medicine
+                //medicine fragment
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
@@ -377,6 +369,9 @@ public class MainActivity extends AppCompatActivity {
              triage.setVisible(true);
              //disable notification
              notification.setVisibility(View.GONE);
+             //disable add code btn
+             providerCodeBtn.setVisibility(View.GONE);
+             providerCodeBtn.setEnabled(false);
              return;
         }
         else if(userRole.equals("parent")){
@@ -399,6 +394,9 @@ public class MainActivity extends AppCompatActivity {
             triage.setEnabled(true);
             triage.setCheckable(true);
             triage.setVisible(true);
+            //disable add code btn
+            providerCodeBtn.setVisibility(View.GONE);
+            providerCodeBtn.setEnabled(false);
             // update child switching list when new child is added / deleted
             listenerToParent(repo.getCurrentUser().getUid(), true);
             //setup notification listener and icon
@@ -417,6 +415,9 @@ public class MainActivity extends AppCompatActivity {
             triage.setVisible(false);
             //disable notification
             notification.setVisibility(View.GONE);
+            //enable add code
+            providerCodeBtn.setVisibility(View.VISIBLE);
+            providerCodeBtn.setEnabled(true);
         }
 
     }
@@ -458,6 +459,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUnreadNotificationsBadge(String uid) {
+        if (!"parent".equals(userRole)) {  return;  } //due to async
          unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
             if (error != null || value == null) return;
             int size = value.size();

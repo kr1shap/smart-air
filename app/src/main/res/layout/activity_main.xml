@@ -98,6 +98,21 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+<!--    &lt;!&ndash; add button for provider code &ndash;&gt;-->
+    <ImageButton
+        android:id="@+id/providerCodeBtn"
+        android:visibility="visible"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/circular_text_field_background"
+        android:src="@drawable/add_sign"
+        android:elevation="10dp"/>
+
+
     <!-- bottom navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
