@@ -11,14 +11,14 @@
         android:id="@+id/loadingView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible" />
+        android:visibility="gone" />
     <!-- triage session  -->
     <LinearLayout
         android:id="@+id/triageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -148,7 +148,8 @@
                             app:icon="@drawable/emergency_call"
                             app:iconGravity="top"
                             app:iconPadding="4dp"
-                            app:iconSize="70dp" />
+                            app:iconSize="70dp"
+                            app:iconTint="@android:color/white" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button4"
@@ -166,36 +167,38 @@
                             app:icon="@drawable/outline_format_list_numbered"
                             app:iconGravity="top"
                             app:iconPadding="4dp"
-                            app:iconSize="80dp" />
+                            app:iconSize="80dp"
+                            app:iconTint="@android:color/white"/>
                     </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/timer"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/timer"
+                        android:padding="3dp"
+                        android:layout_marginTop="15dp"
+                        android:layout_gravity="center"
+                        android:backgroundTint="@android:color/holo_blue_light" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingHorizontal="12dp">
-
-                        <ImageButton
-                            android:id="@+id/timer"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:layout_marginEnd="12dp"
-                            android:background="@android:color/holo_blue_light"
-                            android:padding="6dp"
-                            android:src="@drawable/timer" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/startriage"
                             style="@style/SmartAir.Button2"
                             android:layout_width="0dp"
-                            android:layout_height="100dp"
+                            android:layout_height="60dp"
                             android:layout_marginEnd="12dp"
                             android:layout_weight="1"
                             android:backgroundTint="@android:color/holo_blue_light"
                             android:fontFamily="@font/dm_sans_bold"
-                            android:text="HAVING TROUBLE BREATHING?"
+                            android:text="TROUBLE BREATHING?"
                             android:textColor="@android:color/white"
                             android:textSize="10dp"
                             app:iconGravity="textStart" />
