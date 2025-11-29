@@ -19,10 +19,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
-import com.example.smart_air.Fragments.CheckInFragment;
-import com.example.smart_air.fragments.HistoryFragment;
+import com.example.smart_air.Fragment.CheckInFragment;
+import com.example.smart_air.Fragment.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
-import com.example.smart_air.fragments.NotificationFragment;
+import com.example.smart_air.Fragment.NotificationFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
@@ -216,10 +216,18 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(role.equals("parent") ){
                             List<String> list = user.getChildrenUid();
+                            // null check
+                            if(list == null) {
+                                list = new ArrayList<>();
+                            }
                             convertToNames(list);
                         }
                         if(role.equals("provider")){
                             List<String> list = user.getParentUid();
+                            // null check
+                            if(list == null) {
+                                list = new ArrayList<>();
+                            }
                             getParentsChildren(list);
                         }
                     }
@@ -227,6 +235,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getParentsChildren(List<String> list) {
+        // null check
+        if (list == null || list.isEmpty()) {
+            sharedModel.setChildren(new ArrayList<>());
+            return;
+        }
+
         List<String> allChildren = new ArrayList<>();
         AtomicInteger processedCount = new AtomicInteger(0);
         for(String parentId : list) {

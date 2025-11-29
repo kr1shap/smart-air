@@ -49,6 +49,11 @@ public class HistoryItem {
     public int rescueAttempts;
     public String emergencyCall;
 
+    // tracking for whats shared w/ provider
+    public boolean sharedWithProvider = false;
+    public List<String> sharedItems = new ArrayList<>(); // specific items shared (e.g., "symptoms", "triggers", "PEF")
+
+
     // constructor for Daily Card
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.passFilter = true;

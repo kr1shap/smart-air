@@ -1,4 +1,4 @@
-package com.example.smart_air.Fragments;
+package com.example.smart_air.Fragment;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -96,6 +96,11 @@ public class CheckInFragment extends Fragment {
         // clicking save button and adding to firestore
         MaterialButton save = view.findViewById(R.id.buttonSave);
         save.setOnClickListener(v-> {
+            // null check
+            if (correspondingUid == null || correspondingUid.isEmpty()) {
+                android.widget.Toast.makeText(getContext(), "Please wait, loading...", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
             RadioGroup radioNight = view.findViewById(R.id.radioNight); // night waking
             boolean nightWaking = (radioNight.getCheckedRadioButtonId() == R.id.radioYes);
             SeekBar seekBar = view.findViewById(R.id.seekBar);          // activity limit
@@ -140,6 +145,12 @@ public class CheckInFragment extends Fragment {
 
         // switch entry page
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            // null check
+            if (correspondingUid == null || correspondingUid.isEmpty()) {
+                android.widget.Toast.makeText(getContext(), "Please wait, loading...", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (checkedId == R.id.buttonParent && isChecked){
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
@@ -164,7 +175,39 @@ public class CheckInFragment extends Fragment {
         });
     }
 
+    private void refreshToggleButtons(CheckInRepository repo) {
+        if(correspondingUid == null || correspondingUid.isEmpty() || userRole.isEmpty()) {
+            return; // not ready yet
+        }
+
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
+        int checkedId = toggleGroup.getCheckedButtonId();
+
+        if (checkedId == R.id.buttonParent){
+            if(userRole.equals("child")){
+                repo.getUserInputOther(CheckInFragment.this, correspondingUid, userRole);
+            }
+            else if(userRole.equals("parent")) {
+                repo.getUserInput(this, userRole, correspondingUid);
+            }
+        }
+        else if (checkedId == R.id.buttonChild){
+            if (userRole.equals("child")){
+                repo.getUserInput(this, userRole, correspondingUid);
+            }
+            else if (userRole.equals("parent")){
+                repo.getUserInputOther(CheckInFragment.this, correspondingUid, userRole);
+            }
+        }
+    }
+
     private void refreshUINewChild(CheckInRepository repo) {
+
+        // null check
+        if (correspondingUid == null || correspondingUid.isEmpty()) {
+            return;
+        }
+
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
         int checkedId = toggleGroup.getCheckedButtonId();
 

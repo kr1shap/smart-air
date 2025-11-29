@@ -2,7 +2,7 @@ package com.example.smart_air.Repository;
 
 import android.util.Log;
 
-import com.example.smart_air.Fragments.CheckInFragment;
+import com.example.smart_air.Fragment.CheckInFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -160,6 +160,7 @@ public class CheckInRepository {
     public void getUserInput(CheckInFragment activity, String userRole, String correspondingUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
+
         if (user == null) {
             activity.updateInfoInputWithoutValues();
         }
@@ -167,6 +168,12 @@ public class CheckInRepository {
         if(userRole.equals("child")){
             String uid = user.getUid();
             childUid = uid;
+        }
+
+        // null check
+        if (childUid == null || childUid.isEmpty()) {
+            Log.e("CheckInRepository", "getUserInput called with null or empty childUid");
+            return; // Exit early if childUid is invalid
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
