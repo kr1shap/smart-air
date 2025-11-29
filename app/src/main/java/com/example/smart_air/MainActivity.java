@@ -128,19 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
         // showing child dropdown pop up
         switchChildButton.setOnClickListener(v -> {
-            repo.getUserDoc(repo.getCurrentUser().getUid())
-                    .addOnSuccessListener(doc -> {
-                        if (doc.exists()) {
-                            User currentUser = doc.toObject(User.class);
-                            if (currentUser != null) {
-                                String role = currentUser.getRole();
-                                // only show popup if user is parent or provider
-                                if ("parent".equals(role) || "provider".equals(role)) {
-                                    showChildPopup();
-                                }
-                            }
-                        }
-                    });
+            showChildPopup();
         });
 
         //notif button
@@ -326,31 +314,6 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(userRole.equals("provider")){
             getProviderChildren();
-        }
-    }
-  
-    private void getParentsChildren(List<String> list) {
-        // null check
-        if (list == null || list.isEmpty()) {
-            sharedModel.setChildren(new ArrayList<>());
-            return;
-        }
-
-        List<String> allChildren = new ArrayList<>();
-        AtomicInteger processedCount = new AtomicInteger(0);
-        for(String parentId : list) {
-            repo.getUserDoc(parentId).addOnSuccessListener(doc -> {
-                if(doc.exists()) {
-                    User user = doc.toObject(User.class);
-                    if (user != null && user.getChildrenUid() != null) {
-                        allChildren.addAll(user.getChildrenUid());
-                    }
-                }
-
-                if (processedCount.incrementAndGet() == list.size()) {
-                    convertToNames(allChildren);
-                }
-            });
         }
     }
 

@@ -216,7 +216,7 @@ public class HistoryRepository {
                     hasSharedData = true;
                     sharedData.add("Triggers");
                 }
-                if (activity.options[0] && card.pef > 0) { // PEF (if present)
+                if (activity.options[0]) { // PEF (if present)
                     hasSharedData = true;
                     sharedData.add("PEF");
                 }
