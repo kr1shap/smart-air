@@ -68,7 +68,7 @@ public class HistoryRepository {
                                                             removeProviderInfo(results, activity);
                                                             removeUnPassed(results,activity);
 
-                                                            markSharedItems(results, activity);
+                                                            if(activity.role != null && activity.role.equals("parent")) markSharedItems(results, activity);
                                                             Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate)); // sort results
                                                             
                                                             activity.createRecycleView(results); // create cards on screen
