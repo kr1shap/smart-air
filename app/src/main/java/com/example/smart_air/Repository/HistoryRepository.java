@@ -1,6 +1,6 @@
 package com.example.smart_air.Repository;
 
-import com.example.smart_air.Fragment.HistoryFragment;
+import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;

@@ -132,7 +132,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             // show/hide shared provider label
             if (card.sharedWithProvider && !card.sharedItems.isEmpty()) {
                 sharedProviderLabel.setVisibility(View.VISIBLE);
-                String labelText = "Shared: " + String.join(", ", card.sharedItems);
+                String labelText = "Shared with provider: " + String.join(", ", card.sharedItems);
                 sharedLabelText.setText(labelText);
             } else {
                 sharedProviderLabel.setVisibility(View.GONE);

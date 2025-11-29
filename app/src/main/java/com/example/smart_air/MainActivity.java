@@ -19,10 +19,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.Repository.AuthRepository;
-import com.example.smart_air.Fragment.CheckInFragment;
-import com.example.smart_air.Fragment.HistoryFragment;
+import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
-import com.example.smart_air.Fragment.NotificationFragment;
+import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
@@ -152,8 +152,21 @@ public class MainActivity extends AppCompatActivity {
         getChildren(); // fill array list of children in share modal
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
         setUpButtonAndListener(switchChildButton, bottomNavigationView, dailyCheckIn, triage); // set up button
+
         switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
+            repo.getUserDoc(repo.getCurrentUser().getUid())
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            User currentUser = doc.toObject(User.class);
+                            if (currentUser != null) {
+                                String role = currentUser.getRole();
+                                // only show popup if user is parent or provider
+                                if ("parent".equals(role) || "provider".equals(role)) {
+                                    showChildPopup();
+                                }
+                            }
+                        }
+                    });
         });
 
 
@@ -298,6 +311,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         String role = user.getRole();
                         if(role.equals("child")){
+                            switchChildButton.setVisibility(View.GONE);  // hide button for children
                             // enable dailycheckin and triage
                             dailyCheckIn.setEnabled(true);
                             dailyCheckIn.setCheckable(true);

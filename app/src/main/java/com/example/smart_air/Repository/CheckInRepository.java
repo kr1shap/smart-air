@@ -2,7 +2,7 @@ package com.example.smart_air.Repository;
 
 import android.util.Log;
 
-import com.example.smart_air.Fragment.CheckInFragment;
+import com.example.smart_air.fragments.CheckInFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
