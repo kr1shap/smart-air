@@ -39,6 +39,8 @@ public class HistoryItem {
     public String nightChildText;
     public String nightParentText;
     public String zone;
+    public boolean removeSymptoms = false;
+    public boolean removeTrigger = false;
 
     // triage only stuff
     public List<String> flaglist;
@@ -46,16 +48,14 @@ public class HistoryItem {
     public String userBullets;
     public int rescueAttempts;
     public String emergencyCall;
+
+    // constructor for Daily Card
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.passFilter = true;
         this.pef = pef;
-        if(pef != -5){
-            this.pefText = Integer.toString(pef) + "L/min";
-        }
-        else{
-            this.pefText = "NOT ENTERED";
-        }
 
+
+        // setting up card based parent or child
 
         this.date = date;
         this.nightChild = nightChild;
@@ -96,6 +96,9 @@ public class HistoryItem {
             if(!(triggers.contains(parentTriggers.get(i)))){
                 triggers.add(parentTriggers.get(i));
             }
+        }
+        if(triggers.isEmpty()){
+            triggers.add("None");
         }
 
         switch(activityAvg){
@@ -167,6 +170,7 @@ public class HistoryItem {
 
         this.zone = zone;
 
+        // getting date
         Calendar cal = Calendar.getInstance();
         cal.setTime(accDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
@@ -178,6 +182,7 @@ public class HistoryItem {
 
     }
 
+    // constructor for Triage Card
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
         this.passFilter = true;
         this.accDate = accDate;
@@ -199,6 +204,7 @@ public class HistoryItem {
             userBullets = "None";}
     }
 
+    @Override
     public boolean equals(Object o){
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

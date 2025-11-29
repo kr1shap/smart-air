@@ -14,14 +14,20 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.HistoryRepository;
+import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.io.File;
 import java.io.OutputStreamWriter;
@@ -31,6 +37,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.io.FileOutputStream;
+import java.util.Map;
+
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -45,7 +53,9 @@ public class HistoryFragment extends Fragment {
     private HistoryRepository repo;
     private HistoryAdapter adapter;
     public String [] filters = {"","","","","",""};
+    public boolean [] options = {true,true,true,true,true}; // {pef, rescue, symptoms, triage, triggers}
     String childUid;
+    private SharedChildViewModel sharedModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -88,9 +98,38 @@ public class HistoryFragment extends Fragment {
                 filter.setText("FILTERS ▼");
             }
         });
-
         setUpFilterUI();
-        repo.getChildUid(this);
+
+        // shared viewmodal
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> { // set up child uid if it is a child
+            if (role != null && role.equals("child")) {
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                this.childUid = auth.getCurrentUser().getUid();
+                repo.updateToggles(childUid,this);
+            }
+        });
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child (for when user is parent or provider)
+            if (children != null && !children.isEmpty()) {
+                int currentIndex = sharedModel.getCurrentChild().getValue() != null
+                        ? sharedModel.getCurrentChild().getValue()
+                        : 0;
+
+                String currentChildUid = children.get(currentIndex).getChildUid();
+                this.childUid = currentChildUid;
+                repo.getCards(childUid,this);
+                repo.updateToggles(childUid,this);
+            }
+        });
+
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
+            List<Child> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && currentIndex != null) {
+                this.childUid = children.get(currentIndex).getChildUid();
+                repo.getCards(childUid,this);
+                repo.updateToggles(childUid,this);
+            }
+        });
 
         // night filter
         AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
@@ -105,7 +144,8 @@ public class HistoryFragment extends Fragment {
             else{
                 filters[0] = selected;
             }
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
         // activity filter
@@ -113,7 +153,8 @@ public class HistoryFragment extends Fragment {
         activityDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[1] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
         // coughing filter
@@ -121,7 +162,8 @@ public class HistoryFragment extends Fragment {
         coughingDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[2] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
         // triggers filter
@@ -129,7 +171,8 @@ public class HistoryFragment extends Fragment {
         triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[3] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
         // date filter
@@ -162,7 +205,8 @@ public class HistoryFragment extends Fragment {
             String formattedFilterDate = sdf.format(filterDate);
             filters[4] = formattedFilterDate;
 
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
         // triage filter
@@ -170,10 +214,10 @@ public class HistoryFragment extends Fragment {
         triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             filters[5] = selected;
-            repo.getDailyCheckIns(childUid,this);
+            repo.getCards(childUid,this);
+            repo.updateToggles(childUid,this);
         });
 
-        // TODO: make this button provider only later
         // export button
         MaterialButton export = view.findViewById(R.id.buttonExport);
         export.setOnClickListener(v -> {
@@ -190,45 +234,85 @@ public class HistoryFragment extends Fragment {
         });
     }
 
+    // function to create CSV document and download it
     private void exportCSV() {
         try {
-            List<HistoryItem> listToExport = adapter.getCurrentList();
-            String fileName = "historyLog.csv";
+            List<HistoryItem> listToExport = adapter.getCurrentList(); // get current cards
+            String childName = sharedModel.getCurrentChildName(); // get childs name
+            String fileName = "historyLog_"+childName+".csv";
 
+            // creating file
             File csvFile = new File(requireContext().getExternalFilesDir(null), fileName);
             try (FileOutputStream fos = new FileOutputStream(csvFile);
                  OutputStreamWriter writer = new OutputStreamWriter(fos)) {
 
-                // daily table
+                // daily table input
                 writer.append("DAILY DATA\n");
-                writer.append("Date,Night Terrors,Zone,Activity Limits,Coughing/Wheezing,Triggers\n");
+                // changing columns based on toggle
+                if(options[2]){
+                    writer.append("Date,Zone,Night Terrors,Activity Limits,Coughing/Wheezing");
+                }
+                else{
+                    writer.append("Date,Zone");
+                }
+                if(options[4]){
+                    writer.append(",Triggers\n");
+                }
+                else{
+                    writer.append("\n");
+                }
 
+                // changing values based on toggle
                 for (HistoryItem card : listToExport) {
                     if (!(card.passFilter && card.cardType != HistoryItem.typeOfCard.triage)) continue;
 
-                    writer.append(card.date).append(",");
-                    writer.append(card.nightStatus).append(",");
-                    writer.append(card.zone).append(",");
-                    writer.append(card.activityStatus).append(",");
-                    writer.append(card.coughingStatus).append(",");
-                    writer.append(String.join("|", card.triggers)).append("\n"); // newline at end
+                    if(card.removeSymptoms){
+                        writer.append(card.date).append(",");
+                        writer.append(card.zone).append(",");
+                    }
+                    else {
+                        writer.append(card.date).append(",");
+                        writer.append(card.zone).append(",");
+                        writer.append(card.nightStatus).append(",");
+                        writer.append(card.activityStatus).append(",");
+                        writer.append(card.coughingStatus).append(",");
+                    }
+                    if(card.removeTrigger){
+                        writer.append("\n");
+                    }
+                    else{
+                        writer.append(String.join("|", card.triggers)).append("\n"); // newline at end
+                    }
                 }
 
                 // triage table
-                writer.append("\nTRIAGE DATA\n");
-                writer.append("Date,Time,Present Flags,PEF,Rescue Attempts,Emergency Call,User Response\n");
-                for (HistoryItem card: listToExport){
-                    if (!(card.passFilter && card.cardType == HistoryItem.typeOfCard.triage)) continue;
+                if(options[3]) { // only runs when triage toggle is true
+                    writer.append("\nTRIAGE DATA\n");
+                    writer.append("Date,Time,Present Flags,PEF,Rescue Attempts,Emergency Call,User Response\n");
+                    for (HistoryItem card : listToExport) {
+                        if (!(card.passFilter && card.cardType == HistoryItem.typeOfCard.triage))
+                            continue;
 
-                    writer.append(card.date).append(",");
-                    writer.append(card.time).append(",");
-                    writer.append(String.join("|", card.flaglist)).append(",");
-                    if(card.pef == -5){writer.append("not entered").append(",");}
-                    else{writer.append(Integer.toString(card.pef)).append(",");}
-                    if(card.rescueAttempts == -5){writer.append("0").append(",");}
-                    else{writer.append(Integer.toString(card.rescueAttempts)).append(",");}
-                    writer.append(card.emergencyCall).append(",");
-                    writer.append(String.join("|", card.userRes)).append("\n");
+                        writer.append(card.date).append(",");
+                        writer.append(card.time).append(",");
+                        writer.append(String.join("|", card.flaglist)).append(",");
+                        if (card.pef == -10) {
+                            writer.append("not available").append(",");
+                        } else if (card.pef == -5) {
+                            writer.append("not entered").append(",");
+                        } else {
+                            writer.append(Integer.toString(card.pef)).append(",");
+                        }
+                        if (card.rescueAttempts == -10) {
+                            writer.append("n/a").append(",");
+                        } else if (card.rescueAttempts == -5) {
+                            writer.append("0").append(",");
+                        } else {
+                            writer.append(Integer.toString(card.rescueAttempts)).append(",");
+                        }
+                        writer.append(card.emergencyCall).append(",");
+                        writer.append(String.join("|", card.userRes)).append("\n");
+                    }
                 }
 
                 writer.flush();
@@ -241,29 +325,43 @@ public class HistoryFragment extends Fragment {
         }
     }
 
+    // function to create pdf document and download it
     private void exportPDF() {
-        // TODO: potential add child name and stuff in pdf
-        List<HistoryItem> listToExport = adapter.getCurrentList();
+        List<HistoryItem> listToExport = adapter.getCurrentList(); // data from adapter
+
+        String childName = sharedModel.getCurrentChildName(); // getting child Name
 
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         int pageWidth = 612;
         int pageHeight = 792;
-        int currentY = 50; // leave space for title
+        int currentY = 75; // leave space for title and name
 
         PdfDocument pdfDocument = new PdfDocument();
 
+        // title style
         Paint titlePaint = new Paint();
         titlePaint.setColor(Color.parseColor("#0473AE"));
         titlePaint.setTextSize(24f);
         titlePaint.setTypeface(Typeface.create("dm_sans", Typeface.BOLD));
         titlePaint.setTextAlign(Paint.Align.CENTER);
 
+        // child info style
+        Paint infoPaint = new Paint();
+        infoPaint.setColor(Color.BLACK);
+        infoPaint.setTextSize(12f);
+        infoPaint.setTypeface(Typeface.create("dm_sans", Typeface.NORMAL));
+        infoPaint.setTextAlign(Paint.Align.CENTER);
+
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
+        // draw title
         canvas.drawText("HISTORY LOG", pageWidth / 2f, 40, titlePaint);
+        // draw info
+        canvas.drawText("Name: " + childName, pageWidth / 2f, 70, infoPaint);
 
+        // drawing each card
         for (HistoryItem card : listToExport) {
             if (card.passFilter && card.cardType != HistoryItem.typeOfCard.triage) {
 
@@ -271,14 +369,48 @@ public class HistoryFragment extends Fragment {
 
                 ((TextView) cardView.findViewById(R.id.dateText))
                         .setText(card.date);
-                ((TextView) cardView.findViewById(R.id.triggersText))
-                        .setText(String.join(", ", card.triggers).isEmpty() ? "None" : String.join(", ", card.triggers));
-                ((TextView) cardView.findViewById(R.id.coughStatus))
-                        .setText(card.coughingStatus);
-                ((TextView) cardView.findViewById(R.id.activityStatus))
-                        .setText(card.activityStatus);
-                ((TextView) cardView.findViewById(R.id.nightStatus))
-                        .setText(card.nightStatus);
+                // updating based on toggle for symptoms
+                if(card.removeSymptoms){
+                    (cardView.findViewById(R.id.coughStatus))
+                            .setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.activityStatus))
+                            .setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.nightStatus))
+                            .setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.cough)).setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.activity)).setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.night)).setVisibility(View.GONE);
+                }
+                else {
+                    (cardView.findViewById(R.id.coughStatus))
+                            .setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.activityStatus))
+                            .setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.nightStatus))
+                            .setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.cough)).setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.activity)).setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.night)).setVisibility(View.VISIBLE);
+                    ((TextView) cardView.findViewById(R.id.coughStatus))
+                            .setText(card.coughingStatus);
+                    ((TextView) cardView.findViewById(R.id.activityStatus))
+                            .setText(card.activityStatus);
+                    ((TextView) cardView.findViewById(R.id.nightStatus))
+                            .setText(card.nightStatus);
+                }
+                // updating based on toggle for triggers
+                if(card.removeTrigger){
+                    (cardView.findViewById(R.id.triggersText))
+                            .setVisibility(View.GONE);
+                    (cardView.findViewById(R.id.trigger)).setVisibility(View.GONE);
+                }
+                else{
+                    cardView.findViewById(R.id.triggersText)
+                            .setVisibility(View.VISIBLE);
+                    (cardView.findViewById(R.id.trigger)).setVisibility(View.VISIBLE);
+                    ((TextView) cardView.findViewById(R.id.triggersText))
+                            .setText(String.join(", ", card.triggers).isEmpty() ? "None" : String.join(", ", card.triggers));
+                }
 
                 TextView zoneStatus = cardView.findViewById(R.id.zoneStatus);
                 if (card.zone == null || card.zone.isEmpty()) {
@@ -326,7 +458,7 @@ public class HistoryFragment extends Fragment {
                 // increment yOffset for next card
                 currentY += cardView.getMeasuredHeight() + 10; // spacing between cards
             }
-            if (card.passFilter && card.cardType == HistoryItem.typeOfCard.triage) {
+            if (card.passFilter && card.cardType == HistoryItem.typeOfCard.triage && options[3]) { // only show triage when toggle is on
                 View cardView = inflater.inflate(R.layout.pdf_card_triage, null, false);
 
                 TextView triageTitle = cardView.findViewById(R.id.triageTitle);
@@ -334,10 +466,12 @@ public class HistoryFragment extends Fragment {
                 TextView presentFlags = cardView.findViewById(R.id.presentFlags);
                 presentFlags.setText(String.join(", ",card.flaglist));
                 TextView pefValue = cardView.findViewById(R.id.pefValue);
-                if(card.pef == -5){pefValue.setText("N/A");}
+                if(card.pef == -10){pefValue.setText("N/A");}
+                else if(card.pef == -5){pefValue.setText("Not Entered");}
                 else{pefValue.setText(Integer.toString(card.pef));}
                 TextView rescueAttempts = cardView.findViewById(R.id.rescueAttempts);
-                if(card.rescueAttempts == 0){rescueAttempts.setText("0");}
+                if(card.rescueAttempts == -5){rescueAttempts.setText("0");}
+                else if(card.rescueAttempts == -10){rescueAttempts.setText("N/A");}
                 else{rescueAttempts.setText(Integer.toString(card.rescueAttempts));}
                 TextView emergencyCall = cardView.findViewById(R.id.emergencyCall);
                 emergencyCall.setText(card.emergencyCall);
@@ -373,7 +507,7 @@ public class HistoryFragment extends Fragment {
         // finish the last page
         pdfDocument.finishPage(page);
 
-        File pdfFile = new File(requireContext().getExternalFilesDir(null), "historyLog.pdf");
+        File pdfFile = new File(requireContext().getExternalFilesDir(null), "historyLog_"+childName+".pdf");
         try {
             pdfDocument.writeTo(new FileOutputStream(pdfFile));
             Toast.makeText(getContext(), "PDF saved: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
@@ -385,15 +519,11 @@ public class HistoryFragment extends Fragment {
         }
     }
 
-    public void setChildUid(String childUid) {
-        this.childUid = childUid;
-        repo.getDailyCheckIns(childUid,this);
-    }
-
     public void exitScreen(){
-        //TODO: fix it
+        //meant to do nothing
     }
 
+    // a function to set up one filter UI with list
     private void setUpOneFilterUI(int type, String [] items){
         AutoCompleteTextView dropdown = view.findViewById(type);
 
@@ -407,6 +537,7 @@ public class HistoryFragment extends Fragment {
         dropdown.setAdapter(adapter);
     }
 
+    // sets up all filter UI with it's array and reusable function setUpOneFilterUI
     private void setUpFilterUI(){
         String [] nightWakingOptions = {"","YES","NO"};
         String [] activityLimitsOptions = {"","0-1","2-3","4-5","6-7","8-9","10"};
@@ -425,8 +556,54 @@ public class HistoryFragment extends Fragment {
     public void createRecycleView(List<HistoryItem> results) {
         adapter.updateList(results);
         RecyclerView recyclerView = view.findViewById(R.id.historyRecyclerView);
-        HistoryAdapter adapter = new HistoryAdapter(results); // your list of HistoryItem
+        HistoryAdapter adapter = new HistoryAdapter(results); // list of HistoryItem
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
+    }
+
+    // updates class variable based on what's on repo
+    public void fixToggles(Map<String, Boolean> sharing, Boolean allTrue) {
+        if(allTrue){ // for when child or parent
+            for(int i = 0; i < options.length; i++){
+                options[i] = true;
+            }
+        }
+        else { // for when provider
+            options[0] = sharing != null && sharing.containsKey("pef") ? sharing.get("pef") : false;
+            options[1] = sharing != null && sharing.containsKey("rescue") ? sharing.get("rescue") : false;
+            options[2] = sharing != null && sharing.containsKey("symptoms") ? sharing.get("symptoms") : false;
+            options[3] = sharing != null && sharing.containsKey("triage") ? sharing.get("triage") : false;
+            options[4] = sharing != null && sharing.containsKey("triggers") ? sharing.get("triggers") : false;
+        }
+
+        // change filter settings to grey out filters that don't work anymore based on toggles
+        AutoCompleteTextView selectNightWaking = view.findViewById(R.id.selectNightWaking);
+        selectNightWaking.setEnabled(options[2]);
+        selectNightWaking.setClickable(options[2]);
+        selectNightWaking.setFocusable(options[2]);
+        selectNightWaking.setFocusableInTouchMode(options[2]);
+        AutoCompleteTextView selectCoughing = view.findViewById(R.id.selectCoughingLevel);
+        selectCoughing.setEnabled(options[2]);
+        selectCoughing.setClickable(options[2]);
+        selectCoughing.setFocusable(options[2]);
+        selectCoughing.setFocusableInTouchMode(options[2]);
+        AutoCompleteTextView selectActivity = view.findViewById(R.id.selectActivityLimits);
+        selectActivity.setEnabled(options[2]);
+        selectActivity.setClickable(options[2]);
+        selectActivity.setFocusable(options[2]);
+        selectActivity.setFocusableInTouchMode(options[2]);
+        AutoCompleteTextView selectTriggers = view.findViewById(R.id.selectTriggers);
+        selectTriggers.setEnabled(options[4]);
+        selectTriggers.setClickable(options[4]);
+        selectTriggers.setFocusable(options[4]);
+        selectTriggers.setFocusableInTouchMode(options[4]);
+        AutoCompleteTextView selectTriage = view.findViewById(R.id.selectTriage);
+        selectTriage.setEnabled(options[3]);
+        selectTriage.setClickable(options[3]);
+        selectTriage.setFocusable(options[3]);
+        selectTriage.setFocusableInTouchMode(options[3]);
+
+        repo.getCards(childUid,this); // refresh list
+
     }
 }
