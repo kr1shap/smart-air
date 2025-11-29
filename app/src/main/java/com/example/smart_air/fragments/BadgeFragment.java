@@ -69,16 +69,14 @@ public class BadgeFragment extends Fragment {
         controllerStreakNum = view.findViewById(R.id.controllerStreakNum);
         techniqueStreakNum = view.findViewById(R.id.techniqueStreakNum);
 
+        // shared viewmodal
         //extra check just to ensure role is child
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        User user = doc.toObject(User.class);
-                        if (user == null) { return; }
-                        String role = user.getRole();
-                        if (role.equals("child")) { childUid = repo.getCurrentUser().getUid(); getBadgeStreakInfo(); }
-                    }
-                });
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                if (role.equals("child")) { childUid = repo.getCurrentUser().getUid(); getBadgeStreakInfo(); }
+            }
+        });
 
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);

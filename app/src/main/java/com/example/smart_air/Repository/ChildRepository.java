@@ -7,6 +7,7 @@ import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -21,8 +22,12 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -460,6 +465,8 @@ public class ChildRepository {
                     boolean rescueBadge = false;
                     int techniqueStreak = 0;
                     int controllerStreak = 0;
+                    String techniqueDate = null;
+                    String controllerDate = null;
 
                     if (snap.exists()) {
                         // badges map
@@ -478,6 +485,8 @@ public class ChildRepository {
                         if (techniqueStats != null) {
                             techniqueStreak = techniqueStats.get("currentStreak") != null ?
                                     ((Number) techniqueStats.get("currentStreak")).intValue() : 0;
+                            techniqueDate = techniqueStats.get("lastSessionDate") != null ?
+                                    (String) techniqueStats.get("lastSessionDate") : null;
                         }
 
                         // controllerStats map
@@ -486,8 +495,14 @@ public class ChildRepository {
 //                        if (controllerStats != null) {
 //                            controllerStreak = controllerStats.get("currentStreak") != null ?
 //                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
+                      //  controllerDate = controllerStats.get("lastSessionDate") != null ?
+                            //    (String) techniqueStats.get("lastSessionDate") : null;
 //                        }
+
                     }
+                    //UI change for technique streak - if streak invalid just change to 0 ui-based
+                    //next time child logs in a new session an actual change will be made
+                    if(techniqueDate != null && (StringFormatters.getToday().equals(techniqueDate) || StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
                     BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
                     taskSource.setResult(data);
                 })
