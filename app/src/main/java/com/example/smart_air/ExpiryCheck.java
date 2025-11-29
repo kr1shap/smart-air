@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Notification;
@@ -119,7 +120,6 @@ public class ExpiryCheck extends BroadcastReceiver {
      */
     private void notifyParentsForChild(String childUid, String childName) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         db.collection("users")
                 .document(childUid)
                 .get()

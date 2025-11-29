@@ -9,6 +9,8 @@ import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -69,9 +71,9 @@ public class InventoryFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Context appcontext = requireContext().getApplicationContext();
-        //scheduleExpiryAlarmIfNeeded();
-        scheduleOrRescheduleExpiryAlarm(appcontext, 14, 36);
+        // set checks for expiring medication
+        Context appContext = requireContext().getApplicationContext();
+        scheduleDailyExpiryAlarm(appContext, 0, 0);
 
         controllerContainer = view.findViewById(R.id.controller_card_container);
         rescueContainer     = view.findViewById(R.id.rescue_card_container);
@@ -406,110 +408,49 @@ public class InventoryFragment extends Fragment {
             Log.e("Inventory", "Failed to fetch child name in sendinventoryAlert", error);
         });
     }
-    private void scheduleExpiryAlarmIfNeeded() {
-        Context appContext = requireContext().getApplicationContext();
+    private void scheduleDailyExpiryAlarm(Context context, int hour, int minute) {
 
-        // 🔹 Avoid re-scheduling every time fragment opens
-        android.content.SharedPreferences prefs =
-                appContext.getSharedPreferences("smartair_prefs", Context.MODE_PRIVATE);
-
-        boolean alreadyScheduled = prefs.getBoolean("expiry_alarm_scheduled", false);
-        if (alreadyScheduled) {
-            Log.d("InventoryFragment", "Expiry alarm already scheduled, skipping.");
-            return;
-        }
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 12);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-
-        if (Calendar.getInstance().after(calendar)) {
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
-        }
-
-        Intent intent = new Intent(appContext, ExpiryCheck.class);
-        intent.setAction("CHECK_EXPIRY");
-
-        int flag = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            flag |= PendingIntent.FLAG_IMMUTABLE;
-        }
-
-        PendingIntent pend = PendingIntent.getBroadcast(
-                appContext,
-                0,
-                intent,
-                flag
-        );
-
-        AlarmManager alarmM = (AlarmManager) appContext.getSystemService(ALARM_SERVICE);
-        if (alarmM != null) {
-            alarmM.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.getTimeInMillis(),
-                    AlarmManager.INTERVAL_DAY,
-                    pend
-            );
-            Log.d("InventoryFragment", "Expiry alarm scheduled for: " + calendar.getTime());
-
-            prefs.edit().putBoolean("expiry_alarm_scheduled", true).apply();
-        } else {
-            Log.e("InventoryFragment", "AlarmManager was null, could not schedule alarm");
-        }
-    }
-    private void scheduleOrRescheduleExpiryAlarm(Context appContext, int hour, int minute) {
-        // 🔹 Same prefs key
-        android.content.SharedPreferences prefs =
-                appContext.getSharedPreferences("smartair_prefs", Context.MODE_PRIVATE);
-
-        // 🔹 Build the SAME intent you used before
-        Intent intent = new Intent(appContext, ExpiryCheck.class);
+        Intent intent = new Intent(context, ExpiryCheck.class);
         intent.setAction("CHECK_EXPIRY");
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             flags |= PendingIntent.FLAG_IMMUTABLE;
         }
 
-        PendingIntent pend = PendingIntent.getBroadcast(
-                appContext,
-                0,
-                intent,
-                flags
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent, flags
         );
 
-        AlarmManager alarmM = (AlarmManager) appContext.getSystemService(ALARM_SERVICE);
-        if (alarmM == null) {
-            Log.e("InventoryFragment", "AlarmManager was null, could not schedule alarm");
+        AlarmManager alarmManager =
+                (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (alarmManager == null) {
+            Log.e("Alarm", "AlarmManager null!");
             return;
         }
 
-        // ❗ Cancel any previous alarm with this PendingIntent
-        alarmM.cancel(pend);
-
-        // ⏰ New time
+        // compute trigger time
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
 
-        if (Calendar.getInstance().after(calendar)) {
-            // if time already passed today → schedule for tomorrow
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        // if time already passed today → schedule for tomorrow
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
 
-        alarmM.setRepeating(
+        // schedule repeating every day
+        alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP,
                 calendar.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY,
-                pend
+                pendingIntent
         );
 
-        Log.d("InventoryFragment", "Expiry alarm scheduled/rescheduled for: " + calendar.getTime());
-
-        prefs.edit().putBoolean("expiry_alarm_scheduled", true).apply();
+        Log.d("Alarm", "Expiry alarm set for: " + calendar.getTime());
     }
-
 
 }
