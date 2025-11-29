@@ -39,9 +39,7 @@ public class LogDoseFragment extends Fragment {
     private FirebaseFirestore db;
     private String uid;
 
-    public LogDoseFragment() {
-        // Required empty public constructor
-    }
+    public LogDoseFragment() {}
 
     @Nullable
     @Override
@@ -63,8 +61,24 @@ public class LogDoseFragment extends Fragment {
             return;
         }
 
-        uid = user.getUid();
+        String currentUid = user.getUid();
 
+        db.collection("children")
+                .whereEqualTo("parentUid", currentUid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        uid = querySnapshot.getDocuments().get(0).getId();
+                    } else {
+                        uid = currentUid;
+                    }
+                    setupLogDoseUI(view);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to identify user role", Toast.LENGTH_SHORT).show());
+    }
+
+    private void setupLogDoseUI(View view) {
         TextView dateView = view.findViewById(R.id.text_today_date);
         LinearLayout controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
         LinearLayout rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
@@ -78,7 +92,6 @@ public class LogDoseFragment extends Fragment {
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         dateView.setText(today);
 
-        // Load existing logs
         loadLogsFor("controller", controllerLogsContainer);
         loadLogsFor("rescue", rescueLogsContainer);
 
@@ -96,8 +109,6 @@ public class LogDoseFragment extends Fragment {
         }
     }
 
-    // ===================== DIALOG =====================
-
     private void showLogDialog(String logType, LinearLayout logsContainer) {
         if (getContext() == null) return;
 
@@ -114,26 +125,18 @@ public class LogDoseFragment extends Fragment {
         Button saveBtn = dialogView.findViewById(R.id.btn_save_log);
         Button cancelBtn = dialogView.findViewById(R.id.btn_cancel_log);
 
-        // Title
-        if ("controller".equals(logType)) {
-            titleText.setText("Log Controller Dose");
-        } else {
-            titleText.setText("Log Rescue Dose");
-        }
+        titleText.setText("controller".equals(logType) ? "Log Controller Dose" : "Log Rescue Dose");
 
-        // Short breath slider label
         shortBreathSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 shortBreathValue.setText("Current: " + progress);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         techniqueHelperBtn.setOnClickListener(v ->
-                Toast.makeText(getContext(),
-                        "Technique helper UI coming soon 🙂",
-                        Toast.LENGTH_SHORT).show());
+                Toast.makeText(getContext(), "Technique helper UI coming soon 🙂", Toast.LENGTH_SHORT).show());
 
         AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setView(dialogView)
@@ -148,17 +151,8 @@ public class LogDoseFragment extends Fragment {
             String puffsStr = puffsInput.getText().toString().trim();
             int shortBreathRating = shortBreathSeek.getProgress();
 
-            if (preCheck == null) {
-                Toast.makeText(getContext(), "Please select how you felt before.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (postCheck == null) {
-                Toast.makeText(getContext(), "Please select how you felt after.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (TextUtils.isEmpty(puffsStr)) {
-                puffsInput.setError("Required");
-                puffsInput.requestFocus();
+            if (preCheck == null || postCheck == null || TextUtils.isEmpty(puffsStr)) {
+                Toast.makeText(getContext(), "Please fill out all fields.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -167,7 +161,6 @@ public class LogDoseFragment extends Fragment {
                 puffs = Integer.parseInt(puffsStr);
             } catch (NumberFormatException e) {
                 puffsInput.setError("Enter a valid number");
-                puffsInput.requestFocus();
                 return;
             }
 
@@ -180,21 +173,17 @@ public class LogDoseFragment extends Fragment {
 
             String collectionName = "controller".equals(logType) ? "controllerLog" : "rescueLog";
 
-            CollectionReference logsRef = db.collection("children")
+            db.collection("children")
                     .document(uid)
-                    .collection(collectionName);
-
-            logsRef.add(data)
+                    .collection(collectionName)
+                    .add(data)
                     .addOnSuccessListener(docRef -> {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
                     })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(),
-                                "Failed to log dose: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e ->
+                            Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         });
 
         dialog.show();
@@ -207,8 +196,6 @@ public class LogDoseFragment extends Fragment {
         RadioButton rb = group.findViewById(id);
         return rb != null ? rb.getText().toString() : null;
     }
-
-    // ===================== LOAD LOGS =====================
 
     private void loadLogsFor(String logType, LinearLayout container) {
         if (container == null) return;
@@ -233,8 +220,7 @@ public class LogDoseFragment extends Fragment {
                         String formattedDate = "";
                         if (timestamp != null) {
                             Date date = timestamp.toDate();
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
-                            formattedDate = sdf.format(date);
+                            formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date);
                         }
 
                         String summary = (formattedDate.isEmpty() ? "" : formattedDate + " - ") +
@@ -250,5 +236,4 @@ public class LogDoseFragment extends Fragment {
                     }
                 });
     }
-
 }
