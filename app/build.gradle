@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace 'com.example.smart_air'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.smart_air"
@@ -27,6 +27,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
     }
 }
 
@@ -46,7 +47,10 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.3.1'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation libs.material.v190
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
+
 
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation(libs.firebase.analytics)

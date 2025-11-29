@@ -35,6 +35,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.smart_air.Contracts.AuthContract;
 
 import com.example.smart_air.fragments.BadgeFragment;
+import com.example.smart_air.fragments.DashboardFragment;
 import com.example.smart_air.fragments.TechniqueHelperFragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;

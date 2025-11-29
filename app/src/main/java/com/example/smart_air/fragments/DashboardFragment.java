@@ -16,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
@@ -25,7 +26,6 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import com.example.smart_air.R;
-
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -37,7 +37,6 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -58,89 +57,116 @@ import java.util.List;
 public class DashboardFragment extends Fragment {
 
     private float x1, x2;
-    private final int MIN_DISTANCE = 150;
+    private static final int MIN_DISTANCE = 150;
     private View zoneBar;
-
-    private String zoneColour = "none";
     private View barContainer;
+
     private LineChart pefChart;
     private BarChart rescueChart;
 
+    private String zoneColour = "none";
     private String parentId;
     private String childId;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+    private boolean isChildUser = false;
 
 
-    // get all ids
-
-    private void loadUserAndChildIds(Runnable onComplete) {
-
-        parentId = FirebaseAuth.getInstance().getUid();
-        if (parentId == null) {
+    private void loadUserAndChildIds(TextView titleView, @Nullable Runnable onComplete) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
             Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        db.collection("users")
-                .document(parentId)
+        db.collection("children")
+                .document(uid)
                 .get()
-                .addOnSuccessListener(doc -> {
+                .addOnSuccessListener(childDoc -> {
 
-                    if (!doc.exists()) {
-                        Toast.makeText(requireContext(), "User profile missing", Toast.LENGTH_SHORT).show();
+                    if (childDoc.exists()) {
+
+                        isChildUser = true;
+                        childId = uid;
+                        parentId = childDoc.getString("parentUid");
+
+                        String childName = childDoc.getString("name");
+                        if (childName != null) {
+                            titleView.setText(childName + "’s Dashboard");
+                        }
+
+                        if (onComplete != null) onComplete.run();
                         return;
                     }
 
-                    List<String> children = (List<String>) doc.get("childrenUid");
-                    if (children == null || children.isEmpty()) {
-                        Toast.makeText(requireContext(), "No children linked to account", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+                    db.collection("users")
+                            .document(uid)
+                            .get()
+                            .addOnSuccessListener(parentDoc -> {
+                                if (parentDoc.exists()) {
+                                    isChildUser = false;
+                                    parentId = uid;
 
-                    childId = children.get(0);
-                    System.out.println("Loaded Child ID: " + childId);
+                                    List<String> children = (List<String>) parentDoc.get("childrenUid");
+                                    if (children == null || children.isEmpty()) {
+                                        Toast.makeText(requireContext(), "No children linked", Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
 
-                    if (onComplete != null) onComplete.run();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
-                );
+                                    childId = children.get(0);
+
+                                    titleView.setText("Dashboard");
+
+                                    if (onComplete != null) onComplete.run();
+                                } else {
+                                    Toast.makeText(requireContext(),
+                                            "Profile not found in users or children",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                });
     }
 
 
-    // view creation
-
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_dashboard, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         zoneBar = view.findViewById(R.id.zoneBar);
+        barContainer = view.findViewById(R.id.barContainer);
         rescueChart = view.findViewById(R.id.rescueChart);
         pefChart = view.findViewById(R.id.pefChart);
+        Button btnManage = view.findViewById(R.id.btnManageChildren);
+        Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
 
-        barContainer = view.findViewById(R.id.barContainer);
-        barContainer.post(() -> {
-            loadTodayZone();
-        });
 
-        loadUserAndChildIds(() -> {
+        TextView tvDashboardTitle = view.findViewById(R.id.tvDashboardTitle);
+
+        loadUserAndChildIds(tvDashboardTitle, () -> {
+            if (isChildUser) {
+                btnProviderReport.setVisibility(View.GONE);
+                btnManage.setVisibility(View.GONE);
+            }
+
             loadTodayZone();
             loadZoneHistory();
             loadWeeklyRescues(7);
             loadPEFTrend(7);
         });
+
+
 
         Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -153,7 +179,7 @@ public class DashboardFragment extends Fragment {
 
         trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
                 if (childId == null) return;
 
                 if (position == 0) {
@@ -164,21 +190,20 @@ public class DashboardFragment extends Fragment {
                     loadPEFTrend(30);
                 }
             }
+
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
         Button btnReport = view.findViewById(R.id.btnProviderReport);
-        btnReport.setOnClickListener(v -> {
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new ProviderReportFragment())
-                    .addToBackStack(null)
-                    .commit();
-        });
+        btnReport.setOnClickListener(v -> requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new ProviderReportFragment())
+                .addToBackStack(null)
+                .commit()
+        );
 
         final ViewFlipper flipper = view.findViewById(R.id.trendsCarousel);
-
         if (flipper != null) {
             flipper.post(() -> {
                 flipper.setOnTouchListener((v, event) -> {
@@ -195,9 +220,11 @@ public class DashboardFragment extends Fragment {
                             float deltaX = x2 - x1;
 
                             if (Math.abs(deltaX) > MIN_DISTANCE) {
-                                if (deltaX > 0) flipper.showPrevious();
-                                else flipper.showNext();
-
+                                if (deltaX > 0) {
+                                    flipper.showPrevious();
+                                } else {
+                                    flipper.showNext();
+                                }
                                 updateDots(flipper.getDisplayedChild(), view);
                             }
                             return true;
@@ -210,66 +237,72 @@ public class DashboardFragment extends Fragment {
         }
     }
 
-    // zone widget
-    private void loadTodayZone() {
 
+    private void loadTodayZone() {
         if (childId == null) return;
 
         String dateKey = LocalDate.now().toString();
 
-        db.collection("DailyCheckins")
+        db.collection("dailyCheckins")
                 .document(childId)
                 .collection("entries")
                 .document(dateKey)
                 .get()
                 .addOnSuccessListener(doc -> {
+
                     if (doc.exists()) {
+
                         zoneColour = doc.getString("zoneColour");
                         if (zoneColour == null) zoneColour = "none";
+
+                        Long zoneNum = doc.getLong("zoneNumber");
+                        if (zoneNum == null) zoneNum = 0L;
+
+                        updateZoneBar(zoneColour, zoneNum.intValue());
+
                     } else {
-                        zoneColour = "none";
+                        updateZoneBar("none", 0);
                     }
-                    updateZoneBar();
                 })
-                .addOnFailureListener(e -> {
-                    zoneColour = "none";
-                    updateZoneBar();
-                });
+                .addOnFailureListener(e -> updateZoneBar("none", 0));
     }
 
 
-    private void updateZoneBar() {
+    private void updateZoneBar(String zoneColour, int zoneNum) {
         if (barContainer == null || zoneBar == null) return;
 
-        int maxWidth = barContainer.getWidth();
-        int newWidth;
+        barContainer.post(() -> {
+            int maxWidth = barContainer.getWidth();
+            int newWidth;
 
-        if ("green".equalsIgnoreCase(zoneColour)) {
-            newWidth = (int) (0.33f * maxWidth);
-            zoneBar.setBackgroundColor(Color.parseColor("#31ad36"));
-        }
-        else if ("yellow".equalsIgnoreCase(zoneColour)) {
-            newWidth = (int) (0.66f * maxWidth);
-            zoneBar.setBackgroundColor(Color.parseColor("#ffcc12"));
-        }
-        else if ("red".equalsIgnoreCase(zoneColour)) {
-            newWidth = (int) (1.00f * maxWidth);
-            zoneBar.setBackgroundColor(Color.parseColor("#b50000"));
-        }
-        else {
-            newWidth = 0;
-            zoneBar.setBackgroundColor(Color.GRAY);
-        }
+            newWidth = (int) (maxWidth * (zoneNum / 100f));
 
-        ViewGroup.LayoutParams params = zoneBar.getLayoutParams();
-        params.width = newWidth;
-        zoneBar.setLayoutParams(params);
+            if ("green".equalsIgnoreCase(zoneColour)) {
+                zoneBar.setBackgroundColor(Color.parseColor("#31ad36"));
+            } else if ("yellow".equalsIgnoreCase(zoneColour)) {
+                zoneBar.setBackgroundColor(Color.parseColor("#ffcc12"));
+            } else if ("red".equalsIgnoreCase(zoneColour)) {
+                zoneBar.setBackgroundColor(Color.parseColor("#b50000"));
+            } else {
+
+                if (zoneNum <= 33) {
+                    zoneBar.setBackgroundColor(Color.parseColor("#31ad36"));
+                } else if (zoneNum <= 66) {
+                    zoneBar.setBackgroundColor(Color.parseColor("#ffcc12"));
+                } else if (zoneNum <= 100) {
+                    zoneBar.setBackgroundColor(Color.parseColor("#b50000"));
+                } else {
+                    zoneBar.setBackgroundColor(Color.GRAY);
+                }
+            }
+
+            ViewGroup.LayoutParams params = zoneBar.getLayoutParams();
+            params.width = newWidth;
+            zoneBar.setLayoutParams(params);
+        });
     }
 
-
-    // weekly rescue and last rescue widgets
     private void loadWeeklyRescues(int days) {
-
         if (childId == null) return;
 
         LocalDate cutoff = LocalDate.now().minusDays(days - 1);
@@ -279,11 +312,9 @@ public class DashboardFragment extends Fragment {
                 .collection("triageSessions")
                 .get()
                 .addOnSuccessListener(snap -> {
-
                     int[] counts = new int[days];
 
                     for (DocumentSnapshot doc : snap) {
-
                         Long rescueCount = doc.getLong("rescueAttempts");
                         Timestamp ts = doc.getTimestamp("date");
 
@@ -297,7 +328,6 @@ public class DashboardFragment extends Fragment {
                         if (rescueDate.isBefore(cutoff)) continue;
 
                         int index = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
-
                         if (index >= 0 && index < days) {
                             counts[index] += rescueCount.intValue();
                         }
@@ -305,15 +335,10 @@ public class DashboardFragment extends Fragment {
 
                     drawRescueChartDynamic(counts, days);
                 });
-
     }
 
-    // trends widget
-
-
-    /*TREND ONE: RESCUES*/
-
     private void drawRescueChartDynamic(int[] counts, int days) {
+        if (rescueChart == null) return;
 
         ArrayList<BarEntry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
@@ -322,7 +347,6 @@ public class DashboardFragment extends Fragment {
 
         for (int i = 0; i < days; i++) {
             entries.add(new BarEntry(i, counts[i]));
-
             LocalDate date = start.plusDays(i);
             labels.add(date.getMonthValue() + "/" + date.getDayOfMonth());
         }
@@ -353,32 +377,26 @@ public class DashboardFragment extends Fragment {
     }
 
 
-    /*TREND TWO: BEST PEF*/
-
     private void loadPEFTrend(int days) {
+        if (childId == null) return;
 
         LocalDate today = LocalDate.now();
-
         int[] pefValues = new int[days];
         Arrays.fill(pefValues, 0);
 
-        db.collection("dailyCheckIn")
+        db.collection("dailyCheckins")
                 .document(childId)
                 .collection("entries")
                 .get()
                 .addOnSuccessListener(snapshot -> {
-
                     for (DocumentSnapshot dayDoc : snapshot) {
-
                         String dateKey = dayDoc.getId();
                         LocalDate entryDate = LocalDate.parse(dateKey);
 
                         long diff = ChronoUnit.DAYS.between(entryDate, today);
-
                         if (diff >= 0 && diff < days) {
                             int index = (int) (days - 1 - diff);
-
-                            Long pef = dayDoc.getLong("personalBestPEF");
+                            Long pef = dayDoc.getLong("pef");
                             if (pef != null) {
                                 pefValues[index] = pef.intValue();
                             }
@@ -390,9 +408,9 @@ public class DashboardFragment extends Fragment {
     }
 
     private void drawPEFLineChart(int[] pefValues, int days) {
+        if (pefChart == null) return;
 
         ArrayList<Entry> entries = new ArrayList<>();
-
         for (int i = 0; i < days; i++) {
             entries.add(new Entry(i, pefValues[i]));
         }
@@ -431,38 +449,35 @@ public class DashboardFragment extends Fragment {
     }
 
 
+    private void updateDots(int index, View root) {
+        View dot1 = root.findViewById(R.id.dot1);
+        View dot2 = root.findViewById(R.id.dot2);
 
-    private void updateDots(int index, View view) {
-
-        View dot1 = view.findViewById(R.id.dot1);
-        View dot2 = view.findViewById(R.id.dot2);
-
-        dot1.setBackgroundResource(index == 0 ? R.drawable.dot_active : R.drawable.dot_inactive);
-        dot2.setBackgroundResource(index == 1 ? R.drawable.dot_active : R.drawable.dot_inactive);
+        if (dot1 != null && dot2 != null) {
+            dot1.setBackgroundResource(index == 0 ? R.drawable.dot_active : R.drawable.dot_inactive);
+            dot2.setBackgroundResource(index == 1 ? R.drawable.dot_active : R.drawable.dot_inactive);
+        }
     }
 
     private void loadZoneHistory() {
+        if (childId == null) return;
 
         LocalDate today = LocalDate.now();
         Entry[] entryArray = new Entry[7];
 
         for (int i = 0; i < 7; i++) {
-
             LocalDate day = today.minusDays(6 - i);
             String dateKey = day.toString();
             int index = i;
 
-            db.collection("DailyCheckins")
+            db.collection("dailyCheckins")
                     .document(childId)
                     .collection("entries")
                     .document(dateKey)
                     .get()
                     .addOnSuccessListener(doc -> {
-
                         if (doc.exists()) {
-
                             String zone = doc.getString("zoneColour");
-
                             if (zone == null) {
                                 entryArray[index] = new Entry(index, 0);
                             } else {
@@ -480,7 +495,6 @@ public class DashboardFragment extends Fragment {
                                         entryArray[index] = new Entry(index, 0);
                                 }
                             }
-
                         } else {
                             entryArray[index] = new Entry(index, 0);
                         }
@@ -498,6 +512,7 @@ public class DashboardFragment extends Fragment {
     }
 
     private void drawZoneHistoryChart(ArrayList<Entry> entries) {
+        if (pefChart == null) return;
 
         pefChart.setTouchEnabled(false);
         pefChart.setPinchZoom(false);
@@ -516,7 +531,7 @@ public class DashboardFragment extends Fragment {
 
         YAxis left = pefChart.getAxisLeft();
         left.setAxisMinimum(0f);
-        left.setAxisMaximum(30f);
+        left.setAxisMaximum(3f);
         left.setDrawGridLines(false);
         pefChart.getAxisRight().setEnabled(false);
 
@@ -544,7 +559,6 @@ public class DashboardFragment extends Fragment {
         pefChart.invalidate();
     }
 
-
     private LocalDate getStartOfWeek() {
         LocalDate today = LocalDate.now();
         return today.with(DayOfWeek.SUNDAY);
@@ -568,7 +582,6 @@ public class DashboardFragment extends Fragment {
 
             if (!date.isBefore(start) && !date.isAfter(end)) {
                 int dayIndex = date.getDayOfWeek().getValue() % 7;
-
                 counts[dayIndex]++;
             }
         }
@@ -577,10 +590,7 @@ public class DashboardFragment extends Fragment {
     }
 
 
-    // Provider Report
-
     public void generateProviderReport(int months) {
-
         // TODO: fetch real values from Firestore
         String childName = "John Doe";
         String childDob = "August 12, 2006";
@@ -600,7 +610,6 @@ public class DashboardFragment extends Fragment {
                 new PdfDocument.PageInfo.Builder(595, 842, 1).create();
         PdfDocument.Page page = pdf.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
-
 
         titlePaint.setTextAlign(Paint.Align.CENTER);
         titlePaint.setTextSize(28);
@@ -636,7 +645,6 @@ public class DashboardFragment extends Fragment {
         int headerHeight = 50;
 
         textPaint.setTextSize(18);
-
         canvas.drawRect(left, tableTop, right, tableTop + headerHeight, boxPaint);
         canvas.drawText("Triage Incidents", left + 20, tableTop + 32, textPaint);
 
@@ -646,7 +654,6 @@ public class DashboardFragment extends Fragment {
         textPaint.setTextSize(16);
 
         for (TriageIncident incident : incidents) {
-
             float symptomsX = left + 200;
             float availableWidth = right - symptomsX - 20;
 
@@ -660,7 +667,6 @@ public class DashboardFragment extends Fragment {
             float dynamicRowHeight = Math.max(50, lineHeight * wrappedLines.size() + 20);
 
             canvas.drawRect(left, currentY, right, currentY + dynamicRowHeight, boxPaint);
-
             canvas.drawText("• " + incident.date, left + 20, currentY + 32, textPaint);
 
             float lineY = currentY + 32;
@@ -672,16 +678,13 @@ public class DashboardFragment extends Fragment {
             currentY += dynamicRowHeight;
         }
 
-
         pdf.finishPage(page);
 
         File path = new File(requireContext().getExternalFilesDir(null), "provider_report.pdf");
-
         try {
             FileOutputStream fos = new FileOutputStream(path);
             pdf.writeTo(fos);
             fos.close();
-
             Toast.makeText(getContext(), "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -693,7 +696,6 @@ public class DashboardFragment extends Fragment {
     }
 
     private List<String> wrapTextLines(String text, Paint paint, float maxWidth) {
-
         List<String> lines = new ArrayList<>();
         String[] words = text.split(" ");
         StringBuilder current = new StringBuilder();
@@ -711,10 +713,8 @@ public class DashboardFragment extends Fragment {
         if (current.length() > 0) {
             lines.add(current.toString());
         }
-
         return lines;
     }
-
 
     private void openPdf(File file) {
         Uri uri = FileProvider.getUriForFile(
@@ -727,7 +727,11 @@ public class DashboardFragment extends Fragment {
         intent.setDataAndType(uri, "application/pdf");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-        startActivity(intent);
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "No PDF viewer found", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public static class TriageIncident {
@@ -739,7 +743,4 @@ public class DashboardFragment extends Fragment {
             this.symptoms = symptoms;
         }
     }
-
-
-
 }

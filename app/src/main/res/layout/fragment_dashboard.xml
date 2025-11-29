@@ -15,7 +15,7 @@
             android:id="@+id/tvDashboardTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="John Doe’s Dashboard"
+            android:text="Dashboard"
             android:fontFamily="@font/dm_sans_bold"
             android:layout_gravity="center"
             android:textSize="32sp"
@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:text="Today's Zone"
                 android:fontFamily="@font/dm_sans_bold"
-                android:textColor="@color/colour_blue_dark"
+                android:textColor="@color/colour_darkBlue"
                 android:textStyle="bold"
                 android:textSize="18sp" />
 
@@ -92,7 +92,7 @@
                     android:text="Weekly Rescues"
                     android:fontFamily="@font/dm_sans_bold"
                     android:textSize="16sp"
-                    android:textColor="@color/colour_blue_dark"
+                    android:textColor="@color/colour_darkBlue"
                     android:textStyle="bold" />
 
                 <View
@@ -111,7 +111,7 @@
                     android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="@color/colour_blue_dark"/>
+                    android:textColor="@color/colour_darkBlue"/>
             </LinearLayout>
 
             <!-- Last Rescue -->
@@ -131,7 +131,7 @@
                     android:text="Last Rescue"
                     android:fontFamily="@font/dm_sans_bold"
                     android:textSize="16sp"
-                    android:textColor="@color/colour_blue_dark"
+                    android:textColor="@color/colour_darkBlue"
                     android:textStyle="bold" />
 
                 <View
@@ -151,7 +151,7 @@
                     android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
                     android:layout_marginTop="8dp"
-                    android:textColor="@color/colour_blue_dark"/>
+                    android:textColor="@color/colour_darkBlue"/>
             </LinearLayout>
         </LinearLayout>
 
@@ -171,7 +171,7 @@
                 android:text="Inventory"
                 android:fontFamily="@font/dm_sans_bold"
                 android:textSize="18sp"
-                android:textColor="@color/colour_blue_dark"
+                android:textColor="@color/colour_darkBlue"
                 android:layout_marginBottom="12dp"/>
 
             <View
@@ -187,7 +187,7 @@
                 android:layout_height="wrap_content"
                 android:text="Rescue:"
                 android:textSize="16sp"
-                android:textColor="@color/colour_blue_dark"/>
+                android:textColor="@color/colour_darkBlue"/>
 
             <TextView
                 android:id="@+id/tvInventoryRescue"
@@ -203,7 +203,7 @@
                 android:text="Controller:"
                 android:fontFamily="@font/dm_sans_bold"
                 android:textSize="16sp"
-                android:textColor="@color/colour_blue_dark"/>
+                android:textColor="@color/colour_darkBlue"/>
 
             <TextView
                 android:id="@+id/tvInventoryController"
@@ -225,7 +225,7 @@
                     android:layout_weight="1"
                     android:text="Last Purchase:"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_blue_dark"/>
+                    android:textColor="@color/colour_darkBlue"/>
 
                 <TextView
                     android:layout_width="0dp"
@@ -233,7 +233,7 @@
                     android:layout_weight="1"
                     android:text="Expires in:"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_blue_dark"/>
+                    android:textColor="@color/colour_darkBlue"/>
             </LinearLayout>
 
         </LinearLayout>
@@ -255,7 +255,7 @@
                 android:fontFamily="@font/dm_sans_bold"
                 android:textStyle="bold"
                 android:textSize="18sp"
-                android:textColor="@color/colour_blue_dark"/>
+                android:textColor="@color/colour_darkBlue"/>
 
             <Spinner
                 android:id="@+id/spinnerTrendRange"
