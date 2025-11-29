@@ -257,6 +257,15 @@
                 android:textSize="18sp"
                 android:textColor="@color/colour_blue_dark"/>
 
+            <Spinner
+                android:id="@+id/spinnerTrendRange"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:padding="6dp"
+                android:spinnerMode="dropdown" />
+
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -280,7 +289,7 @@
                     android:layout_margin="16dp" />
 
                 <com.github.mikephil.charting.charts.LineChart
-                    android:id="@+id/zoneChart"
+                    android:id="@+id/pefChart"
                     android:layout_width="match_parent"
                     android:layout_height="250dp"
                     android:layout_margin="16dp" />

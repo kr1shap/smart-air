@@ -19,6 +19,11 @@ import java.util.List;
 
 public class ProviderReportFragment extends Fragment {
 
+    private String childName;
+    private String childDob;
+    private String parentName;
+    private String parentContact;
+
     public ProviderReportFragment() {
         // required empty constructor
     }

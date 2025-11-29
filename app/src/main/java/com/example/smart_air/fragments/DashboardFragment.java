@@ -12,8 +12,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
@@ -36,12 +38,10 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,10 +49,9 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -64,10 +63,49 @@ public class DashboardFragment extends Fragment {
 
     private String zoneColour = "none";
     private View barContainer;
-    private LineChart zoneChart;
+    private LineChart pefChart;
     private BarChart rescueChart;
+
+    private String parentId;
+    private String childId;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private static final String CHILD_ID = FirebaseAuth.getInstance().getUid();
+
+
+    // get all ids
+
+    private void loadUserAndChildIds(Runnable onComplete) {
+
+        parentId = FirebaseAuth.getInstance().getUid();
+        if (parentId == null) {
+            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("users")
+                .document(parentId)
+                .get()
+                .addOnSuccessListener(doc -> {
+
+                    if (!doc.exists()) {
+                        Toast.makeText(requireContext(), "User profile missing", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    List<String> children = (List<String>) doc.get("childrenUid");
+                    if (children == null || children.isEmpty()) {
+                        Toast.makeText(requireContext(), "No children linked to account", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    childId = children.get(0);
+                    System.out.println("Loaded Child ID: " + childId);
+
+                    if (onComplete != null) onComplete.run();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+    }
 
 
     // view creation
@@ -85,19 +123,52 @@ public class DashboardFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        zoneBar = view.findViewById(R.id.zoneBar);
-        rescueChart = view.findViewById(R.id.rescueChart);
-        zoneChart = view.findViewById(R.id.zoneChart);
 
-        barContainer = view.findViewById(R.id.barContainer);
-        barContainer.post(() -> updateZoneBar());
-        loadTodayZone();
         super.onViewCreated(view, savedInstanceState);
 
+        zoneBar = view.findViewById(R.id.zoneBar);
+        rescueChart = view.findViewById(R.id.rescueChart);
+        pefChart = view.findViewById(R.id.pefChart);
+
+        barContainer = view.findViewById(R.id.barContainer);
+        barContainer.post(() -> {
+            loadTodayZone();
+        });
+
+        loadUserAndChildIds(() -> {
+            loadTodayZone();
+            loadZoneHistory();
+            loadWeeklyRescues(7);
+            loadPEFTrend(7);
+        });
+
+        Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"Past 7 Days", "Past 30 Days"}
+        );
+        trendSpinner.setAdapter(adapter);
+        trendSpinner.setSelection(0);
+
+        trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (childId == null) return;
+
+                if (position == 0) {
+                    loadWeeklyRescues(7);
+                    loadPEFTrend(7);
+                } else {
+                    loadWeeklyRescues(30);
+                    loadPEFTrend(30);
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         Button btnReport = view.findViewById(R.id.btnProviderReport);
-        btnReport.setOnClickListener(v -> generateProviderReport(4));
-
         btnReport.setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
@@ -106,58 +177,50 @@ public class DashboardFragment extends Fragment {
                     .commit();
         });
 
-        db = FirebaseFirestore.getInstance();
-
-        loadZoneHistory();
-        loadWeeklyRescues();
-
         final ViewFlipper flipper = view.findViewById(R.id.trendsCarousel);
-        if (flipper == null) {
-            return;
-        }
-        flipper.post(() -> {
-            flipper.setOnTouchListener((v, event) -> {
-                v.getParent().requestDisallowInterceptTouchEvent(true);
 
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        x1 = event.getX();
-                        return true;
+        if (flipper != null) {
+            flipper.post(() -> {
+                flipper.setOnTouchListener((v, event) -> {
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
 
-                    case MotionEvent.ACTION_UP:
-                        v.performClick();
-                        x2 = event.getX();
-                        float deltaX = x2 - x1;
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            x1 = event.getX();
+                            return true;
 
-                        if (Math.abs(deltaX) > MIN_DISTANCE) {
-                            if (deltaX > 0) {
-                                flipper.showPrevious();
-                            } else {
-                                flipper.showNext();
+                        case MotionEvent.ACTION_UP:
+                            v.performClick();
+                            x2 = event.getX();
+                            float deltaX = x2 - x1;
+
+                            if (Math.abs(deltaX) > MIN_DISTANCE) {
+                                if (deltaX > 0) flipper.showPrevious();
+                                else flipper.showNext();
+
+                                updateDots(flipper.getDisplayedChild(), view);
                             }
+                            return true;
+                    }
+                    return false;
+                });
 
-                            updateDots(flipper.getDisplayedChild(), view);
-                        }
-                        return true;
-                }
-                return false;
+                updateDots(0, view);
             });
-
-            updateDots(0, view);
-
-        });
-
+        }
     }
-
 
     // zone widget
     private void loadTodayZone() {
-        String childId = FirebaseAuth.getInstance().getUid();
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        if (childId == null) return;
 
-        db.collection("dailycheckin")
+        String dateKey = LocalDate.now().toString();
+
+        db.collection("DailyCheckins")
                 .document(childId)
+                .collection("entries")
+                .document(dateKey)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -166,7 +229,6 @@ public class DashboardFragment extends Fragment {
                     } else {
                         zoneColour = "none";
                     }
-
                     updateZoneBar();
                 })
                 .addOnFailureListener(e -> {
@@ -174,6 +236,7 @@ public class DashboardFragment extends Fragment {
                     updateZoneBar();
                 });
     }
+
 
     private void updateZoneBar() {
         if (barContainer == null || zoneBar == null) return;
@@ -205,87 +268,170 @@ public class DashboardFragment extends Fragment {
 
 
     // weekly rescue and last rescue widgets
-    private void loadWeeklyRescues() {
+    private void loadWeeklyRescues(int days) {
 
-        String childId = FirebaseAuth.getInstance().getUid();
+        if (childId == null) return;
 
-        db.collection("IncidentLog")
+        LocalDate cutoff = LocalDate.now().minusDays(days - 1);
+
+        db.collection("incidentLog")
                 .document(childId)
-                .collection("TriageSession")
+                .collection("triageSessions")
                 .get()
-                .addOnSuccessListener(sessionSnap -> {
+                .addOnSuccessListener(snap -> {
 
-                    ArrayList<Long> timestamps = new ArrayList<>();
+                    int[] counts = new int[days];
 
-                    if (sessionSnap.isEmpty()) {
+                    for (DocumentSnapshot doc : snap) {
 
-                        updateWeeklyRescuesUI(0, "No rescues yet");
-                        return;
+                        Long rescueCount = doc.getLong("rescueAttempts");
+                        Timestamp ts = doc.getTimestamp("date");
+
+                        if (rescueCount == null || ts == null) continue;
+
+                        LocalDate rescueDate = ts.toDate()
+                                .toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate();
+
+                        if (rescueDate.isBefore(cutoff)) continue;
+
+                        int index = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
+
+                        if (index >= 0 && index < days) {
+                            counts[index] += rescueCount.intValue();
+                        }
                     }
 
-                    final int totalSessions = sessionSnap.size();
-                    final int[] loadedSessions = {0};
+                    drawRescueChartDynamic(counts, days);
+                });
 
-                    for (DocumentSnapshot sessionDoc : sessionSnap) {
+    }
 
-                        db.collection("IncidentLog")
-                                .document(childId)
-                                .collection("TriageSession")
-                                .document(sessionDoc.getId())
-                                .collection("rescueAttempts")
-                                .get()
-                                .addOnSuccessListener(rescueSnap -> {
+    // trends widget
 
-                                    for (DocumentSnapshot rescueDoc : rescueSnap) {
-                                        Long ts = rescueDoc.getLong("timestamp");
-                                        if (ts != null) timestamps.add(ts);
-                                    }
 
-                                    loadedSessions[0]++;
+    /*TREND ONE: RESCUES*/
 
-                                    if (loadedSessions[0] == totalSessions) {
-                                        processRescues(timestamps);
-                                    }
+    private void drawRescueChartDynamic(int[] counts, int days) {
 
-                                });
+        ArrayList<BarEntry> entries = new ArrayList<>();
+        ArrayList<String> labels = new ArrayList<>();
+
+        LocalDate start = LocalDate.now().minusDays(days - 1);
+
+        for (int i = 0; i < days; i++) {
+            entries.add(new BarEntry(i, counts[i]));
+
+            LocalDate date = start.plusDays(i);
+            labels.add(date.getMonthValue() + "/" + date.getDayOfMonth());
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "Rescue Attempts");
+        dataSet.setColor(Color.parseColor("#3F51B5"));
+
+        BarData barData = new BarData(dataSet);
+        barData.setBarWidth(0.6f);
+
+        XAxis xAxis = rescueChart.getXAxis();
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setLabelCount(days);
+        xAxis.setGranularity(1f);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(10f);
+
+        rescueChart.getAxisLeft().setAxisMinimum(0);
+        rescueChart.getAxisRight().setEnabled(false);
+
+        rescueChart.getDescription().setEnabled(false);
+        rescueChart.setFitBars(true);
+        rescueChart.setTouchEnabled(false);
+        rescueChart.setPinchZoom(false);
+
+        rescueChart.setData(barData);
+        rescueChart.invalidate();
+    }
+
+
+    /*TREND TWO: BEST PEF*/
+
+    private void loadPEFTrend(int days) {
+
+        LocalDate today = LocalDate.now();
+
+        int[] pefValues = new int[days];
+        Arrays.fill(pefValues, 0);
+
+        db.collection("dailyCheckIn")
+                .document(childId)
+                .collection("entries")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    for (DocumentSnapshot dayDoc : snapshot) {
+
+                        String dateKey = dayDoc.getId();
+                        LocalDate entryDate = LocalDate.parse(dateKey);
+
+                        long diff = ChronoUnit.DAYS.between(entryDate, today);
+
+                        if (diff >= 0 && diff < days) {
+                            int index = (int) (days - 1 - diff);
+
+                            Long pef = dayDoc.getLong("personalBestPEF");
+                            if (pef != null) {
+                                pefValues[index] = pef.intValue();
+                            }
+                        }
                     }
 
+                    drawPEFLineChart(pefValues, days);
                 });
     }
 
-    private void processRescues(ArrayList<Long> timestamps) {
+    private void drawPEFLineChart(int[] pefValues, int days) {
 
-        int[] counts = countRescuesThisWeek(timestamps);
-        int weeklyTotal = 0;
-        for (int c : counts) weeklyTotal += c;
+        ArrayList<Entry> entries = new ArrayList<>();
 
-        String lastRescueDate = "No rescues yet";
-
-        if (!timestamps.isEmpty()) {
-            long lastTs = Collections.max(timestamps);
-
-            LocalDate date = Instant.ofEpochMilli(lastTs)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            lastRescueDate = date.toString();
+        for (int i = 0; i < days; i++) {
+            entries.add(new Entry(i, pefValues[i]));
         }
 
-        updateWeeklyRescuesUI(weeklyTotal, lastRescueDate);
+        LineDataSet dataSet = new LineDataSet(entries, "Best PEF");
+        dataSet.setColor(Color.parseColor("#009688"));
+        dataSet.setCircleColor(Color.parseColor("#009688"));
+        dataSet.setLineWidth(2.5f);
+        dataSet.setCircleRadius(4f);
+        dataSet.setDrawValues(false);
 
-        drawWeeklyRescueChart(counts);
+        LineData lineData = new LineData(dataSet);
+        pefChart.setData(lineData);
+
+        XAxis xAxis = pefChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setDrawGridLines(false);
+
+        if (days == 7) {
+            String[] labels = {"S", "M", "T", "W", "T", "F", "S"};
+            xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+            xAxis.setLabelCount(7);
+            xAxis.setEnabled(true);
+        } else {
+            xAxis.setLabelCount(0, false);
+            xAxis.setValueFormatter(new IndexAxisValueFormatter(new String[]{}));
+            xAxis.setEnabled(false);
+        }
+
+        pefChart.getAxisRight().setEnabled(false);
+        pefChart.getAxisLeft().setAxisMinimum(0);
+        pefChart.getAxisLeft().setDrawGridLines(true);
+
+        pefChart.invalidate();
     }
 
-    private void updateWeeklyRescuesUI(int weeklyTotal, String lastRescueDate) {
-        TextView txtWeekly = getView().findViewById(R.id.tvWeeklyRescues);
-        TextView txtLastRescue = getView().findViewById(R.id.tvLastRescue);
-
-        txtWeekly.setText("Rescues this week: " + weeklyTotal);
-        txtLastRescue.setText("Last rescue: " + lastRescueDate);
-    }
 
 
-    // trends widget
     private void updateDots(int index, View view) {
 
         View dot1 = view.findViewById(R.id.dot1);
@@ -300,15 +446,13 @@ public class DashboardFragment extends Fragment {
         LocalDate today = LocalDate.now();
         Entry[] entryArray = new Entry[7];
 
-        String childId = FirebaseAuth.getInstance().getUid();
-
         for (int i = 0; i < 7; i++) {
 
             LocalDate day = today.minusDays(6 - i);
             String dateKey = day.toString();
             int index = i;
 
-            db.collection("dailycheckin")
+            db.collection("DailyCheckins")
                     .document(childId)
                     .collection("entries")
                     .document(dateKey)
@@ -355,13 +499,13 @@ public class DashboardFragment extends Fragment {
 
     private void drawZoneHistoryChart(ArrayList<Entry> entries) {
 
-        zoneChart.setTouchEnabled(false);
-        zoneChart.setPinchZoom(false);
-        zoneChart.setDoubleTapToZoomEnabled(false);
-        zoneChart.setDragEnabled(false);
-        zoneChart.setScaleEnabled(false);
-        zoneChart.setHighlightPerTapEnabled(false);
-        zoneChart.setHighlightPerDragEnabled(false);
+        pefChart.setTouchEnabled(false);
+        pefChart.setPinchZoom(false);
+        pefChart.setDoubleTapToZoomEnabled(false);
+        pefChart.setDragEnabled(false);
+        pefChart.setScaleEnabled(false);
+        pefChart.setHighlightPerTapEnabled(false);
+        pefChart.setHighlightPerDragEnabled(false);
 
         LineDataSet dataSet = new LineDataSet(entries, "Zone (Past 7 Days)");
         dataSet.setColor(Color.BLACK);
@@ -370,15 +514,15 @@ public class DashboardFragment extends Fragment {
         dataSet.setCircleRadius(4f);
         dataSet.setDrawValues(false);
 
-        YAxis left = zoneChart.getAxisLeft();
+        YAxis left = pefChart.getAxisLeft();
         left.setAxisMinimum(0f);
         left.setAxisMaximum(30f);
         left.setDrawGridLines(false);
-        zoneChart.getAxisRight().setEnabled(false);
+        pefChart.getAxisRight().setEnabled(false);
 
         String[] labels = {"S", "M", "T", "W", "T", "F", "S"};
 
-        XAxis x = zoneChart.getXAxis();
+        XAxis x = pefChart.getXAxis();
         x.setValueFormatter(new IndexAxisValueFormatter(labels));
         x.setPosition(XAxis.XAxisPosition.BOTTOM);
         x.setGranularity(1f);
@@ -391,13 +535,13 @@ public class DashboardFragment extends Fragment {
         x.setEnabled(true);
         x.setDrawLabels(true);
 
-        zoneChart.setExtraBottomOffset(20f);
+        pefChart.setExtraBottomOffset(20f);
 
-        zoneChart.getDescription().setEnabled(false);
-        zoneChart.getLegend().setEnabled(false);
+        pefChart.getDescription().setEnabled(false);
+        pefChart.getLegend().setEnabled(false);
 
-        zoneChart.setData(new LineData(dataSet));
-        zoneChart.invalidate();
+        pefChart.setData(new LineData(dataSet));
+        pefChart.invalidate();
     }
 
 
@@ -432,295 +576,102 @@ public class DashboardFragment extends Fragment {
         return counts;
     }
 
-    private void drawWeeklyRescueChart(int[] counts) {
-        ArrayList<BarEntry> entries = buildEntriesForWeek(counts);
 
-        BarDataSet dataSet = new BarDataSet(entries, "Rescue Uses");
-        dataSet.setColor(Color.parseColor("#3F51B5"));
-        dataSet.setDrawValues(false);
-
-        BarData barData = new BarData(dataSet);
-        barData.setBarWidth(0.5f);
-
-        String[] days = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-
-        XAxis xAxis = rescueChart.getXAxis();
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(days));
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f);
-        xAxis.setLabelCount(7);
-        xAxis.setDrawGridLines(false);
-
-        rescueChart.getAxisRight().setEnabled(false);
-        rescueChart.getAxisLeft().setAxisMinimum(0f);
-
-        rescueChart.setData(barData);
-        rescueChart.setFitBars(true);
-        rescueChart.invalidate();
-    }
-
-    private ArrayList<BarEntry> buildEntriesForWeek(int[] counts) {
-        ArrayList<BarEntry> entries = new ArrayList<>();
-        for (int i = 0; i < 7; i++) {
-            entries.add(new BarEntry(i, counts[i]));
-        }
-        return entries;
-    }
+    // Provider Report
 
     public void generateProviderReport(int months) {
 
-        LocalDate today = LocalDate.now();
-        LocalDate fromDate = today.minusMonths(months);
+        // TODO: fetch real values from Firestore
+        String childName = "John Doe";
+        String childDob = "August 12, 2006";
+        String parentName = "Jane Doe";
+        String parentContact = "faiza.khanc@gmail.com";
 
-        long fromMillis = fromDate
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli();
-
-        Task<QuerySnapshot> triageTask = db.collection("IncidentLog")
-                .document(CHILD_ID)
-                .collection("TriageSession")
-                .whereGreaterThanOrEqualTo("timestamp", fromMillis)
-                .get();
-
-        triageTask.addOnSuccessListener(triageSnap -> {
-
-            List<Task<QuerySnapshot>> rescueTasks = new ArrayList<>();
-            List<DocumentSnapshot> triageDocs = triageSnap.getDocuments();
-
-            if (triageDocs.isEmpty()) {
-                loadZoneAndBuildPdf(months, 0, 0L, new ArrayList<>());
-                return;
-            }
-
-            for (DocumentSnapshot sessionDoc : triageDocs) {
-                Task<QuerySnapshot> t = sessionDoc.getReference()
-                        .collection("rescueAttempts")
-                        .get();
-                rescueTasks.add(t);
-            }
-
-            Tasks.whenAllSuccess(rescueTasks)
-                    .addOnSuccessListener(results -> {
-
-                        int totalRescues = 0;
-                        long latestRescueTs = 0L;
-
-                        for (Object obj : results) {
-                            QuerySnapshot snap = (QuerySnapshot) obj;
-
-                            for (DocumentSnapshot rescueDoc : snap.getDocuments()) {
-                                Long ts = rescueDoc.getLong("timestamp");
-                                if (ts != null) {
-                                    totalRescues++;
-                                    if (ts > latestRescueTs) {
-                                        latestRescueTs = ts;
-                                    }
-                                }
-                            }
-                        }
-
-                        List<DocumentSnapshot> notableTriage = new ArrayList<>(triageDocs);
-
-                        loadZoneAndBuildPdf(months, totalRescues, latestRescueTs, notableTriage);
-                    })
-                    .addOnFailureListener(e -> {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error loading rescues: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-
-        }).addOnFailureListener(e -> {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Error loading triage sessions: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    private void loadZoneAndBuildPdf(int months,
-                                     int totalRescues,
-                                     long latestRescueTs,
-                                     List<DocumentSnapshot> triageDocs) {
-
-        LocalDate today = LocalDate.now();
-        LocalDate fromDate = today.minusMonths(months);
-
-        db.collection("dailycheckin")
-                .document(CHILD_ID)
-                .collection("entries")
-                .get()
-                .addOnSuccessListener(entriesSnap -> {
-
-                    int greenCount = 0;
-                    int yellowCount = 0;
-                    int redCount = 0;
-
-                    for (DocumentSnapshot doc : entriesSnap.getDocuments()) {
-
-                        String docId = doc.getId();
-                        try {
-                            LocalDate entryDate = LocalDate.parse(docId);
-                            if (entryDate.isBefore(fromDate)) {
-                                continue;
-                            }
-                        } catch (Exception ignored) {
-                            continue;
-                        }
-
-                        String zone = doc.getString("zoneColour");
-                        if (zone == null) continue;
-
-                        zone = zone.toLowerCase();
-                        switch (zone) {
-                            case "green":
-                                greenCount++;
-                                break;
-                            case "yellow":
-                                yellowCount++;
-                                break;
-                            case "red":
-                                redCount++;
-                                break;
-                        }
-                    }
-
-                    buildProviderReportPdf(months,
-                            totalRescues,
-                            latestRescueTs,
-                            greenCount,
-                            yellowCount,
-                            redCount,
-                            triageDocs);
-
-                })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    Toast.makeText(getContext(), "Error loading daily check-ins: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void buildProviderReportPdf(int months,
-                                        int totalRescues,
-                                        long latestRescueTs,
-                                        int greenCount,
-                                        int yellowCount,
-                                        int redCount,
-                                        List<DocumentSnapshot> triageDocs) {
+        List<TriageIncident> incidents = new ArrayList<>();
+        incidents.add(new TriageIncident("Jan 12, 2025", "Wheeze, Cough, Chest Tightness"));
+        incidents.add(new TriageIncident("Feb 03, 2025", "Shortness of Breath"));
 
         PdfDocument pdf = new PdfDocument();
-        Paint paint = new Paint();
+        Paint titlePaint = new Paint();
+        Paint textPaint = new Paint();
+        Paint boxPaint = new Paint();
 
         PdfDocument.PageInfo pageInfo =
                 new PdfDocument.PageInfo.Builder(595, 842, 1).create();
         PdfDocument.Page page = pdf.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        int centerX = pageInfo.getPageWidth() / 2;
-        int y = 80;
 
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(28);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Provider Report", centerX, y, paint);
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+        titlePaint.setTextSize(28);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        canvas.drawText("Provider Report", pageInfo.getPageWidth() / 2f, 80, titlePaint);
 
-        y += 40;
-        paint.setTextSize(18);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        canvas.drawText("Past " + months + " months", centerX, y, paint);
+        titlePaint.setTextSize(20);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        canvas.drawText("Last " + months + " Months", pageInfo.getPageWidth() / 2f, 120, titlePaint);
 
-        paint.setTextAlign(Paint.Align.LEFT);
-        y += 40;
+        int left = 40;
+        int top = 160;
+        int right = pageInfo.getPageWidth() - 40;
+        int bottom = top + 180;
 
-        paint.setTextSize(16);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Child Name: CHILDNAME", 40, y, paint);
+        boxPaint.setStyle(Paint.Style.STROKE);
+        boxPaint.setStrokeWidth(3);
+        canvas.drawRect(left, top, right, bottom, boxPaint);
 
-        paint.setTextSize(16);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Rescue frequency", 40, y, paint);
+        textPaint.setTextSize(18);
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        textPaint.setTextAlign(Paint.Align.LEFT);
 
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        y += 25;
-        canvas.drawText("Total rescues in period: " + totalRescues, 60, y, paint);
+        int textY = top + 40;
+        int padding = 35;
 
-        y += 25;
-        String lastRescueText;
-        if (latestRescueTs == 0L) {
-            lastRescueText = "Last rescue: none recorded in this period";
-        } else {
-            LocalDate lastDate = Instant.ofEpochMilli(latestRescueTs)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            String formatted = lastDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
-            lastRescueText = "Last rescue: " + formatted;
-        }
-        canvas.drawText(lastRescueText, 60, y, paint);
+        canvas.drawText("Child’s Name: " + childName, left + 20, textY, textPaint);
+        canvas.drawText("Date of Birth: " + childDob, left + 20, textY + padding, textPaint);
+        canvas.drawText("Parent’s Name: " + parentName, left + 20, textY + padding * 2, textPaint);
+        canvas.drawText("Parent’s Contact: " + parentContact, left + 20, textY + padding * 3, textPaint);
 
-        y += 40;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Zone distribution over time", 40, y, paint);
+        int tableTop = bottom + 40;
+        int headerHeight = 50;
 
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        y += 25;
-        canvas.drawText("Green days:  " + greenCount, 60, y, paint);
-        y += 20;
-        canvas.drawText("Yellow days: " + yellowCount, 60, y, paint);
-        y += 20;
-        canvas.drawText("Red days:    " + redCount, 60, y, paint);
+        textPaint.setTextSize(18);
 
-        y += 40;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Notable triage incidents", 40, y, paint);
+        canvas.drawRect(left, tableTop, right, tableTop + headerHeight, boxPaint);
+        canvas.drawText("Triage Incidents", left + 20, tableTop + 32, textPaint);
 
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        y += 25;
+        int currentY = tableTop + headerHeight;
 
-        int maxIncidentsToShow = 3;
-        int count = 0;
-        for (DocumentSnapshot triageDoc : triageDocs) {
-            if (count >= maxIncidentsToShow) break;
-            count++;
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        textPaint.setTextSize(16);
 
-            Long ts = triageDoc.getLong("timestamp");
-            String severity = triageDoc.getString("severity");
-            String trigger = triageDoc.getString("trigger");
+        for (TriageIncident incident : incidents) {
 
-            String dateStr = "Unknown date";
-            if (ts != null) {
-                LocalDate d = Instant.ofEpochMilli(ts)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate();
-                dateStr = d.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+            float symptomsX = left + 200;
+            float availableWidth = right - symptomsX - 20;
+
+            List<String> wrappedLines = wrapTextLines(
+                    "Symptoms: " + incident.symptoms,
+                    textPaint,
+                    availableWidth
+            );
+
+            float lineHeight = textPaint.getTextSize() + 6;
+            float dynamicRowHeight = Math.max(50, lineHeight * wrappedLines.size() + 20);
+
+            canvas.drawRect(left, currentY, right, currentY + dynamicRowHeight, boxPaint);
+
+            canvas.drawText("• " + incident.date, left + 20, currentY + 32, textPaint);
+
+            float lineY = currentY + 32;
+            for (String line : wrappedLines) {
+                canvas.drawText(line, symptomsX, lineY, textPaint);
+                lineY += lineHeight;
             }
 
-            canvas.drawText("- " + dateStr, 60, y, paint);
-            y += 18;
-            if (severity != null) {
-                canvas.drawText("  Severity: " + severity, 80, y, paint);
-                y += 18;
-            }
-            if (trigger != null) {
-                canvas.drawText("  Trigger: " + trigger, 80, y, paint);
-                y += 18;
-            }
-            y += 10;
+            currentY += dynamicRowHeight;
         }
 
-        if (triageDocs.isEmpty()) {
-            canvas.drawText("No triage incidents recorded in this period.", 60, y, paint);
-        }
-
-        y += 40;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Controller adherence", 40, y, paint);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        y += 25;
-        canvas.drawText("Planned vs actual controller use: (to be added once schedule is defined)", 60, y, paint);
-
-        y += 40;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Symptom burden", 40, y, paint);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        y += 25;
-        canvas.drawText("Problem day counts: (to be added once symptom fields are finalized)", 60, y, paint);
 
         pdf.finishPage(page);
 
@@ -730,6 +681,7 @@ public class DashboardFragment extends Fragment {
             FileOutputStream fos = new FileOutputStream(path);
             pdf.writeTo(fos);
             fos.close();
+
             Toast.makeText(getContext(), "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -739,6 +691,30 @@ public class DashboardFragment extends Fragment {
         pdf.close();
         openPdf(path);
     }
+
+    private List<String> wrapTextLines(String text, Paint paint, float maxWidth) {
+
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split(" ");
+        StringBuilder current = new StringBuilder();
+
+        for (String word : words) {
+            String test = current + word + " ";
+            if (paint.measureText(test) > maxWidth) {
+                lines.add(current.toString());
+                current = new StringBuilder(word + " ");
+            } else {
+                current.append(word).append(" ");
+            }
+        }
+
+        if (current.length() > 0) {
+            lines.add(current.toString());
+        }
+
+        return lines;
+    }
+
 
     private void openPdf(File file) {
         Uri uri = FileProvider.getUriForFile(
@@ -753,6 +729,17 @@ public class DashboardFragment extends Fragment {
 
         startActivity(intent);
     }
+
+    public static class TriageIncident {
+        String date;
+        String symptoms;
+
+        public TriageIncident(String date, String symptoms) {
+            this.date = date;
+            this.symptoms = symptoms;
+        }
+    }
+
 
 
 }
