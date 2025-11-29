@@ -25,6 +25,9 @@ import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.io.File;
 import java.io.OutputStreamWriter;
@@ -98,8 +101,14 @@ public class HistoryFragment extends Fragment {
         setUpFilterUI();
 
         // shared viewmodal
-        repo.getChildUid(this); // set up child uid if it is a child
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> { // set up child uid if it is a child
+            if (role != null && role.equals("child")) {
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                this.childUid = auth.getCurrentUser().getUid();
+                repo.updateToggles(childUid,this);
+            }
+        });
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child (for when user is parent or provider)
             if (children != null && !children.isEmpty()) {
                 int currentIndex = sharedModel.getCurrentChild().getValue() != null
@@ -544,17 +553,6 @@ public class HistoryFragment extends Fragment {
         } finally {
             pdfDocument.close();
         }
-    }
-
-    // if currently child sets it's own id as uid from HistoryRepository call
-    public void setChildUid(String childUid) {
-        if(childUid.equals("")){
-            return;
-        }
-        this.childUid = childUid;
-
-        // updates ui after switching
-        repo.updateToggles(childUid,this);
     }
 
     public void exitScreen(){

@@ -1,5 +1,6 @@
 package com.example.smart_air.modelClasses;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ public class Child {
     private Map<String, Object> techniqueStats;
     private Map<String, Object> controllerStats;
     private Map<String, Integer> thresholds;
+    private ArrayList<String> allowedProviderUids; //list of all provider uids
 
 
     // made for dropdown
@@ -54,19 +56,9 @@ public class Child {
     //initalize defaults
 
     private void initializeDefaults() {
-        this.weeklySchedule = new HashMap<>();
-        weeklySchedule.put("Monday", false);
-        weeklySchedule.put("Tuesday", false);
-        weeklySchedule.put("Wednesday", false);
-        weeklySchedule.put("Thursday", false);
-        weeklySchedule.put("Friday", false);
-        weeklySchedule.put("Saturday", false);
-        weeklySchedule.put("Sunday", false);
+        this.weeklySchedule = initalizeDays();
         // badges
-        this.badges = new HashMap<>();
-        badges.put("techniqueBadge", false);
-        badges.put("controllerBadge", false);
-        badges.put("lowRescueBadge", false);
+        this.badges = initalizeBadges();
 
         // techniqueStats
         this.techniqueStats = new HashMap<>();
@@ -78,13 +70,34 @@ public class Child {
         //TODO: fill it in with the right stuff after
         this.controllerStats = new HashMap<>();
 
+        //array list
+        this.allowedProviderUids = new ArrayList<>();
+
         // thresholds
         this.thresholds = new HashMap<>();
         thresholds.put("quality_thresh", 0);
         thresholds.put("rescue_thresh", 0);
     }
 
+    public static HashMap<String, Boolean> initalizeBadges() {
+        HashMap<String, Boolean> badges = new HashMap<>();
+        badges.put("techniqueBadge", false);
+        badges.put("controllerBadge", false);
+        badges.put("lowRescueBadge", false);
+        return badges;
+    }
 
+    public static HashMap<String, Boolean> initalizeDays() {
+        HashMap<String, Boolean> weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", false);
+        weeklySchedule.put("Tuesday", false);
+        weeklySchedule.put("Wednesday", false);
+        weeklySchedule.put("Thursday", false);
+        weeklySchedule.put("Friday", false);
+        weeklySchedule.put("Saturday", false);
+        weeklySchedule.put("Sunday", false);
+        return weeklySchedule;
+    }
 
     // get and set !
 
@@ -158,4 +171,8 @@ public class Child {
     public Map<String, Boolean> getWeeklySchedule() { return weeklySchedule; }
 
     public void setWeeklySchedule(Map<String, Boolean> weeklySchedule) { this.weeklySchedule = weeklySchedule; }
+
+    public ArrayList<String> getAllowedProviderUids() { return allowedProviderUids; }
+
+    public void setAllowedProviderUids(ArrayList<String> allowedProviderUids) { this.allowedProviderUids = allowedProviderUids; }
 }

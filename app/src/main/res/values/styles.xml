@@ -87,7 +87,6 @@
         <item name="android:textColor">@color/colour_indigo</item>
     </style>
 
-    <!-- style for the toggle button -->
     <style name="SmartAir.ToggleSelectedButton" parent="Widget.MaterialComponents.Button">
         <item name="cornerRadius">24dp</item>
         <item name="android:paddingTop">12dp</item>
@@ -116,6 +115,19 @@
         <item name="backgroundTint">@color/colour_blue</item>
         <item name="rippleColor">@color/colour_lightBlue</item>
         <item name="elevation">4dp</item>
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">32dp</item>
+    </style>
+    <style name="RedFlagSquare" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">18dp</item>
+        <item name="android:layout_height">25dp</item>
+        <item name="android:backgroundTint">#B75D5D</item>
+        <item name="android:checkable">true</item>
+        <item name="android:checked">false</item>
+        <item name="cornerRadius">4dp</item>
+        <item name="iconTint">@android:color/white</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconGravity">textStart</item>
     </style>
 
     <style name="CustomChipStyle" parent="Widget.MaterialComponents.Chip.Choice">
@@ -127,5 +139,13 @@
         <item name="chipBackgroundColor">@color/chip_background_selector</item>
 
     </style>
+
+    <!-- Alert dialog  -->
+    <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:background">@color/white</item>
+        <item name="android:textColorPrimary">@color/colour_indigo</item>
+        <item name="android:fontFamily">@font/dm_sans_regular</item>
+    </style>
+
 
 </resources>

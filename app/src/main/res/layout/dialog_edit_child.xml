@@ -459,11 +459,53 @@
 
         </LinearLayout>
 
+        <!-- for provider choices -->
+    <!-- Provider Access Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Provider Access"
+        android:textSize="16sp"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textColor="@color/colour_blue"
+        android:paddingTop="24dp"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select which healthcare providers can view this child's data:"
+        android:textSize="14sp"
+        android:paddingBottom="12dp"
+        android:textColor="@android:color/darker_gray"/>
+
+    <LinearLayout
+        android:id="@+id/ll_providers_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_border"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tv_no_providers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No healthcare providers connected yet."
+            android:gravity="center"
+            android:padding="16dp"
+            android:textColor="@android:color/darker_gray"
+            android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <!-- cancel buttons and save buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="end">
+            android:gravity="end"
+            android:layout_marginTop="10dp">
 
             <Button
                 android:id="@+id/btn_cancel"

@@ -3,14 +3,15 @@ package com.example.smart_air.Repository;
 import android.util.Log;
 
 import com.example.smart_air.FirebaseInitalizer;
+import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -36,26 +37,6 @@ public class ChildRepository {
 
 
     //GENERAL CHILD REPO FUNCTIONS
-
-    // add a new child
-    public void addChild(Child child, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-        String childId = db.collection("children").document().getId();
-        child.setChildUid(childId);
-
-        Log.d(TAG, "Adding child with ID: " + childId + ", Name: " + child.getName());
-
-        db.collection("children")
-                .document(childId)
-                .set(child)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Child added successfully: " + childId);
-                    onSuccess.onSuccess(childId);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error adding child", e);
-                    onFailure.onFailure(e);
-                });
-    }
 
     // update the existing child
     public void updateChild(Child child, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
@@ -83,7 +64,6 @@ public class ChildRepository {
                         Child child = doc.toObject(Child.class);
                         if (child != null) { children.add(child); }
                     }
-                    Log.d(TAG, "Retrieved " + children.size() + " children for parent: " + parentUid);
                     onSuccess.onSuccess(children);
                 })
                 .addOnFailureListener(e -> {
@@ -188,7 +168,6 @@ public class ChildRepository {
 
     // use invite code (mark as used and link user)
     public void useInviteCode(String code, String userUid, String role, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-        Log.d(TAG, "Using invite code: " + code + " for user: " + userUid + " with role: " + role);
 
         validateInviteCode(code, invite -> {
             // mark invite as used
@@ -210,99 +189,35 @@ public class ChildRepository {
     // link user (child or provider) to parent
     private void linkUserToParent(String userUid, String parentUid, String role,
                                   OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-        Log.d(TAG, "Linking user " + userUid + " to parent " + parentUid + " as " + role);
-
-        // update users parentUid list
         db.collection("users")
-                .document(userUid) //find child or provider
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    User user = documentSnapshot.toObject(User.class);
-                    if (user == null) {
-                        Log.e(TAG, "User not found: " + userUid);
-                        onFailure.onFailure(new Exception("User not found"));
-                        return;
+                .document(userUid)
+                .update("parentUid", FieldValue.arrayUnion(parentUid))
+                .addOnSuccessListener(aVoid -> {
+                    if ("child".equalsIgnoreCase(role)) {
+                        // if it's a child, add child to parent's childrenUid
+                        updateParentChildrenList(
+                                parentUid,
+                                userUid,
+                                onSuccess,
+                                onFailure
+                        );
+                    } else {
+                        // provider case
+                        onSuccess.onSuccess(parentUid);
                     }
-
-                    List<String> parentUids = user.getParentUid();
-                    if (parentUids == null) { parentUids = new ArrayList<>(); }
-                    if (!parentUids.contains(parentUid)) { parentUids.add(parentUid); }
-
-                    db.collection("users")
-                            .document(userUid)
-                            .update("parentUid", parentUids)
-                            .addOnSuccessListener(aVoid -> {
-                                Log.d(TAG, "User's parentUid list updated");
-                                // update parents' childrenUid list if linking a child
-                                if ("child".equalsIgnoreCase(role)) {
-                                    updateParentChildrenList(parentUid, userUid, onSuccess, onFailure);
-                                } else {
-                                    Log.d(TAG, "User linked to parent successfully");
-                                    onSuccess.onSuccess(parentUid);
-                                }
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error updating user's parentUid", e);
-                                onFailure.onFailure(e);
-                            });
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching user", e);
-                    onFailure.onFailure(e);
-                });
+                .addOnFailureListener(onFailure::onFailure);
     }
 
     // update parents children list
     private void updateParentChildrenList(String parentUid, String childUid,
                                           OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
         Log.d(TAG, "Updating parent's children list");
-
         db.collection("users")
                 .document(parentUid)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    User parent = documentSnapshot.toObject(User.class);
-                    if (parent == null) {
-                        Log.e(TAG, "Parent not found: " + parentUid);
-                        onFailure.onFailure(new Exception("Parent not found"));
-                        return;
-                    }
-
-                    List<String> childrenUids = parent.getChildrenUid();
-                    if (childrenUids == null) { childrenUids = new ArrayList<>(); }
-                    if (!childrenUids.contains(childUid)) { childrenUids.add(childUid); }
-
-                    db.collection("users")
-                            .document(parentUid)
-                            .update("childrenUid", childrenUids)
-                            .addOnSuccessListener(aVoid -> {
-                                Log.d(TAG, "Parent's children list updated successfully");
-                                onSuccess.onSuccess(parentUid);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error updating parent's children list", e);
-                                onFailure.onFailure(e);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching parent", e);
-                    onFailure.onFailure(e);
-                });
-    }
-
-    // update the sharing toggles for a child
-    public void updateSharingToggles(String childUid, Map<String, Boolean> sharing, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
-        db.collection("children")
-                .document(childUid)
-                .update("sharing", sharing)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Sharing toggles updated successfully");
-                    onSuccess.onSuccess(aVoid);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error updating sharing toggles", e);
-                    onFailure.onFailure(e);
-                });
+                .update("childrenUid", FieldValue.arrayUnion(childUid))
+                .addOnSuccessListener(aVoid -> onSuccess.onSuccess(parentUid))
+                .addOnFailureListener(onFailure::onFailure);
     }
 
     // get existing invite for parent (to check if one already exists)
@@ -313,7 +228,6 @@ public class ChildRepository {
                 .whereEqualTo("used", false) //must be unused function
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         Invite invite = doc.toObject(Invite.class);
                         if (invite != null) {
@@ -337,8 +251,6 @@ public class ChildRepository {
                     onFailure.onFailure(e);
                 });
     }
-
-    // Add these methods to your ChildRepository.java class:
 
     // Get all linked providers for a parent
     public void getLinkedProviders(String parentUid, OnSuccessListener<List<Invite>> onSuccess,
@@ -383,7 +295,7 @@ public class ChildRepository {
         parentRef.update("childrenUid", FieldValue.arrayRemove(childUid))
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Removed child from parent list");
-                    //delete the parent from the child's user document
+                    //delete the parent from the child's user document (b/c cannot directly delete due to auth)
                     childRefUser.update("parentUid", null)
                             .addOnSuccessListener(aVoid2 -> {
                                 Log.d(TAG, "Removed parentUid list from child");
@@ -445,48 +357,143 @@ public class ChildRepository {
 
     // Unlink a provider (mark invite as inactive or delete)
     public void unlinkProvider(String inviteCode, OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
-        Log.d(TAG, "Unlinking provider with invite code (transaction): " + inviteCode);
+        //get the invite first
+        db.collection("invites").document(inviteCode).get()
+                .addOnSuccessListener(inviteSnap -> {
+                    if (!inviteSnap.exists()) {
+                        onFailure.onFailure(new Exception("Invite not found"));
+                        return;
+                    }
+                    //get the uids (used and the parent one)
+                    String usedByUid = inviteSnap.getString("usedByUid");
+                    String parentUid = inviteSnap.getString("parentUid");
+                    //if any null, error with the code
+                    if (usedByUid == null || parentUid == null || usedByUid.trim().isEmpty() || parentUid.trim().isEmpty()) {
+                        onFailure.onFailure(new Exception("Invite missing required UIDs"));
+                        return;
+                    }
+                    //query all children for the parent uid, and now we remove the provider from the children list
+                    db.collection("children")
+                            .whereEqualTo("parentUid", parentUid)
+                            .get()
+                            .addOnSuccessListener(childrenSnapshot -> {
+                                runUnlinkTransaction(inviteCode, usedByUid, parentUid, childrenSnapshot, onSuccess, onFailure);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error fetching children", e);
+                                onFailure.onFailure(e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching invite", e);
+                    onFailure.onFailure(e);
+                });
+    }
+
+    //private function to run the transaction
+    private void runUnlinkTransaction(String inviteCode, String usedByUid, String parentUid,
+                                      QuerySnapshot childrenSnapshot,
+                                      OnSuccessListener<Void> onSuccess,
+                                      OnFailureListener onFailure) {
         db.runTransaction(transaction -> {
-
-            //get document for invite
-            DocumentReference inviteRef = db.collection("invites").document(inviteCode);
-            DocumentSnapshot inviteSnap = transaction.get(inviteRef);
-
-            if (!inviteSnap.exists()) {
-                throw new FirebaseFirestoreException("Invite not found", FirebaseFirestoreException.Code.NOT_FOUND);
-            }
-
-            String usedByUid = inviteSnap.getString("usedByUid");
-            String parentUid = inviteSnap.getString("parentUid");
-            //if uid is null, dne (just an invalid invite generation)
-            if (usedByUid == null || parentUid == null ||
-                    usedByUid.trim().isEmpty() || parentUid.trim().isEmpty()) {
-                throw new FirebaseFirestoreException("Invite missing required UIDs", FirebaseFirestoreException.Code.ABORTED);
-            }
-
-            // STEP 2 : Remove the parentUid from the provider UID
+            // remove the parentUid from the provider parentUid array
             DocumentReference providerRef = db.collection("users").document(usedByUid);
-            //get a snapshot (transaction)
             DocumentSnapshot providerSnap = transaction.get(providerRef);
-            //get the parent list
             List<String> parentList = (List<String>) providerSnap.get("parentUid");
-            //check if provider list contains parent uid
+
             if (parentList == null || !parentList.contains(parentUid)) {
-                throw new FirebaseFirestoreException("Provider does not contain that parent UID", FirebaseFirestoreException.Code.ABORTED);
+                throw new FirebaseFirestoreException("Provider does not contain that parent UID",
+                        FirebaseFirestoreException.Code.ABORTED);
             }
-            //remove from array
             transaction.update(providerRef, "parentUid", FieldValue.arrayRemove(parentUid));
-            //delete the invite doc
+            //remove provider from all providerUid lists in children
+            for (DocumentSnapshot childDoc : childrenSnapshot.getDocuments()) {
+                DocumentReference childRef = db.collection("children").document(childDoc.getId());
+                transaction.update(childRef, "allowedProviderUids", FieldValue.arrayRemove(usedByUid));
+                Log.d(TAG, "Removed provider " + usedByUid + " from child: " + childDoc.getId());
+            }
+
+            //delete invite document
+            DocumentReference inviteRef = db.collection("invites").document(inviteCode);
             transaction.delete(inviteRef);
             return null;
 
         }).addOnSuccessListener(aVoid -> {
-            Log.d(TAG, "Transaction completed: Provider unlinked & invite deleted");
+            Log.d(TAG, "Transaction completed: Provider unlinked, removed from all children, & invite deleted");
             onSuccess.onSuccess(null);
         }).addOnFailureListener(e -> {
             Log.e(TAG, "Transaction failed", e);
             onFailure.onFailure(e);
         });
+    }
+
+    //Get all providers for parent (return USER object)
+    public void getProvidersUserForParent(String parentUid,
+                                          OnSuccessListener<List<User>> onSuccess,
+                                          OnFailureListener onFailure) {
+        db.collection("users")
+                .whereEqualTo("role", "provider")
+                .whereArrayContains("parentUid", parentUid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<User> providers = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        User provider = doc.toObject(User.class);
+                        if (provider != null) {
+                            provider.setUid(doc.getId());
+                            providers.add(provider);
+                        }
+                    }
+                    onSuccess.onSuccess(providers);
+                })
+                .addOnFailureListener(onFailure);
+    }
+
+    //Get badge information from a child (return as task)
+    public Task<BadgeData> getBadgeData(String childUid) {
+        TaskCompletionSource<BadgeData> taskSource = new TaskCompletionSource<>();
+        db.collection("children").document(childUid).get()
+                .addOnSuccessListener(snap -> {
+                    //default
+                    boolean controllerBadge = false;
+                    boolean techniqueBadge = false;
+                    boolean rescueBadge = false;
+                    int techniqueStreak = 0;
+                    int controllerStreak = 0;
+
+                    if (snap.exists()) {
+                        // badges map
+                        Map<String, Object> badges = (Map<String, Object>) snap.get("badges");
+                        if (badges != null) {
+                            controllerBadge = badges.get("controllerBadge") != null ?
+                                    (Boolean) badges.get("controllerBadge") : false;
+                            techniqueBadge = badges.get("techniqueBadge") != null ?
+                                    (Boolean) badges.get("techniqueBadge") : false;
+                            rescueBadge = badges.get("lowRescueBadge") != null ?
+                                    (Boolean) badges.get("lowRescueBadge") : false;
+                        }
+
+                        // techniqueStats map
+                        Map<String, Object> techniqueStats = (Map<String, Object>) snap.get("techniqueStats");
+                        if (techniqueStats != null) {
+                            techniqueStreak = techniqueStats.get("currentStreak") != null ?
+                                    ((Number) techniqueStats.get("currentStreak")).intValue() : 0;
+                        }
+
+                        // controllerStats map
+                        //TODO: uncomment and make it work based on teammates work
+//                        Map<String, Object> controllerStats = (Map<String, Object>) snap.get("controllerStats");
+//                        if (controllerStats != null) {
+//                            controllerStreak = controllerStats.get("currentStreak") != null ?
+//                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
+//                        }
+                    }
+                    BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
+                    taskSource.setResult(data);
+                })
+                .addOnFailureListener(taskSource::setException);
+
+        return taskSource.getTask();
     }
 
     //PRIVATE HELPER FUNCTIONS

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:backgroundTint="#C86E6E"
+    android:layout_margin="16dp"
+    android:paddingBottom="15dp"
+    android:background="@drawable/circular_text_field_background"
+    >
+
+    <TextView
+        android:id="@+id/red_flag_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quick Red Flags"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:fontFamily="@font/dm_sans_regular"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_flag_sentences"
+            style="@style/RedFlagSquare" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Can't speak full sentences"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/dm_sans_regular"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_flag_chest"
+            style="@style/RedFlagSquare" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Chest pulling"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/dm_sans_regular"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_flag_retractions"
+            style="@style/RedFlagSquare" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="In/Retractions"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/dm_sans_regular"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_flag_blue"
+            style="@style/RedFlagSquare" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Blue/Gray lips/Nails"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/dm_sans_regular"/>
+    </LinearLayout>
+
+</LinearLayout>

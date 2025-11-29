@@ -26,35 +26,6 @@ public class HistoryRepository {
         db = FirebaseFirestore.getInstance();
     }
 
-    // if child gets it's own uid
-    public void getChildUid(HistoryFragment activity) {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        String currentUid = auth.getCurrentUser().getUid();
-
-        db.collection("users").document(currentUid)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document != null && document.exists()) {
-                            boolean isChild = "child".equals(document.getString("role"));
-                            String childUid;
-
-                            if (isChild) {
-                                childUid = currentUid;
-                                activity.setChildUid(childUid);
-                                return;
-                            }
-                            activity.setChildUid("");
-
-                            activity.exitScreen();
-                        }
-                    }
-                });
-    }
-
-
-
     // get's current cards
     public void getCards(String childUid, HistoryFragment activity){
         // null cehck
