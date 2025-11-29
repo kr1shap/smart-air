@@ -229,11 +229,19 @@ public class LogDoseFragment extends Fragment {
                         Long puffs = doc.getLong("puffs");
                         Long shortBreathRating = doc.getLong("shortBreathRating");
 
-                        String summary =
+                        com.google.firebase.Timestamp timestamp = doc.getTimestamp("timeTaken");
+                        String formattedDate = "";
+                        if (timestamp != null) {
+                            Date date = timestamp.toDate();
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+                            formattedDate = sdf.format(date);
+                        }
+
+                        String summary = (formattedDate.isEmpty() ? "" : formattedDate + " - ") +
                                 (puffs == null ? "" : (puffs + " puffs")) +
-                                        (shortBreathRating == null ? "" : ", SOB: " + shortBreathRating) +
-                                        (preCheck == null ? "" : ", Pre: " + preCheck) +
-                                        (postCheck == null ? "" : ", Post: " + postCheck);
+                                (shortBreathRating == null ? "" : ", SOB: " + shortBreathRating) +
+                                (preCheck == null ? "" : ", Pre: " + preCheck) +
+                                (postCheck == null ? "" : ", Post: " + postCheck);
 
                         TextView logView = new TextView(getContext());
                         logView.setText(summary);
@@ -242,4 +250,5 @@ public class LogDoseFragment extends Fragment {
                     }
                 });
     }
+
 }
