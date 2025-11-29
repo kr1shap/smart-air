@@ -60,51 +60,45 @@ public class InventoryFragment extends Fragment {
     private String selectedChildUid = null;
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.inventorypage, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         // set checks for expiring medication
         Context appContext = requireContext().getApplicationContext();
-        scheduleDailyExpiryAlarm(appContext, 0, 0);
-
+        scheduleexpirycheck(appContext, 0, 0); // set time to check in 24 hour clock
+        // creates container to store rescue and controller info
         controllerContainer = view.findViewById(R.id.controller_card_container);
         rescueContainer     = view.findViewById(R.id.rescue_card_container);
+        // back button functionality
         Button backButton   = view.findViewById(R.id.btn_back_meds);
-
         backButton.setOnClickListener(v ->
                 requireActivity().getOnBackPressedDispatcher().onBackPressed()
         );
-
+        // checks if user is parent, if not don't allow access, if so show inventory screen
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             denyAccess();
             return;
         }
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users")
                 .document(user.getUid())
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
+                    if (doc.exists()==false) {
                         denyAccess();
                         return;
                     }
-
                     String role = doc.getString("role");
-                    if (!"parent".equals(role)) {
+                    if ("parent".equals(role)==false) {
                         denyAccess();
                         return;
                     }
-                    setupChildSelectionWithViewModel();
+                    setupchildinventory();
                 })
                 .addOnFailureListener(e -> {
                     Log.e("InventoryFragment", "Error loading user role", e);
@@ -112,37 +106,32 @@ public class InventoryFragment extends Fragment {
                 });
     }
 
-
-    private void denyAccess() {
+    /*
+    Message to tell any non-parent user they cannot access this page
+     */
+    public void denyAccess() {
         if (isAdded()) {
-            Toast.makeText(requireContext(),
-                    "You do not have access to the inventory page.",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "You do not have access to the inventory page.", Toast.LENGTH_SHORT).show();
             requireActivity().getOnBackPressedDispatcher().onBackPressed();
         }
     }
 
-    /**
-     * Uses your existing SharedChildViewModel pattern.
-     * When a child is selected, we load that child's inventory.
+    /*
+    loads selected childs inventory page UI
      */
-    private void setupChildSelectionWithViewModel() {
-        sharedModel = new ViewModelProvider(requireActivity())
-                .get(SharedChildViewModel.class);
-
-        // When children list loads, just cache it
+    public void setupchildinventory() {
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        // cache children list loading
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> {
-            Log.d("InventoryFragment", "Children list size = " +
-                    (children == null ? 0 : children.size()));
+            Log.d("InventoryFragment", "Children list size = " + (children == null ? 0 : children.size()));
         });
-
-        // When current child index changes → load that child's inventory
+        // load childs inventory based on selected child
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> {
             List<Child> children = sharedModel.getAllChildren().getValue();
             if (children != null && !children.isEmpty() && currentIndex != null) {
                 selectedChildUid = children.get(currentIndex).getChildUid();
                 Log.d("InventoryFragment", "Selected child = " + selectedChildUid);
-                loadInventoryForChild(selectedChildUid);
+                loadinventory(selectedChildUid);
             } else {
                 selectedChildUid = null;
                 controllerContainer.removeAllViews();
@@ -150,25 +139,26 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
-    private void loadInventoryForChild(String childUid) {
+    /*
+    loads the rescue and controller inventory of selected child
+     */
+    public void loadinventory(String childUid) {
+        // clears existing view of inventory
         controllerContainer.removeAllViews();
         rescueContainer.removeAllViews();
-
-        if (childUid == null) return;
-
+        // if kid doesnt exist dont load
+        if (childUid == null){
+            return;
+        }
         Log.d("InventoryFragment", "Loading inventory for childUid = " + childUid);
-
-        // controller doc
-        loadSingleInventoryDoc(childUid, "controller", controllerContainer);
-
-        // rescue doc
-        loadSingleInventoryDoc(childUid, "rescue", rescueContainer);
+        // load corresponding document
+        loadinventoryDoc(childUid, "controller", controllerContainer);
+        loadinventoryDoc(childUid, "rescue", rescueContainer);
     }
-
-    private void loadSingleInventoryDoc(String childUid,
-                                        String docId,
-                                        LinearLayout targetContainer) {
-
+    /*
+     load rescue/controller document from Firebase
+     */
+    public void loadinventoryDoc(String childUid, String docId, LinearLayout targetContainer) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("children")
                 .document(childUid)
@@ -176,104 +166,119 @@ public class InventoryFragment extends Fragment {
                 .document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        // If you later want an "Add" button here, you can add it.
+                    if (doc.exists()==false) {
+                        // if document does not exist, tell user
                         TextView tv = new TextView(requireContext());
                         tv.setText("No " + docId + " inventory added yet.");
                         tv.setTextSize(14f);
                         targetContainer.addView(tv);
                         return;
                     }
-
+                    // inflate document into viewcard
                     LayoutInflater inflater = LayoutInflater.from(requireContext());
                     View card = inflater.inflate(R.layout.inventory_card, targetContainer, false);
-
-                    EditText nameEt      = card.findViewById(R.id.edit_controller_name);
-                    TextView amountTv    = card.findViewById(R.id.text_controller_today);
-                    TextView purchaseTv  = card.findViewById(R.id.text_controller_purchase_date);
-                    TextView expiryTv    = card.findViewById(R.id.text_controller_expiry_date);
-                    Button   editBtn     = card.findViewById(R.id.btn_save_controller_name);
-
+                    EditText nameEt = card.findViewById(R.id.edit_controller_name);
+                    TextView amountTv = card.findViewById(R.id.text_controller_today);
+                    TextView purchaseTv = card.findViewById(R.id.text_controller_purchase_date);
+                    TextView expiryTv = card.findViewById(R.id.text_controller_expiry_date);
+                    Button editBtn = card.findViewById(R.id.btn_save_controller_name);
+                    // read Firebase values
                     String name = doc.getString("name");
                     Long amount = doc.getLong("amount");
                     com.google.firebase.Timestamp purchaseTs = doc.getTimestamp("purchaseDate");
                     com.google.firebase.Timestamp expiryTs   = doc.getTimestamp("expiryDate");
-
-                    java.text.DateFormat df =
-                            new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
-
-                    if (name != null)   nameEt.setText(name);
-                    if (amount != null) amountTv.setText("Amount: " + amount);
-                    if (purchaseTs != null)
+                    java.text.DateFormat df = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
+                    // load and format values
+                    if (name != null){
+                        nameEt.setText(name);
+                    }
+                    if (amount != null){
+                        amountTv.setText("Amount: " + amount);
+                    }
+                    if (purchaseTs != null){
                         purchaseTv.setText("Purchase Date: " + df.format(purchaseTs.toDate()));
-                    if (expiryTs != null)
+                    }
+                    if (expiryTs != null){
                         expiryTv.setText("Expiry Date: " + df.format(expiryTs.toDate()));
-
+                    }
+                    // show edit dialog on click
                     editBtn.setOnClickListener(v ->
-                            showEditInventoryDialog(childUid, docId,
-                                    amountTv, purchaseTv, expiryTv));
-
+                            editdialog(childUid, docId, nameEt, amountTv, purchaseTv, expiryTv)
+                    );
+                    // add card to UI
                     targetContainer.addView(card);
                 })
                 .addOnFailureListener(e ->
-                        Log.e("InventoryFragment",
-                                "Error loading inventory doc " + docId, e));
+                        Log.e("InventoryFragment", "Error loading inventory doc " + docId, e));
     }
-    private void showEditInventoryDialog(String childUid,
-                                         String docId,
-                                         TextView amountTv,
-                                         TextView purchaseTv,
-                                         TextView expiryTv) {
-
+    /*
+        runs edit dialog to edit values in inventory
+     */
+    public void editdialog(String childUid, String docId, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv) {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         View dialogView = inflater.inflate(R.layout.dialog_inventory_edit, null);
-
-        EditText etAmount   = dialogView.findViewById(R.id.et_child_name);
+        // set input fields and button
+        EditText etName     = dialogView.findViewById(R.id.et_child_name);
+        EditText etAmount   = dialogView.findViewById(R.id.et_amount);
         EditText etPurchase = dialogView.findViewById(R.id.et_personal_best);
         EditText etExpiry   = dialogView.findViewById(R.id.et_badge_threshold_tech);
-        Button   btnSave    = dialogView.findViewById(R.id.btn_save_edits);
-
-        // Pre-fill from current text (optional, quick & dirty parsing)
+        Button btnSave      = dialogView.findViewById(R.id.btn_save_edits);
+        // get inputted values
+        String currentNameText     = nameEtOriginal.getText().toString().trim();
         String currentAmountText   = amountTv.getText().toString().replace("Amount:", "").trim();
         String currentPurchaseText = purchaseTv.getText().toString().replace("Purchase Date:", "").trim();
         String currentExpiryText   = expiryTv.getText().toString().replace("Expiry Date:", "").trim();
-
+        //
+        etName.setText(currentNameText);
         etAmount.setText(currentAmountText);
         etPurchase.setText(currentPurchaseText);
         etExpiry.setText(currentExpiryText);
 
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setView(dialogView)
-                .create();
+        AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
 
         btnSave.setOnClickListener(v -> {
-            saveInventoryEdits(childUid, docId, etAmount, etPurchase, etExpiry, amountTv, purchaseTv, expiryTv, dialog);
+            saveedits(childUid, docId, etName, etAmount, etPurchase, etExpiry, nameEtOriginal, amountTv, purchaseTv, expiryTv, dialog);
         });
 
         dialog.show();
     }
-    private void saveInventoryEdits(String childUid, String docId, EditText etAmount, EditText etPurchase, EditText etExpiry, TextView amountTv, TextView purchaseTv, TextView expiryTv, AlertDialog dialog) {
+
+    /*
+    check validity and save edited inventory into Firebase
+    */
+    public void saveedits(String childUid, String docId, EditText etName, EditText etAmount, EditText etPurchase, EditText etExpiry, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv, AlertDialog dialog) {
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             dialog.dismiss();
             return;
         }
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> updates = new HashMap<>();
-        String amountStr=etAmount.getText().toString().trim();
+
+        String nameStr = etName.getText().toString().trim();
+        if (!nameStr.isEmpty()) {
+            updates.put("name", nameStr);
+        }
+
+        String amountStr = etAmount.getText().toString().trim();
         if (amountStr.isEmpty()==false) {
             try {
                 int newAmount = Integer.parseInt(amountStr);
-                if (newAmount>threshold) {
+                // make sure amount isnt more then threshold
+                if (newAmount > threshold) {
                     Toast.makeText(requireContext(), "Amount cannot exceed 300.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (newAmount<=lessthan20)
-                {
-                    Toast.makeText(requireContext(), "Sent low inventory alert!.", Toast.LENGTH_SHORT).show();
+                // sends alert if mediciation is less than 20% of threshold
+                if (newAmount <= lessthan20) {
+                    Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
                     sendinventoryAlert(childUid);
                 }
+                // update amount
                 updates.put("amount", newAmount);
+
             } catch (NumberFormatException e) {
                 Toast.makeText(requireContext(), "Please enter a valid number.", Toast.LENGTH_SHORT).show();
                 return;
@@ -281,28 +286,29 @@ public class InventoryFragment extends Fragment {
         }
 
         java.text.DateFormat df = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
+
         String purchaseStr = etPurchase.getText().toString().trim();
         if (!purchaseStr.isEmpty()) {
             try {
                 Date p = df.parse(purchaseStr);
-                if (p != null) {
-                    updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
-                }
+                updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
             } catch (Exception e) {
-                Toast.makeText(requireContext(), "Purchase date format should be like: November 29, 2025", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(),
+                        "Purchase date format should be like: November 29, 2025",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
         }
 
         String expiryStr = etExpiry.getText().toString().trim();
-        if (expiryStr.isEmpty()==false) {
+        if (!expiryStr.isEmpty()) {
             try {
                 Date e = df.parse(expiryStr);
-                if (e!=null) {
-                    updates.put("expiryDate", new com.google.firebase.Timestamp(e));
-                }
+                updates.put("expiryDate", new com.google.firebase.Timestamp(e));
             } catch (Exception ex) {
-                Toast.makeText(requireContext(), "Expiry date format should be like: November 19, 2025", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(),
+                        "Expiry date format should be like: November 19, 2025",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -313,16 +319,24 @@ public class InventoryFragment extends Fragment {
                 .document(docId)
                 .set(updates, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-                    // update UI text from what user typed
+
+                    // update UI fields
+                    if (updates.containsKey("name")) {
+                        nameEtOriginal.setText(nameStr);
+                    }
+
                     if (updates.containsKey("amount")) {
                         amountTv.setText("Amount: " + updates.get("amount"));
                     }
+
                     if (updates.containsKey("purchaseDate")) {
                         purchaseTv.setText("Purchase Date: " + purchaseStr);
                     }
+
                     if (updates.containsKey("expiryDate")) {
                         expiryTv.setText("Expiry Date: " + expiryStr);
                     }
+
                     dialog.dismiss();
                 })
                 .addOnFailureListener(e -> {
@@ -331,6 +345,7 @@ public class InventoryFragment extends Fragment {
                     dialog.dismiss();
                 });
     }
+
     /*
     get child's name
      */
@@ -352,45 +367,32 @@ public class InventoryFragment extends Fragment {
     }
 
     /*
-     * Send inventory low notification to all parents of this child
+      send inventory-related notifications to all parents of this child
      */
     public void sendinventoryAlert(String childUid) {
         Log.d("Inventory", "sendinventoryAlert for childUid = " + childUid);
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        // 1) Get the child's name from children/{childUid}
         getchildname(childUid, childName -> {
-
-            // 2) Get child's user doc from users/{childUid} to find parentUid array
             db.collection("users")
                     .document(childUid)
                     .get()
                     .addOnSuccessListener(doc -> {
-                        if (!doc.exists()) {
+                        if (doc.exists()==false) {
                             Log.e("Inventory", "Child user document missing in users collection");
                             return;
                         }
-
                         @SuppressWarnings("unchecked")
                         List<String> parentUids = (List<String>) doc.get("parentUid");
                         if (parentUids == null || parentUids.isEmpty()) {
                             Log.e("Inventory", "No parentUid array found on child user doc");
                             return;
                         }
-
                         NotificationRepository notifRepo = new NotificationRepository();
                         for (String pUid : parentUids) {
-                            if (pUid == null) continue;
-
-                            Notification notif = new Notification(
-                                    childUid,                 // child id
-                                    false,                    // read flag
-                                    Timestamp.now(),          // time
-                                    NotifType.INVENTORY,      // type
-                                    childName                 // extra text/name
-                            );
-
+                            if (pUid == null){
+                                continue;
+                            }
+                            Notification notif = new Notification(childUid, false, Timestamp.now(), NotifType.INVENTORY, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
                                             Log.d("NotificationRepo",
@@ -401,56 +403,42 @@ public class InventoryFragment extends Fragment {
                         }
                     })
                     .addOnFailureListener(e ->
-                            Log.e("Inventory", "Failed to load child user doc", e)
-                    );
-
+                            Log.e("Inventory", "Failed to load child user doc", e));
         }, error -> {
             Log.e("Inventory", "Failed to fetch child name in sendinventoryAlert", error);
         });
     }
-    private void scheduleDailyExpiryAlarm(Context context, int hour, int minute) {
+    /*
+    schedule when to check if mediciations are expired
+     */
+    public void scheduleexpirycheck(Context context, int hour, int minute) {
 
         Intent intent = new Intent(context, ExpiryCheck.class);
         intent.setAction("CHECK_EXPIRY");
-
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             flags |= PendingIntent.FLAG_IMMUTABLE;
         }
-
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 context, 0, intent, flags
         );
-
-        AlarmManager alarmManager =
-                (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-
-        if (alarmManager == null) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager==null) {
             Log.e("Alarm", "AlarmManager null!");
             return;
         }
-
         // compute trigger time
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-
-        // if time already passed today → schedule for tomorrow
+        // if time already passed today, schedule for tomorrow
         if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
-
         // schedule repeating every day
-        alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
-                calendar.getTimeInMillis(),
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent
-        );
-
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
         Log.d("Alarm", "Expiry alarm set for: " + calendar.getTime());
     }
-
 }

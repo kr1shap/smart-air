@@ -26,7 +26,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Amount Left"
+            android:text="Name"
             android:fontFamily="@font/dm_sans_bold"
             android:textSize="16sp"
             android:textColor="@color/colour_blue"
@@ -34,6 +34,26 @@
 
         <EditText
             android:id="@+id/et_child_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter Name of Medication"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:inputType="textCapWords"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amount Left"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textSize="16sp"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_amount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Enter amount left"
