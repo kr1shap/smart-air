@@ -234,15 +234,6 @@ public class AuthRepository {
     //Helper method to add a new child object to children db
     private void addChildCollection(String parentUid, String childUid, String childName,
                                     AuthContract.GeneralCallback callback) {
-        Map<String, Boolean> sharing = new HashMap<>();
-        sharing.put("rescue", false);
-        sharing.put("controller", false);
-        sharing.put("symptoms", false);
-        sharing.put("triggers",false);
-        sharing.put("pef",false);
-        sharing.put("triage",false);
-        sharing.put("charts",false);
-
         // Create the object
         Child child = new Child(
                 childName,          // name
@@ -250,15 +241,32 @@ public class AuthRepository {
                 parentUid,          // parentUid
                 new Date(),         // make it current date, parent will modify
                 null,               // extraNotes
-                0,                  // personalBest
-                sharing             // sharing
+                0                  // personalBest
         );
 
-        db.collection("children")
-                .document(child.getChildUid())   // doc id
-                .set(child)
+        //get the document
+        DocumentReference childRef = db.collection("children").document(childUid);
+
+        childRef.set(child)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("Firestore", "Child added using model!");
+                    Log.d("Firestore", "Child added!");
+                    //make inventory subcollection
+                    Map<String, Object> emptyInventory = new HashMap<>();
+                    emptyInventory.put("amount", 0);
+                    emptyInventory.put("name", "N/A");
+                    emptyInventory.put("expiryDate", null);
+                    emptyInventory.put("purchaseDate", null);
+
+                    // under inventory/rescue
+                    childRef.collection("inventory")
+                            .document("rescue")
+                            .set(emptyInventory);
+
+                    // under inventory/controller
+                    childRef.collection("inventory")
+                            .document("controller")
+                            .set(emptyInventory);
+
                     callback.onSuccess();
                 })
                 .addOnFailureListener(e -> {
