@@ -1,4 +1,4 @@
-package com.example.smart_air.fragments;
+package com.example.smart_air.Fragment;
 
 import android.app.AlertDialog;
 import android.graphics.Color;
@@ -25,8 +25,6 @@ import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.example.smart_air.adapter.HistoryAdapter;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.firestore.ListenerRegistration;
 
 import java.io.File;
 import java.io.OutputStreamWriter;
@@ -127,6 +125,12 @@ public class HistoryFragment extends Fragment {
         // night filter
         AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
         nightDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             if(selected.equals("YES")){
                 filters[0] = "true";
@@ -144,6 +148,12 @@ public class HistoryFragment extends Fragment {
         // activity filter
         AutoCompleteTextView activityDropdown = view.findViewById(R.id.selectActivityLimits);
         activityDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null chck
+            if (childUid == null || childUid.isEmpty()){
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[1] = selected;
             repo.getCards(childUid,this);
@@ -153,6 +163,12 @@ public class HistoryFragment extends Fragment {
         // coughing filter
         AutoCompleteTextView coughingDropdown = view.findViewById(R.id.selectCoughingLevel);
         coughingDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[2] = selected;
             repo.getCards(childUid,this);
@@ -162,6 +178,12 @@ public class HistoryFragment extends Fragment {
         // triggers filter
         AutoCompleteTextView triggerDropdown = view.findViewById(R.id.selectTriggers);
         triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[3] = selected;
             repo.getCards(childUid,this);
@@ -171,6 +193,12 @@ public class HistoryFragment extends Fragment {
         // date filter
         AutoCompleteTextView dateDropdown = view.findViewById(R.id.selectDate);
         dateDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
 
             // set date to compare too based on it
@@ -205,6 +233,12 @@ public class HistoryFragment extends Fragment {
         // triage filter
         AutoCompleteTextView triageDropdown = view.findViewById(R.id.selectTriage);
         triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[5] = selected;
             repo.getCards(childUid,this);
