@@ -36,6 +36,9 @@
         <activity android:name=".SignInActivity"/>
         <activity android:name=".TriageActivity"/>
         <activity android:name=".OnboardingActivity"/>
+        <receiver
+            android:name=".ExpiryCheck"
+            android:exported="true" />
 
     </application>
 

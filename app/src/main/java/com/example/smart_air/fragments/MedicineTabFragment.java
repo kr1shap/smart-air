@@ -63,6 +63,17 @@ public class MedicineTabFragment extends Fragment {
                         .commit();
             });
         }
+        Button inventoryButton = view.findViewById(R.id.btn_inventory);
+        if (inventoryButton != null) {
+            inventoryButton.setOnClickListener(v -> {
+                requireActivity()
+                        .getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new InventoryFragment())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
     }
 
 
