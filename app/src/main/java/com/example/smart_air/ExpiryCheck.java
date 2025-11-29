@@ -21,21 +21,18 @@ import java.util.List;
 
 public class ExpiryCheck extends BroadcastReceiver {
 
-    // how many days before expiry you want to warn
-    private static final int WARNING_DAYS = 7;
+    int WARNING_DAYS = 0;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d("ExpiryCheck", "Alarm fired – running expiry check");
-        runExpiryCheck();
+        runexpirycheck();
     }
-
-    /**
-     * Main function: checks all children and their inventory for expiry
+    /*
+    checks children for any expiry dates
      */
-    private void runExpiryCheck() {
+    public void runexpirycheck() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         db.collection("children")
                 .get()
                 .addOnSuccessListener(snap -> {
@@ -43,14 +40,13 @@ public class ExpiryCheck extends BroadcastReceiver {
                         Log.d("ExpiryCheck", "No children found");
                         return;
                     }
-
                     for (DocumentSnapshot childDoc : snap.getDocuments()) {
                         String childUid = childDoc.getId();
                         String childName = childDoc.getString("name");
                         if (childName == null) {
                             childName = "Child";
                         }
-                        checkChildInventory(childUid, childName);
+                        checkexpirytimestamp(childUid, childName);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -58,15 +54,12 @@ public class ExpiryCheck extends BroadcastReceiver {
                 });
     }
 
-    /**
-     * Check both controller and rescue inventory docs for this child.
+    /*
+    gets expired timestamp from each rescue and controller document
      */
-    private void checkChildInventory(String childUid, String childName) {
+    public void checkexpirytimestamp(String childUid, String childName) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        // We’ll check "controller" and "rescue" docs
         String[] types = new String[] {"controller", "rescue"};
-
         for (String type : types) {
             db.collection("children")
                     .document(childUid)
@@ -74,21 +67,19 @@ public class ExpiryCheck extends BroadcastReceiver {
                     .document(type)
                     .get()
                     .addOnSuccessListener(invDoc -> {
-                        if (!invDoc.exists()) {
+                        if (invDoc.exists()==false) {
                             Log.d("ExpiryCheck", "No " + type + " inventory for " + childUid);
                             return;
                         }
-
                         Timestamp expiryTs = invDoc.getTimestamp("expiryDate");
                         if (expiryTs == null) {
                             Log.d("ExpiryCheck", "No expiryDate on " + type + " for " + childUid);
                             return;
                         }
-
                         Date expiryDate = expiryTs.toDate();
-                        if (isExpiredOrSoon(expiryDate)) {
+                        if (isexpired(expiryDate)) {
                             Log.d("ExpiryCheck", "Inventory " + type + " is expired/expiring soon for child " + childUid);
-                            notifyParentsForChild(childUid, childName);
+                            sendinventoryAlert(childUid, childName);
                         }
                     })
                     .addOnFailureListener(e -> {
@@ -96,58 +87,47 @@ public class ExpiryCheck extends BroadcastReceiver {
                     });
         }
     }
-
-    /**
-     * Returns true if date is already past or within WARNING_DAYS from now.
+    /*
+    checks if expiry date has passed
      */
-    private boolean isExpiredOrSoon(Date expiryDate) {
+    public boolean isexpired(Date expiryDate) {
+        // get present date
         Calendar nowCal = Calendar.getInstance();
         Date now = nowCal.getTime();
-
-        // Already expired
+        // check if expiry date has passed
         if (expiryDate.before(now)) {
             return true;
         }
-
-        // within next WARNING_DAYS days
         nowCal.add(Calendar.DAY_OF_YEAR, WARNING_DAYS);
         Date warnLimit = nowCal.getTime();
         return expiryDate.before(warnLimit);
     }
 
-    /**
-     * Notify all parents of this child that inventory is expiring.
-     */
-    private void notifyParentsForChild(String childUid, String childName) {
+   /*
+   send notification of expired medicine
+    */
+    public void sendinventoryAlert(String childUid, String childName) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users")
                 .document(childUid)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
+                    if (doc.exists()==false) {
                         Log.e("ExpiryCheck", "Child user doc missing in users collection: " + childUid);
                         return;
                     }
-
                     @SuppressWarnings("unchecked")
                     List<String> parentUids = (List<String>) doc.get("parentUid");
                     if (parentUids == null || parentUids.isEmpty()) {
                         Log.e("ExpiryCheck", "No parentUid array found for child " + childUid);
                         return;
                     }
-
                     NotificationRepository notifRepo = new NotificationRepository();
                     for (String pUid : parentUids) {
-                        if (pUid == null) continue;
-
-                        Notification notif = new Notification(
-                                childUid,
-                                false,
-                                Timestamp.now(),
-                                NotifType.INVENTORY,
-                                childName
-                        );
-
+                        if (pUid == null){
+                            continue;
+                        }
+                        Notification notif = new Notification(childUid, false, Timestamp.now(), NotifType.INVENTORY, childName);
                         notifRepo.createNotification(pUid, notif)
                                 .addOnSuccessListener(aVoid ->
                                         Log.d("NotificationRepo", "Expiry notification created for parent " + pUid))

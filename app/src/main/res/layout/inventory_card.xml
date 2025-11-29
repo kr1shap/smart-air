@@ -7,7 +7,6 @@
     android:padding="16dp"
     android:background="@color/colour_blue">
 
-    <!-- Medicine name (controller) -->
     <EditText
         style="@style/SmartAir.Text.title"
         android:id="@+id/edit_controller_name"
@@ -21,7 +20,6 @@
         android:inputType="textPersonName"
         android:paddingBottom="8dp" />
 
-    <!-- Save / Edit name button -->
     <Button
         style="@style/SmartAir.Button1"
         android:id="@+id/btn_save_controller_name"
@@ -32,7 +30,6 @@
         android:backgroundTint="@color/colour_blue"
         android:textColor="@android:color/white" />
 
-    <!-- Amount (today / total, you can change this text in code) -->
     <TextView
         style="@style/SmartAir.Text.body"
         android:id="@+id/text_controller_today"
@@ -44,7 +41,6 @@
         android:paddingTop="8dp"
         android:paddingBottom="4dp" />
 
-    <!-- Purchase Date -->
     <TextView
         style="@style/SmartAir.Text.body"
         android:id="@+id/text_controller_purchase_date"
@@ -55,7 +51,6 @@
         android:textColor="@android:color/white"
         android:paddingBottom="4dp" />
 
-    <!-- Expiry Date -->
     <TextView
         style="@style/SmartAir.Text.body"
         android:id="@+id/text_controller_expiry_date"

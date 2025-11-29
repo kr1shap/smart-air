@@ -228,18 +228,18 @@ public class InventoryFragment extends Fragment {
         String currentAmountText   = amountTv.getText().toString().replace("Amount:", "").trim();
         String currentPurchaseText = purchaseTv.getText().toString().replace("Purchase Date:", "").trim();
         String currentExpiryText   = expiryTv.getText().toString().replace("Expiry Date:", "").trim();
-        //
+        // pre fill previous values
         etName.setText(currentNameText);
         etAmount.setText(currentAmountText);
         etPurchase.setText(currentPurchaseText);
         etExpiry.setText(currentExpiryText);
-
+        // create dialog
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
-
+        // set save button to save edits
         btnSave.setOnClickListener(v -> {
             saveedits(childUid, docId, etName, etAmount, etPurchase, etExpiry, nameEtOriginal, amountTv, purchaseTv, expiryTv, dialog);
         });
-
+        // show as dialog
         dialog.show();
     }
 
@@ -247,21 +247,20 @@ public class InventoryFragment extends Fragment {
     check validity and save edited inventory into Firebase
     */
     public void saveedits(String childUid, String docId, EditText etName, EditText etAmount, EditText etPurchase, EditText etExpiry, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv, AlertDialog dialog) {
-
+        // get user to store to in Firebase
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             dialog.dismiss();
             return;
         }
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> updates = new HashMap<>();
-
+        // read name from dialog
         String nameStr = etName.getText().toString().trim();
-        if (!nameStr.isEmpty()) {
+        if (nameStr.isEmpty()==false) {
             updates.put("name", nameStr);
         }
-
+        // read amount from dialog
         String amountStr = etAmount.getText().toString().trim();
         if (amountStr.isEmpty()==false) {
             try {
@@ -271,7 +270,7 @@ public class InventoryFragment extends Fragment {
                     Toast.makeText(requireContext(), "Amount cannot exceed 300.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // sends alert if mediciation is less than 20% of threshold
+                // sends alert if medication is less than 20% of threshold
                 if (newAmount <= lessthan20) {
                     Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
                     sendinventoryAlert(childUid);
@@ -286,9 +285,9 @@ public class InventoryFragment extends Fragment {
         }
 
         java.text.DateFormat df = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
-
+        // read purchase date from dialog
         String purchaseStr = etPurchase.getText().toString().trim();
-        if (!purchaseStr.isEmpty()) {
+        if (purchaseStr.isEmpty()==false) {
             try {
                 Date p = df.parse(purchaseStr);
                 updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
@@ -299,9 +298,9 @@ public class InventoryFragment extends Fragment {
                 return;
             }
         }
-
+        // read expiry date from dialog
         String expiryStr = etExpiry.getText().toString().trim();
-        if (!expiryStr.isEmpty()) {
+        if (expiryStr.isEmpty()==false) {
             try {
                 Date e = df.parse(expiryStr);
                 updates.put("expiryDate", new com.google.firebase.Timestamp(e));
@@ -312,31 +311,27 @@ public class InventoryFragment extends Fragment {
                 return;
             }
         }
-
+        // store into Firebase database
         db.collection("children")
                 .document(childUid)
                 .collection("inventory")
                 .document(docId)
                 .set(updates, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-
                     // update UI fields
                     if (updates.containsKey("name")) {
                         nameEtOriginal.setText(nameStr);
                     }
-
                     if (updates.containsKey("amount")) {
                         amountTv.setText("Amount: " + updates.get("amount"));
                     }
-
                     if (updates.containsKey("purchaseDate")) {
                         purchaseTv.setText("Purchase Date: " + purchaseStr);
                     }
-
                     if (updates.containsKey("expiryDate")) {
                         expiryTv.setText("Expiry Date: " + expiryStr);
                     }
-
+                    // close dialog
                     dialog.dismiss();
                 })
                 .addOnFailureListener(e -> {
@@ -350,6 +345,7 @@ public class InventoryFragment extends Fragment {
     get child's name
      */
     public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+        // store into Firebase
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("children")
                 .document(childUid)
