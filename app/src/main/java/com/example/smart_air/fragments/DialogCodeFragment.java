@@ -39,7 +39,7 @@ public class DialogCodeFragment extends DialogFragment {
         if(authRepo.getCurrentUser() == null) { dismiss(); }
         childRepo = new ChildRepository();
 
-        // shared viewmodal to check for role
+        // shared viewmodal to check for role (in-case)
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         sharedModel.getCurrentRole().observe(this, role -> {
             if (role != null && !role.equals("provider")) { dismiss(); }
