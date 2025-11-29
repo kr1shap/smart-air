@@ -37,7 +37,6 @@ public class AuthRepository {
         this.db = FirebaseInitalizer.getDb();
     }
 
-    //SIGNUP - PARENT
     public void signUpParent(String email, String password,
                              AuthContract.AuthCallback callback) {
         auth.createUserWithEmailAndPassword(email, password)

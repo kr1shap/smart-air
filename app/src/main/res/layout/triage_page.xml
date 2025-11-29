@@ -11,14 +11,14 @@
         android:id="@+id/loadingView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone" />
+        android:visibility="visible" />
     <!-- triage session  -->
     <LinearLayout
         android:id="@+id/triageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -379,6 +379,7 @@
                     android:text="Zone:"
                     android:textSize="18sp"
                     android:textStyle="bold"
+                    android:textColor="@color/colour_indigo"
                     android:fontFamily="@font/dm_sans_regular"/>
 
                 <TextView
