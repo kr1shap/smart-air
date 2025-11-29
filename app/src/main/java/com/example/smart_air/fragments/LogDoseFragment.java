@@ -164,6 +164,8 @@ public class LogDoseFragment extends Fragment {
                 return;
             }
 
+            String medCollection = "controller".equals(logType) ? "controllerLog" : "rescueLog";
+
             Map<String, Object> data = new HashMap<>();
             data.put("preCheck", preCheck);
             data.put("postCheck", postCheck);
@@ -171,16 +173,15 @@ public class LogDoseFragment extends Fragment {
             data.put("shortBreathRating", shortBreathRating);
             data.put("timeTaken", FieldValue.serverTimestamp());
 
-            String collectionName = "controller".equals(logType) ? "controllerLog" : "rescueLog";
-
             db.collection("children")
                     .document(uid)
-                    .collection(collectionName)
+                    .collection(medCollection)
                     .add(data)
                     .addOnSuccessListener(docRef -> {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
+                        getAndUpdateInventory(logType, puffs);
                     })
                     .addOnFailureListener(e ->
                             Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -235,5 +236,51 @@ public class LogDoseFragment extends Fragment {
                         container.addView(logView);
                     }
                 });
+    }
+
+    private void getAndUpdateInventory(String medType, int puffs) {
+        if (uid == null) return;
+
+        String collection = "controller".equals(medType) ? "controllerInventory" : "rescueInventory";
+
+        db.collection("children")
+                .document(uid)
+                .collection(collection)
+                .document("main")
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists() && doc.contains("amount")) {
+                        Long currentAmountLong = doc.getLong("amount");
+
+                        if (currentAmountLong == null) {
+                            Toast.makeText(getContext(), "Inventory data is corrupted or missing.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long currentAmount = currentAmountLong;
+
+                        if (currentAmount < puffs) {
+                            Toast.makeText(getContext(), "Not enough doses left in inventory.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long updatedAmount = currentAmount - puffs;
+
+                        db.collection("children")
+                                .document(uid)
+                                .collection(collection)
+                                .document("main")
+                                .update("amount", updatedAmount)
+                                .addOnSuccessListener(unused ->
+                                        Toast.makeText(getContext(), "Inventory updated.", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(getContext(), "Failed to update inventory.", Toast.LENGTH_SHORT).show());
+
+                    } else {
+                        Toast.makeText(getContext(), "Inventory not set up yet.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Error accessing inventory.", Toast.LENGTH_SHORT).show());
     }
 }
