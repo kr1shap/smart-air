@@ -1,0 +1,45 @@
+<!-- res/layout/item_step_saved.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F5F5F5"
+    android:layout_marginBottom="8dp">
+
+
+    <TextView
+        android:id="@+id/txtSavedStepDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Add Desc"
+        android:textSize="14sp"
+        android:textColor="@color/colour_indigo"
+        android:fontFamily="@font/dm_sans_regular"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnEditStep"
+            style="@style/SmartAir.Button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Edit"
+            android:fontFamily="@font/dm_sans_regular"/>
+
+        <Button
+            android:id="@+id/btnDeleteStep"
+            style="@style/SmartAir.Button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-" />
+    </LinearLayout>
+
+</LinearLayout>

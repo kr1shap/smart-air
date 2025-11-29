@@ -1,20 +1,31 @@
 package com.example.smart_air.Presenters;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.example.smart_air.Contracts.AuthContract;
-import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.User;
+
+import com.example.smart_air.Repository.AuthRepository;
 
 public class SignInPresenter implements AuthContract.SignInContract.Presenter {
     private AuthContract.SignInContract.View view;
-    private final AuthRepository repo;
+    public AuthRepository repo;
 
     public SignInPresenter(AuthContract.SignInContract.View view) {
         this.view = view;
         this.repo = new AuthRepository();
     }
 
+    //constructor with mock repo, solely for testing purposes only
+    @VisibleForTesting
+    public SignInPresenter(AuthContract.SignInContract.View view, AuthRepository repo) {
+        this.view = view;
+        this.repo = repo;
+    }
+
     @Override
     public void signIn(String emailOrUsername, String password, String role) {
+        if(view==null) {return;}
         if (emailOrUsername == null || emailOrUsername.trim().isEmpty()) {
             view.showError("Email/Username is required");
             return;
@@ -23,27 +34,27 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
             view.showError("Password is required");
             return;
         }
+        String trimmedEU = emailOrUsername.trim();
 
         view.showLoading();
 
         if ("child".equalsIgnoreCase(role)) {
-            repo.signInChild(emailOrUsername, password, createCallback()); //username -> email handled in method
+            repo.signInChild(trimmedEU, password, createCallback()); //username -> email handled in method
         } else {
-            repo.signIn(emailOrUsername, password, createCallback());
+            repo.signIn(trimmedEU, password, createCallback());
         }
 
     }
 
     @Override
     public void sendPasswordReset(String email) {
-        if (email == null || email.trim().isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if(view==null) {return;}
+        if (email == null || !validEmail(email.trim())) {
             view.showError("Please enter a valid email address");
             return;
         }
-
         view.showLoading();
-
-        repo.sendPasswordResetEmail(email, new AuthContract.GeneralCallback() {
+        repo.sendPasswordResetEmail(email.trim(), new AuthContract.GeneralCallback() {
             @Override
             public void onSuccess() {
                 if (view != null) {
@@ -64,6 +75,7 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
 
     @Override
     public void onRoleSelected(String role) {
+        if(view==null) {return;}
         switch (role) {
             case "parentProv":
                 view.showEmailField();
@@ -88,16 +100,28 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
         return new AuthContract.AuthCallback() {
             @Override
             public void onSuccess(User user) {
-                view.hideLoading();
-                view.navigateToHome(user); //nav to home (check based on role)
+                if(view!=null) {
+                    view.hideLoading();
+                    view.navigateToHome(user); //nav to home (check based on role)
+                }
+
             }
 
             @Override
             public void onFailure(String error) {
-                view.hideLoading();
-                view.showError(error);
+                if(view!=null) {
+                    view.hideLoading();
+                    view.showError(error);
+                }
             }
         };
     }
+
+    //Helper function to check if valid email
+    public static boolean validEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        return email.trim().matches(emailRegex);
+    }
+
 
 }

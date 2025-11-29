@@ -9,6 +9,9 @@
     <color name="colour_white">#F9FCFF</color>
     <color name="colour_lightBlue">#C1DBE3</color>
     <color name="colour_grey">#F5F5F5</color>
+    <color name="zone_green_bg">#E6FFF1</color>
+    <color name="zone_yellow_bg">#FFF8E1</color>
+    <color name="zone_red_bg">#FFE6E6</color>
 
     <color name="role_selected_bg">#204ba8</color>
     <color name="role_default_bg">#007CBE</color>

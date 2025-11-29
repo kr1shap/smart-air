@@ -1,5 +1,6 @@
-package com.example.smart_air.Fragments;
+package com.example.smart_air.fragments;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,12 +18,20 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
+import com.example.smart_air.Repository.NotificationRepository;
+import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.modelClasses.Notification;
+import com.example.smart_air.modelClasses.enums.NotifType;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.slider.Slider;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -32,12 +41,16 @@ import javax.annotation.Nullable;
 
 public class CheckInFragment extends Fragment {
     private View view;
+    int personalBest;
     String userRole = "";
-    String correspondingUid;
+    public String correspondingUid;
     String currentTriggers = "Tap to Select";
     String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
-    @Nullable
+    private SharedChildViewModel sharedModel;
 
+    CheckInRepository repo;
+
+    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
@@ -50,8 +63,38 @@ public class CheckInFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
+        this.personalBest = 400; //TODO: get personal best from parent's original set up
 
-        CheckInRepository repo = new CheckInRepository();
+        repo = new CheckInRepository();
+
+        // shared viewmodal
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                this.userRole = role;
+            }
+        });
+
+        // getting current children for parents/providers
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child
+            if (children != null && !children.isEmpty()) {
+                int currentIndex = sharedModel.getCurrentChild().getValue() != null
+                        ? sharedModel.getCurrentChild().getValue()
+                        : 0;
+
+                String currentChildUid = children.get(currentIndex).getChildUid();
+                this.correspondingUid = currentChildUid;
+            }
+        });
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), currentIndex -> { // update each time child index changed
+            List<Child> children = sharedModel.getAllChildren().getValue();
+            if (children != null && !children.isEmpty() && currentIndex != null) {
+                correspondingUid = children.get(currentIndex).getChildUid();
+                refreshUINewChild(repo);
+            }
+        });
+
+        // get corresponding uid if child
         repo.getUserInfo(this);
 
         // setting date
@@ -71,27 +114,45 @@ public class CheckInFragment extends Fragment {
         MaterialButton save = view.findViewById(R.id.buttonSave);
         save.setOnClickListener(v-> {
             RadioGroup radioNight = view.findViewById(R.id.radioNight); // night waking
-            RadioButton radioYes = view.findViewById(R.id.radioYes);    // night waking
             boolean nightWaking = (radioNight.getCheckedRadioButtonId() == R.id.radioYes);
             SeekBar seekBar = view.findViewById(R.id.seekBar);          // activity limit
             int activityValue = (int)seekBar.getProgress();
             Slider slider = view.findViewById(R.id.sliderCough);                         // coughing/wheezing
             int coughingValue = (int)slider.getValue();
-            int pef = 0;
+            int pef[] = {0}; // array to hold current pef
             if(userRole.equals("parent")){
                 EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
                 String myNumberEditTextString = myNumberEditText.getText().toString().trim();
-                try {
-                    pef = myNumberEditTextString.isEmpty() ? 400 : Integer.parseInt(myNumberEditTextString);
-                } catch (NumberFormatException e){
-                    pef = 400;
+                int inputPef;
+                inputPef = Integer.parseInt(myNumberEditTextString);
+
+                EditText preText = view.findViewById(R.id.editTextPreMed);
+                String preTextString = preText.getText().toString().trim();
+                EditText postText = view.findViewById(R.id.editTextPostMed);
+                String postTextString = postText.getText().toString().trim();
+                int pre;
+                int post;
+
+                if(postTextString.isEmpty() || preTextString.isEmpty()){
+                    pre = 0;
+                    post = 0;
                 }
+                else{
+                    pre = Integer.parseInt(preTextString);
+                    post = Integer.parseInt(postTextString);
+                }
+                repo.maxPef(correspondingUid, userRole, inputPef, maxValue -> {
+                    pef[0] = maxValue; // if pef changes it runs with new
+                    repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef[0],pre,post);
+                });
             }
-            Log.d("DEBUG", "Saving data: nightWaking=" + nightWaking + ", activity=" + activityValue + ", coughing=" + coughingValue + ", pef=" + pef);
-            repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,pef);
+            else{
+                repo.saveUserData(CheckInFragment.this, userRole, triggers, selectedTriggers, correspondingUid, nightWaking, activityValue, coughingValue,0,0,0); // otherwise runs with no pef
+            }
         });
 
 
+        // getting toggle buttons for parent/child
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);  // which form
         MaterialButton buttonParent = view.findViewById(R.id.buttonParent);          // which form
         MaterialButton buttonChild = view.findViewById(R.id.buttonChild);            // which form
@@ -122,7 +183,32 @@ public class CheckInFragment extends Fragment {
         });
     }
 
-    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
+    // change screen for new children based on toggle
+    private void refreshUINewChild(CheckInRepository repo) {
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
+        int checkedId = toggleGroup.getCheckedButtonId();
+
+        if (checkedId == R.id.buttonParent){
+            if(userRole.equals("child")){
+                repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
+            }
+            else if(userRole.equals("parent")){
+                repo.getUserInput(this,userRole,correspondingUid);
+            }
+        }
+        else if (checkedId == R.id.buttonChild){
+            if(userRole.equals("child")){
+                repo.getUserInput(this,userRole,correspondingUid);
+
+            }
+            else if(userRole.equals("parent")){
+                repo.getUserInputOther(CheckInFragment.this,correspondingUid,userRole);
+            }
+        }
+    }
+
+    // get info from database and update ui
+    public void updateInfoInput(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef, int pre, int post) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
         CardView coughWheezeCard = view.findViewById(R.id.coughing);
@@ -160,10 +246,18 @@ public class CheckInFragment extends Fragment {
             myNumberEditText.setText(pef.toString());
         }
 
+        if(!(pre == 0 && post == 0)){
+            EditText preText = view.findViewById(R.id.editTextPreMed);
+            preText.setText(Integer.toString(pre));
+            EditText postText = view.findViewById(R.id.editTextPostMed);
+            postText.setText(Integer.toString(post));
+        }
+
         setCardCurrent();
 
     }
 
+    // update ui with default values
     public void updateInfoInputWithoutValues() {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -181,7 +275,7 @@ public class CheckInFragment extends Fragment {
 
         // set default values
         SeekBar seekbar = view.findViewById(R.id.seekBar);
-        seekbar.setProgress(Math.toIntExact(5));
+        seekbar.setProgress(Math.toIntExact(0));
 
         Slider slider = view.findViewById(R.id.sliderCough);
         slider.setValue(0);
@@ -193,11 +287,13 @@ public class CheckInFragment extends Fragment {
         currentTriggers = "Tap to Select";
         multiSelectTriggers.setText(currentTriggers);
 
+
         setCardCurrent();
 
 
     }
 
+    // get info from database for other person and update ui
     public void updateInfoInputOther(Boolean nightWaking, Long activityLimits, Long coughingWheezing, List<String> selection, Long pef) {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -241,6 +337,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // update ui with default values for other
     public void updateInfoInputOtherWithoutValues() {
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -267,6 +364,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // set up ui for cards
     public void setCardCurrent(){
         CardView nightWakingCard = view.findViewById(R.id.nightCard);
         CardView activityLimitsCard = view.findViewById(R.id.activity);
@@ -401,20 +499,20 @@ public class CheckInFragment extends Fragment {
 
     /**
      * a method that loads info about the user into variables
-     * @param role, stores what type of user it is
-     * @param correspondingUid, stores it's corresponding child or user
      */
-    public void userInfoLoaded(String role, String correspondingUid){
-        userRole = role;
+    public void userInfoLoaded(String correspondingUid){
+        updateUIBasedOnRole(userRole);
+        if(correspondingUid.equals("")){
+            return;
+        }
         this.correspondingUid = correspondingUid;
-        updateUIBasedOnRole(role);
     }
 
     /**
      * changes the text prompts based on type of user
      * @param userRole is the current type of user
      */
-    public void updateUIBasedOnRole(String userRole ){
+    public void updateUIBasedOnRole(String userRole){
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);  // which form
         MaterialButton buttonParent = view.findViewById(R.id.buttonParent);          // which form
         MaterialButton buttonChild = view.findViewById(R.id.buttonChild);            // which form
@@ -428,7 +526,7 @@ public class CheckInFragment extends Fragment {
             toggleGroup.check(R.id.buttonChild);
             buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
             buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
-            nightPrompt.setText("Did you experience any night walking last night?");
+            nightPrompt.setText("Did you experience any night waking last night?");
             activityPrompt.setText("How limited was your activity level today?");
             coughingPrompt.setText("How often we’re you coughing or wheezing today?");
             PEFCard.setVisibility(View.INVISIBLE);
@@ -438,7 +536,7 @@ public class CheckInFragment extends Fragment {
             toggleGroup.check(R.id.buttonParent);
             buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
             buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
-            nightPrompt.setText("Did your child experience any night walking last night?");
+            nightPrompt.setText("Did your child experience any night waking last night?");
             activityPrompt.setText("How limited was your child's activity level today?");
             coughingPrompt.setText("How often was your child coughing or wheezing today?");
             PEFCard.setVisibility(View.VISIBLE);
@@ -449,6 +547,7 @@ public class CheckInFragment extends Fragment {
 
     }
 
+    // set up triggers pop up
     private boolean [] setUpTriggers(String currentTriggers){
         TextView multiSelectTriggers = view.findViewById(R.id.multiSelect);
         boolean [] selectedTriggers = new boolean[triggers.length];
@@ -475,5 +574,28 @@ public class CheckInFragment extends Fragment {
         });
 
         return selectedTriggers;
+    }
+
+    // return zone colour based on percentage
+    public String zoneColour(int pef) {
+        int percent = (int) Math.round((pef * 100.0) / personalBest);
+        if(percent >= 80){
+            return "green";
+        }
+        if(percent >= 50){
+            return "yellow";
+        }
+        // sending notification for being in red zone
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        String uid = auth.getCurrentUser().getUid();
+        repo.checkIfRed(correspondingUid, uid, this);
+
+        return "red";
+
+    }
+
+    // return zone number based on pef
+    public int zoneNumber(int pef){
+        return (int) Math.round((pef * 100.0) / personalBest);
     }
 }

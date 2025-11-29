@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Child Profile"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_black"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Basic Info Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Basic Information"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textSize="16sp"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Child Name *"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/et_child_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter child's name"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:inputType="textCapWords"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Date of Birth *"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/et_child_dob"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select date"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:focusable="false"
+            android:clickable="true"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Extra Notes (optional)"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/et_child_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter notes"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:minLines="3"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:maxLength="200"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Peak Flow Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Peak Flow"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Personal Best Peak Flow (L/min)"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/et_personal_best"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:hint="e.g., 250"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:inputType="number"
+            android:padding="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Personal best is the highest peak flow reading your child can achieve when their asthma is well controlled."
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginBottom="24dp" />
+
+        <!-- badges section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Badge threshold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Number of perfect technique sessions to get 'Technique Master'"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginBottom="3dp" />
+
+        <EditText
+            android:id="@+id/et_badge_threshold_tech"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:hint="e.g., 10"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:inputType="number"
+            android:padding="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Maximum rescue sessions per month to get 'Rescue God'"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/dm_sans_regular"
+            android:layout_marginBottom="3dp" />
+
+        <EditText
+            android:id="@+id/et_badge_threshold_rescue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:hint="e.g., 10"
+            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
+            android:inputType="number"
+            android:padding="12dp" />
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Controller Schedule"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <!-- the weekly date choice -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupWeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="false"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="#F5F5F5"
+            app:selectionRequired="false">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipMon"
+                style="@style/CustomChipStyle"
+                android:text="Mon" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipTues"
+                style="@style/CustomChipStyle"
+                android:text="Tues" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipWed"
+                style="@style/CustomChipStyle"
+                android:text="Wed" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThurs"
+                style="@style/CustomChipStyle"
+                android:text="Thurs" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFri"
+                style="@style/CustomChipStyle"
+                android:text="Fri" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipSat"
+                style="@style/CustomChipStyle"
+                android:text="Sat" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipSun"
+                style="@style/CustomChipStyle"
+                android:text="Sun" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+
+        <!-- Sharing Settings Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Share with Provider"
+            android:textSize="16sp"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose what data providers can see"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#F5F5F5"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Rescue Logs"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_rescue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Controller Summary"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_controller"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Symptoms"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_symptoms"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Triggers"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_triggers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Peak Flow (PEF)"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_pef"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Triage Incidents"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_triage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/dm_sans_regular"
+                    android:text="Summary Charts"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_charts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- for provider choices -->
+    <!-- Provider Access Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Provider Access"
+        android:textSize="16sp"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textColor="@color/colour_blue"
+        android:paddingTop="24dp"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select which healthcare providers can view this child's data:"
+        android:textSize="14sp"
+        android:paddingBottom="12dp"
+        android:textColor="@android:color/darker_gray"/>
+
+    <LinearLayout
+        android:id="@+id/ll_providers_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_border"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tv_no_providers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No healthcare providers connected yet."
+            android:gravity="center"
+            android:padding="16dp"
+            android:textColor="@android:color/darker_gray"
+            android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <!-- cancel buttons and save buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/btn_cancel"
+                style="@style/SmartAir.Button1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_save"
+                style="@style/SmartAir.Button1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save Changes" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

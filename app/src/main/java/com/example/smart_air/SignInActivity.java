@@ -145,7 +145,6 @@ public class SignInActivity extends AppCompatActivity implements AuthContract.Si
     @Override
     public void navigateToHome(User user) {
         Intent intent = new Intent(this, MainActivity.class); //TODO: fix based on per role navigation or change to home if needed
-        intent.putExtra("user", new Gson().toJson(user));
         startActivity(intent);
         finish(); //finish current activity
     }
