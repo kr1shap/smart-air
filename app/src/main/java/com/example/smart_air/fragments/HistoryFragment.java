@@ -1,4 +1,4 @@
-package com.example.smart_air.fragments;
+package com.example.smart_air.Fragment;
 
 import android.app.AlertDialog;
 import android.graphics.Color;

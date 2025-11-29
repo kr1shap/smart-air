@@ -69,7 +69,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    // call specific function based on type of viewHolder
+    // call specifci function based on type of viewHolder
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
@@ -93,8 +93,6 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         ProgressBar childActivityLimitsBar, parentActivityLimitsBar, childCoughingBar, parentCoughingBar;
         ChipGroup triggersContainer;
         View colourBox;
-        View sharedProviderLabel;
-        TextView sharedLabelText;
 
         public DailyViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -119,24 +117,11 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             parentCoughingBar = itemView.findViewById(R.id.parentCoughingBar);
 
             triggersContainer = itemView.findViewById(R.id.triggersContainer);
-
-            // shared provider label components
-            sharedProviderLabel = itemView.findViewById(R.id.sharedProviderLabel);
-            sharedLabelText = itemView.findViewById(R.id.sharedLabelText);
         }
 
         public void bind(HistoryItem card) {
             // date
             dateText.setText(card.date);
-
-            // show/hide shared provider label
-            if (card.sharedWithProvider && !card.sharedItems.isEmpty()) {
-                sharedProviderLabel.setVisibility(View.VISIBLE);
-                String labelText = "Shared with provider: " + String.join(", ", card.sharedItems);
-                sharedLabelText.setText(labelText);
-            } else {
-                sharedProviderLabel.setVisibility(View.GONE);
-            }
 
             // child/parent logic
             switch (card.cardType) {
@@ -285,8 +270,6 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // setting up ui components
         ChipGroup flagsChipGroup;
         TextView pefValue, rescueAttemptsValue, emergencyButtonText, userResponseList, dateText, title;
-        View sharedProviderLabel;
-        TextView sharedLabelText;
 
         TriageViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -298,23 +281,9 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             userResponseList = itemView.findViewById(R.id.userResponseList);
             dateText = itemView.findViewById(R.id.dateText);
             title = itemView.findViewById(R.id.title);
-
-            // shared provider label components
-            sharedProviderLabel = itemView.findViewById(R.id.sharedProviderLabel);
-            sharedLabelText = itemView.findViewById(R.id.sharedLabelText);
         }
 
         void bind(HistoryItem item) {
-
-            // show/hide shared provider label
-            if(item.sharedWithProvider && !item.sharedItems.isEmpty()) {
-                sharedProviderLabel.setVisibility(View.VISIBLE);
-                String labelText = "Shared: " + String.join(", ", item.sharedItems);
-                sharedLabelText.setText(labelText);
-            } else{
-                sharedProviderLabel.setVisibility(View.GONE);
-            }
-
             // setting values based on card
             dateText.setText(item.time);
             title.setText(item.date + " INCIDENT LOG");

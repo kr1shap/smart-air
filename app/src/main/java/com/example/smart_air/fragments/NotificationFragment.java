@@ -1,4 +1,4 @@
-package com.example.smart_air.fragments;
+package com.example.smart_air.Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
