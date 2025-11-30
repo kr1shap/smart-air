@@ -48,6 +48,7 @@ public class LogDoseFragment extends Fragment {
 
     private FirebaseFirestore db;
     private String uid;
+    int lessthan20=60;
 
     public LogDoseFragment() {
         // Required empty public constructor
@@ -292,7 +293,9 @@ public class LogDoseFragment extends Fragment {
                 });
     }
     /*
-    used to send rapid rescue or inventory notifications to all parents
+     used to send rapid rescue or inventory notifications to all parents
+     if child use: get uid
+     if parent use: get sharedmodel stored childuid
     */
     public void sendAlert(String cUid, int choice) {
         if (cUid == null) {
@@ -309,22 +312,10 @@ public class LogDoseFragment extends Fragment {
                             Log.e("Rapid Rescue", "Child user document missing");
                             return;
                         }
-                        List<?> rawParentUids = doc.get("parentUid", List.class);
-                        if (rawParentUids == null || rawParentUids.isEmpty()) {
+                        @SuppressWarnings("unchecked")
+                        List<String> parentUids = (List<String>) doc.get("parentUid");
+                        if (parentUids == null || parentUids.isEmpty()) {
                             Log.e("Rapid Rescue", "No parentUid array found");
-                            return;
-                        }
-                        // Convert to List<String> safely
-                        List<String> parentUids = new ArrayList<>();
-                        for (Object o : rawParentUids) {
-                            if (o instanceof String) {
-                                parentUids.add((String) o);
-                            } else {
-                                Log.w("Rapid Rescue", "Invalid parentUid entry: " + o);
-                            }
-                        }
-                        if (parentUids.isEmpty()) {
-                            Log.e("Rapid Rescue", "parentUid array had no valid String values");
                             return;
                         }
                         NotificationRepository notifRepo = new NotificationRepository();
@@ -333,7 +324,6 @@ public class LogDoseFragment extends Fragment {
                                 continue;
                             }
                             NotifType type;
-
                             if (choice == 1) {
                                 type = NotifType.RAPID_RESCUE;
                             }
@@ -356,7 +346,6 @@ public class LogDoseFragment extends Fragment {
             Log.e("Rapid Rescue", "Failed to fetch child name", error);
         });
     }
-
     /*
     get child's name
      */
