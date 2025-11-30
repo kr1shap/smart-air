@@ -79,7 +79,7 @@ public class InventoryFragment extends Fragment {
             Log.d("Alarm", "First time scheduling expiry alarm from InventoryFragment");
         }
         else {
-            Log.d("Alarm", "Expiry alarm already scheduled, not scheduling again");
+            Log.d("Alarm", "Expiry alarm already scheduled, initial scheduled time will not change");
         }
         // back button functionality
         Button backButton   = view.findViewById(R.id.btn_back_meds);
