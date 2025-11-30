@@ -283,7 +283,7 @@ public class LogDoseFragment extends Fragment {
                         }
                     }
                     if (count >= 3) {
-                        sendAlert();
+                        //sendAlert();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -291,24 +291,26 @@ public class LogDoseFragment extends Fragment {
                 });
     }
     /*
-   Used to send notifications to parent
+     used to send rapid rescue or inventory notifications to all parents
+     if child use: get uid
+     if parent use: get sharedmodel stored childuid
     */
-    public void sendAlert() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
+    public void sendAlert(String cUid, int choice) {
+        if (cUid == null) {
+            Log.e("Rapid Rescue", "sendAlert called with null childUid");
             return;
         }
-        String cUid = user.getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         getchildname(cUid, childName -> {
             db.collection("users")
                     .document(cUid)
                     .get()
                     .addOnSuccessListener(doc -> {
-                        if (!doc.exists()) {
+                        if (doc.exists()==false) {
                             Log.e("Rapid Rescue", "Child user document missing");
                             return;
                         }
+                        @SuppressWarnings("unchecked")
                         List<String> parentUids = (List<String>) doc.get("parentUid");
                         if (parentUids == null || parentUids.isEmpty()) {
                             Log.e("Rapid Rescue", "No parentUid array found");
@@ -319,18 +321,24 @@ public class LogDoseFragment extends Fragment {
                             if (pUid == null){
                                 continue;
                             }
-                            Notification notif = new Notification(cUid, false, Timestamp.now(), NotifType.RAPID_RESCUE, childName);
+                            NotifType type;
+                            if (choice == 1) {
+                                type = NotifType.RAPID_RESCUE;
+                            }
+                            else {
+                                type = NotifType.INVENTORY;
+                            }
+                            Notification notif = new Notification(cUid, false, Timestamp.now(), type, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
-                                            Log.d("NotificationRepo", "Notification created for parent " + pUid))
+                                            Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
                                     .addOnFailureListener(e ->
-                                            Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
+                                            Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
                         }
 
                     })
                     .addOnFailureListener(e ->
-                            Log.e("Rapid Rescue", "Failed to load child document", e)
-                    );
+                            Log.e("Rapid Rescue", "Failed to load child document", e));
 
         }, error -> {
             Log.e("Rapid Rescue", "Failed to fetch child name", error);
