@@ -51,8 +51,9 @@ public class LogDoseFragment extends Fragment {
     private FirebaseFirestore db;
     /** This will always hold the *current child’s* UID (or the child user’s own UID). */
     private String uid;
-    int lessthan20=60;
     int threshold=300;
+    double lessthan20=threshold*0.2;
+
     private SharedChildViewModel sharedModel;
     private String userRole = "";
 

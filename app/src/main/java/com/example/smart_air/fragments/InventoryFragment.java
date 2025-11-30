@@ -54,8 +54,8 @@ public class InventoryFragment extends Fragment {
 
     private LinearLayout controllerContainer;
     private LinearLayout rescueContainer;
-    int lessthan20=60;
     int threshold=300;
+    double lessthan20=threshold*0.2;
     private SharedChildViewModel sharedModel;
     private String selectedChildUid = null;
 
