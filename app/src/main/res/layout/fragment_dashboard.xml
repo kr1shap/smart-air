@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/colour_white"
     android:padding="16dp">
 
@@ -30,6 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_card"
+            app:cardElevation="4dp"
             android:orientation="vertical"
             android:padding="18dp"
             android:layout_marginBottom="16dp">
@@ -84,6 +85,7 @@
                 android:layout_height="120dp"
                 android:layout_weight="1"
                 android:background="@drawable/rounded_card"
+                app:cardElevation="4dp"
                 android:padding="16dp"
                 android:orientation="vertical"
                 android:layout_marginEnd="8dp">
@@ -126,6 +128,7 @@
                 android:layout_height="120dp"
                 android:layout_weight="1"
                 android:background="@drawable/rounded_card"
+                app:cardElevation="4dp"
                 android:padding="16dp"
                 android:orientation="vertical"
                 android:layout_marginStart="8dp">
@@ -158,26 +161,28 @@
                     android:layout_marginTop="8dp"
                     android:textColor="@color/colour_darkBlue"/>
             </LinearLayout>
+
         </LinearLayout>
 
         <!-- Inventory -->
         <LinearLayout
-            android:id="@+id/cardInventory"
+            android:id="@+id/inventorySection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_card"
-            android:padding="16dp"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp">
+            android:background="@drawable/rounded_card"
+            app:cardElevation="4dp"
+            android:padding="18dp"
+            android:layout_marginBottom="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Inventory"
                 android:fontFamily="@font/dm_sans_bold"
+                android:textStyle="bold"
                 android:textSize="18sp"
-                android:textColor="@color/colour_darkBlue"
-                android:layout_marginBottom="12dp"/>
+                android:textColor="@color/colour_darkBlue"/>
 
             <View
                 android:layout_width="match_parent"
@@ -186,62 +191,85 @@
                 android:layout_marginTop="6dp"
                 android:layout_marginBottom="12dp"/>
 
-
+            <!-- Rescue -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Rescue:"
-                android:textSize="16sp"
+                android:fontFamily="@font/dm_sans_bold"
                 android:textColor="@color/colour_darkBlue"/>
 
             <TextView
-                android:id="@+id/tvInventoryRescue"
+                android:id="@+id/tvRescueName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
-                android:layout_marginBottom="8dp"
-                android:textSize="16sp"/>
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
 
+            <TextView
+                android:id="@+id/tvRescuePurchase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:id="@+id/tvRescueExpiry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Controller -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Controller:"
                 android:fontFamily="@font/dm_sans_bold"
-                android:textSize="16sp"
-                android:textColor="@color/colour_darkBlue"/>
+                android:textColor="@color/colour_darkBlue" />
 
             <TextView
-                android:id="@+id/tvInventoryController"
+                android:id="@+id/tvControllerName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
-                android:layout_marginBottom="12dp"
-                android:textSize="16sp"/>
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
+            <TextView
+                android:id="@+id/tvControllerPurchase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
+            <TextView
+                android:id="@+id/tvControllerExpiry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:fontFamily="@font/dm_sans_medium"
+                android:textSize="16sp"
+                android:layout_marginBottom="10dp"/>
 
+            <!-- Bottom row -->
             <LinearLayout
-                android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:weightSum="2">
+                android:orientation="horizontal">
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Last Purchase:"
-                    android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_darkBlue"/>
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Expires in:"
-                    android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_darkBlue"/>
             </LinearLayout>
 
+
         </LinearLayout>
+
 
         <!-- Trends -->
         <LinearLayout
@@ -249,6 +277,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_card"
+            app:cardElevation="4dp"
             android:padding="16dp"
             android:orientation="vertical"
             android:layout_marginBottom="20dp">
@@ -288,7 +317,7 @@
                 android:layout_marginBottom="12dp"/>
 
 
-            <!-- Trends pages -->
+            <!-- Trends -->
             <ViewFlipper
                 android:id="@+id/trendsCarousel"
                 android:layout_width="match_parent"
@@ -296,12 +325,24 @@
                 android:inAnimation="@anim/slide_in_right"
                 android:outAnimation="@anim/slide_out_left">
 
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp">
+
+                    <TextView
+                        android:id="@+id/tvRescueTrendTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Daily Rescues"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colour_darkBlue"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginTop="4dp"/>
 
                     <com.github.mikephil.charting.charts.BarChart
                         android:id="@+id/rescueChart"
@@ -312,8 +353,21 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp">
+
+                    <TextView
+                        android:id="@+id/tvPEFTrendTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Daily PEF"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colour_darkBlue"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginTop="4dp"/>
 
                     <com.github.mikephil.charting.charts.LineChart
                         android:id="@+id/pefChart"
@@ -322,7 +376,6 @@
                 </LinearLayout>
 
             </ViewFlipper>
-
 
             <LinearLayout
                 android:id="@+id/carouselDots"

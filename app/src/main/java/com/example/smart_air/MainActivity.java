@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
     private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

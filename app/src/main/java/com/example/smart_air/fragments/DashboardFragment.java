@@ -8,10 +8,13 @@ import android.graphics.Typeface;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -24,8 +27,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
+import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -37,8 +44,10 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -47,7 +56,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -60,8 +68,10 @@ import java.util.Locale;
 import java.util.Map;
 
 public class DashboardFragment extends Fragment {
+    private SharedChildViewModel sharedModel;
     private float x1, x2;
     private static final int MIN_DISTANCE = 150;
+    private ViewFlipper trendsCarousel;
     private View zoneBar;
     private View barContainer;
     private LineChart pefChart;
@@ -72,6 +82,237 @@ public class DashboardFragment extends Fragment {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private boolean isChildUser = false;
     private TextView tvWeeklyRescues;
+    private TextView tvRescueName;
+    private TextView tvRescuePurchase;
+    private TextView tvRescueExpiry;
+    private TextView tvControllerName;
+    private TextView tvControllerPurchase;
+    private TextView tvControllerExpiry;
+    private String correspondingUid;
+    private String userRole;
+    private AuthRepository repo;
+    private TextView tvLatestRescue;
+    private int currentTrendIndex = 0;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_dashboard, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        repo = new AuthRepository();
+        TextView tvTitle = view.findViewById(R.id.tvDashboardTitle);
+        View root = view;
+
+        // using viewmodel to load dashboard
+
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+
+        // linking xml ids to fragment
+        zoneBar = view.findViewById(R.id.zoneBar);
+        barContainer = view.findViewById(R.id.barContainer);
+        rescueChart = view.findViewById(R.id.rescueChart);
+        pefChart = view.findViewById(R.id.pefChart);
+        tvWeeklyRescues = view.findViewById(R.id.tvWeeklyRescues);
+
+        tvRescueName = view.findViewById(R.id.tvRescueName);
+        tvRescuePurchase = view.findViewById(R.id.tvRescuePurchase);
+        tvRescueExpiry = view.findViewById(R.id.tvRescueExpiry);
+
+        tvControllerName = view.findViewById(R.id.tvControllerName);
+        tvControllerPurchase = view.findViewById(R.id.tvControllerPurchase);
+        tvControllerExpiry = view.findViewById(R.id.tvControllerExpiry);
+        tvLatestRescue = view.findViewById(R.id.tvLastRescue);
+
+
+        Button btnManage = view.findViewById(R.id.btnManageChildren);
+        Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
+
+
+        Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
+        trendsCarousel = view.findViewById(R.id.trendsCarousel);
+
+        // to help with trend animation sliding correctly
+        Animation inLeft = AnimationUtils.loadAnimation(getContext(), R.anim.slide_in_right);
+        Animation outLeft = AnimationUtils.loadAnimation(getContext(), R.anim.slide_out_left);
+        Animation inRight = AnimationUtils.loadAnimation(getContext(), R.anim.slide_in_left);
+        Animation outRight = AnimationUtils.loadAnimation(getContext(), R.anim.slide_out_right);
+
+        Animation.AnimationListener listener = new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                freezeOtherPage();
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                unfreezeAllPages();
+            }
+
+            @Override public void onAnimationRepeat(Animation animation) {}
+        };
+
+        inLeft.setAnimationListener(listener);
+        outLeft.setAnimationListener(listener);
+        inRight.setAnimationListener(listener);
+        outRight.setAnimationListener(listener);
+
+        trendsCarousel.setInAnimation(inLeft);
+        trendsCarousel.setOutAnimation(outLeft);
+
+        // setOnTouchListeners
+        trendsCarousel.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    x1 = event.getX();
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+                    x2 = event.getX();
+                    float deltaX = x2 - x1;
+
+                    if (Math.abs(deltaX) > MIN_DISTANCE) {
+
+                        // swipe right
+                        if (deltaX > 0) {
+                            if (currentTrendIndex == 0) {
+                                return true;
+                            }
+
+                            trendsCarousel.setInAnimation(getContext(), R.anim.slide_in_left);
+                            trendsCarousel.setOutAnimation(getContext(), R.anim.slide_out_right);
+                            trendsCarousel.showPrevious();
+
+                            currentTrendIndex--;
+                        }
+
+                        // swipe left
+                        else {
+                            if (currentTrendIndex == 1) {
+                                return true;
+                            }
+
+                            trendsCarousel.setInAnimation(getContext(), R.anim.slide_in_right);
+                            trendsCarousel.setOutAnimation(getContext(), R.anim.slide_out_left);
+                            trendsCarousel.showNext();
+
+                            currentTrendIndex++;
+                        }
+
+                        updateDots(currentTrendIndex, root);
+                    }
+
+                    return true;
+            }
+            return false;
+        });
+
+        // use viewmodel to load role and dashboard
+
+        // first checks the role
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role == null) return;
+
+            userRole = role;
+
+            if (role.equals("child")|| role.equals("provider")) {
+
+                // loads childId and childName from firestore db
+                loadUserAndChildIds(tvTitle, () -> {
+                    correspondingUid = childId;
+                    loadDashboardForChild(correspondingUid);
+                });
+
+                btnProviderReport.setVisibility(View.GONE);
+                btnManage.setVisibility(View.GONE);
+            } else if (role.equals("parent")) {
+
+                // show full dashboard
+                btnProviderReport.setVisibility(View.VISIBLE);
+                btnManage.setVisibility(View.VISIBLE);
+
+                btnProviderReport.setOnClickListener(v -> {
+                    ProviderReportFragment frag = new ProviderReportFragment();
+
+                    Bundle args = new Bundle();
+                    args.putString("childId", correspondingUid);
+                    frag.setArguments(args);
+
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, frag)
+                            .addToBackStack(null)
+                            .commit();
+                });
+
+
+
+            }
+        });
+
+        // after getting full list of children
+        sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> {
+            if (children == null || children.isEmpty()) return;
+            Integer idx = sharedModel.getCurrentChild().getValue();
+            if (idx == null) idx = 0;
+
+            correspondingUid = children.get(idx).getChildUid();
+
+            if (!"child".equals(userRole)) {
+                Child child = children.get(idx);
+                tvTitle.setText(child.getName() + "’s Dashboard");
+                loadDashboardForChild(correspondingUid);
+            }
+        });
+
+        // for when parent switches child
+        sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), idx -> {
+            List<Child> list = sharedModel.getAllChildren().getValue();
+            if (list == null || list.isEmpty() || idx == null) return;
+
+            correspondingUid = list.get(idx).getChildUid();
+
+            if (!"child".equals(userRole)) {
+                loadDashboardForChild(correspondingUid);
+            }
+        });
+
+        // trend dropdown
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"Past 7 Days", "Past 30 Days"}
+        );
+        trendSpinner.setAdapter(adapter);
+
+        trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+                if (childId == null) return;
+
+                if (position == 0) {
+                    loadWeeklyRescues(7);
+                    loadPEFTrend(7);
+                } else {
+                    loadWeeklyRescues(30);
+                    loadPEFTrend(30);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+    }
 
     private void loadUserAndChildIds(TextView titleView, @Nullable Runnable onComplete) {
         String uid = FirebaseAuth.getInstance().getUid();
@@ -127,123 +368,37 @@ public class DashboardFragment extends Fragment {
                 });
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
+    private void freezeOtherPage() {
+        int displayed = trendsCarousel.getDisplayedChild();
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_dashboard, container, false);
-    }
+        for (int i = 0; i < trendsCarousel.getChildCount(); i++) {
+            View child = trendsCarousel.getChildAt(i);
 
-    @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        zoneBar = view.findViewById(R.id.zoneBar);
-        barContainer = view.findViewById(R.id.barContainer);
-        rescueChart = view.findViewById(R.id.rescueChart);
-        pefChart = view.findViewById(R.id.pefChart);
-        tvWeeklyRescues = view.findViewById(R.id.tvWeeklyRescues);
-
-        Button btnManage = view.findViewById(R.id.btnManageChildren);
-        Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
-
-
-        TextView tvDashboardTitle = view.findViewById(R.id.tvDashboardTitle);
-
-        loadUserAndChildIds(tvDashboardTitle, () -> {
-            if (isChildUser) {
-                btnProviderReport.setVisibility(View.GONE);
-                btnManage.setVisibility(View.GONE);
+            if (i != displayed) {
+                child.setVisibility(View.INVISIBLE);
             }
-
-            loadTodayZone();
-            loadZoneHistory();
-            loadWeeklyRescues(7);
-            loadLatestRescueDate();
-            loadPEFTrend(7);
-        });
-
-        Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Past 7 Days", "Past 30 Days"}
-        );
-        trendSpinner.setAdapter(adapter);
-        trendSpinner.setSelection(0);
-
-        trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
-                if (childId == null) return;
-
-                if (position == 0) {
-                    loadWeeklyRescues(7);
-                    loadPEFTrend(7);
-                } else {
-                    loadWeeklyRescues(30);
-                    loadPEFTrend(30);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-        Button btnReport = view.findViewById(R.id.btnProviderReport);
-        btnReport.setOnClickListener(v -> requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_container, new ProviderReportFragment())
-                .addToBackStack(null)
-                .commit()
-        );
-
-        final ViewFlipper flipper = view.findViewById(R.id.trendsCarousel);
-        if (flipper != null) {
-            flipper.post(() -> {
-                flipper.setOnTouchListener((v, event) -> {
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            x1 = event.getX();
-                            return true;
-
-                        case MotionEvent.ACTION_UP:
-                            v.performClick();
-                            x2 = event.getX();
-                            float deltaX = x2 - x1;
-
-                            if (Math.abs(deltaX) > MIN_DISTANCE) {
-
-                                if (deltaX > 0) {
-                                    flipper.setInAnimation(requireContext(), R.anim.slide_in_left);
-                                    flipper.setOutAnimation(requireContext(), R.anim.slide_out_right);
-                                    flipper.showPrevious();
-                                } else {
-                                    flipper.setInAnimation(requireContext(), R.anim.slide_in_right);
-                                    flipper.setOutAnimation(requireContext(), R.anim.slide_out_left);
-                                    flipper.showNext();
-                                }
-
-                                updateDots(flipper.getDisplayedChild(), view);
-                            }
-                            return true;
-
-                    }
-                    return false;
-                });
-
-                updateDots(0, view);
-            });
         }
     }
+
+    private void unfreezeAllPages() {
+        for (int i = 0; i < trendsCarousel.getChildCount(); i++) {
+            trendsCarousel.getChildAt(i).setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void loadDashboardForChild(String childUid) {
+        if (childUid == null) return;
+
+        this.childId = childUid;
+
+        loadTodayZone();
+        loadZoneHistory();
+        loadWeeklyRescues(7);
+        loadLatestRescueDate();
+        loadPEFTrend(7);
+        loadInventory();
+    }
+
 
     private void loadTodayZone() {
         if (childId == null) return;
@@ -375,7 +530,6 @@ public class DashboardFragment extends Fragment {
                 .document(childId)
                 .collection("triageSessions")
                 .orderBy("date", Query.Direction.DESCENDING)
-                .limit(1)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
@@ -385,21 +539,25 @@ public class DashboardFragment extends Fragment {
                         return;
                     }
 
-                    DocumentSnapshot doc = snapshot.getDocuments().get(0);
+                    Date latestRescueDate = null;
 
-                    Long count = doc.getLong("rescueAttempts");
-                    Timestamp ts = doc.getTimestamp("date");
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Long count = doc.getLong("rescueAttempts");
+                        Timestamp ts = doc.getTimestamp("date");
 
-                    if (count == null || ts == null || count == 0) {
-                        tvLatestRescue.setText("No rescues yet");
-                        return;
+                        if (count != null && ts != null && count >= 1) {
+                            latestRescueDate = ts.toDate();
+                            break;
+                        }
                     }
 
-                    Date date = ts.toDate();
-                    String formatted = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-                            .format(date);
-
-                    tvLatestRescue.setText(formatted);
+                    if (latestRescueDate == null) {
+                        tvLatestRescue.setText("No rescues yet");
+                    } else {
+                        String formatted = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                                .format(latestRescueDate);
+                        tvLatestRescue.setText(formatted);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
@@ -409,6 +567,7 @@ public class DashboardFragment extends Fragment {
 
     private void drawRescueChartDynamic(int[] counts, int days) {
         if (rescueChart == null) return;
+
 
         ArrayList<BarEntry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
@@ -422,12 +581,37 @@ public class DashboardFragment extends Fragment {
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "Rescue Attempts");
-        dataSet.setColor(Color.parseColor("#3F51B5"));
+        dataSet.setColor(Color.parseColor("#003B7A"));
+        dataSet.setDrawValues(false);
 
         BarData barData = new BarData(dataSet);
         barData.setBarWidth(0.6f);
 
         XAxis xAxis = rescueChart.getXAxis();
+
+
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int index = (int) value;
+                if (days == 30) {
+                    if (index == 0) return labels.get(0);
+                    if (index == days - 1) return labels.get(days - 1);
+                    return "";
+                } else {
+                    return labels.get(index);
+                }
+            }
+        });
+
+        if (days == 30) {
+            xAxis.setTextSize(2f);
+            xAxis.setLabelRotationAngle(280f);
+        } else {
+            xAxis.setTextSize(10f);
+            xAxis.setLabelRotationAngle(0f);
+        }
+
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setLabelCount(days);
         xAxis.setGranularity(1f);
@@ -436,6 +620,7 @@ public class DashboardFragment extends Fragment {
 
         rescueChart.getAxisLeft().setAxisMinimum(0);
         rescueChart.getAxisRight().setEnabled(false);
+        rescueChart.getLegend().setEnabled(false);
 
         rescueChart.getDescription().setEnabled(false);
         rescueChart.setFitBars(true);
@@ -500,16 +685,25 @@ public class DashboardFragment extends Fragment {
             entries.add(new Entry(i, pefValues[i]));
         }
 
+        pefChart.setTouchEnabled(false);
+        pefChart.setPinchZoom(false);
+        pefChart.setDoubleTapToZoomEnabled(false);
+        pefChart.setDragEnabled(false);
+        pefChart.setScaleEnabled(false);
+        pefChart.setHighlightPerTapEnabled(false);
+        pefChart.setHighlightPerDragEnabled(false);
+        pefChart.getLegend().setEnabled(false);
+        pefChart.getDescription().setEnabled(false);
+
         LineDataSet dataSet = new LineDataSet(entries, "Best PEF");
-        dataSet.setColor(Color.parseColor("#009688"));
-        dataSet.setCircleColor(Color.parseColor("#009688"));
+        dataSet.setColor(Color.parseColor("#003B7A"));
+        dataSet.setCircleColor(Color.parseColor("#003B7A"));
         dataSet.setLineWidth(2.5f);
         dataSet.setCircleRadius(4f);
         dataSet.setDrawValues(false);
         dataSet.setMode(LineDataSet.Mode.LINEAR);
 
         pefChart.setData(new LineData(dataSet));
-
 
         XAxis xAxis = pefChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -607,230 +801,70 @@ public class DashboardFragment extends Fragment {
         for (Entry e : entryArray) {
             if (e == null) return;
         }
-        drawZoneHistoryChart(new ArrayList<>(Arrays.asList(entryArray)));
     }
 
-    private void drawZoneHistoryChart(ArrayList<Entry> entries) {
-        if (pefChart == null) return;
 
-        pefChart.setTouchEnabled(false);
-        pefChart.setPinchZoom(false);
-        pefChart.setDoubleTapToZoomEnabled(false);
-        pefChart.setDragEnabled(false);
-        pefChart.setScaleEnabled(false);
-        pefChart.setHighlightPerTapEnabled(false);
-        pefChart.setHighlightPerDragEnabled(false);
+    // inventory
 
-        LineDataSet dataSet = new LineDataSet(entries, "Zone (Past 7 Days)");
-        dataSet.setColor(Color.BLACK);
-        dataSet.setCircleColor(Color.BLACK);
-        dataSet.setLineWidth(2f);
-        dataSet.setCircleRadius(4f);
-        dataSet.setDrawValues(false);
+    private void loadInventory() {
+        if (childId == null) return;
 
-        YAxis left = pefChart.getAxisLeft();
-        left.setAxisMinimum(0f);
-        left.setAxisMaximum(3f);
-        left.setDrawGridLines(false);
-        pefChart.getAxisRight().setEnabled(false);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        String[] labels = {"S", "M", "T", "W", "T", "F", "S"};
+        DocumentReference rescueRef = db.collection("children")
+                .document(childId)
+                .collection("inventory")
+                .document("rescue");
 
-        XAxis x = pefChart.getXAxis();
-        x.setValueFormatter(new IndexAxisValueFormatter(labels));
-        x.setPosition(XAxis.XAxisPosition.BOTTOM);
-        x.setGranularity(1f);
-        x.setLabelCount(7, true);
-        x.setDrawGridLines(false);
+        DocumentReference controllerRef = db.collection("children")
+                .document(childId)
+                .collection("inventory")
+                .document("controller");
 
-        x.setAxisMaximum(6.3f);
-        x.setAvoidFirstLastClipping(false);
+        rescueRef.get().addOnSuccessListener(rescueDoc -> {
+            if (rescueDoc.exists()) {
+                String name = rescueDoc.getString("name");
+                Long amount = rescueDoc.getLong("amount");
 
-        x.setEnabled(true);
-        x.setDrawLabels(true);
+                Timestamp purchase = rescueDoc.getTimestamp("purchaseDate");
+                Timestamp expiry = rescueDoc.getTimestamp("expiryDate");
 
-        pefChart.setExtraBottomOffset(20f);
+                String display = "";
 
-        pefChart.getDescription().setEnabled(false);
-        pefChart.getLegend().setEnabled(false);
+                if (name != null) display += name;
+                if (amount != null) display += ":  " + amount;
+                tvRescueName.setText(display.isEmpty() ? "" : display);
 
-        pefChart.setData(new LineData(dataSet));
-        pefChart.invalidate();
-    }
-
-    private LocalDate getStartOfWeek() {
-        LocalDate today = LocalDate.now();
-        return today.with(DayOfWeek.SUNDAY);
-    }
-
-    private LocalDate getEndOfWeek() {
-        LocalDate today = LocalDate.now();
-        return today.with(DayOfWeek.SATURDAY);
-    }
-
-    private int[] countRescuesThisWeek(ArrayList<Long> timestamps) {
-        int[] counts = new int[7];
-
-        LocalDate start = getStartOfWeek();
-        LocalDate end = getEndOfWeek();
-
-        for (long ts : timestamps) {
-            LocalDate date = Instant.ofEpochMilli(ts)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            if (!date.isBefore(start) && !date.isAfter(end)) {
-                int dayIndex = date.getDayOfWeek().getValue() % 7;
-                counts[dayIndex]++;
+                tvRescuePurchase.setText(purchase != null ? "Purchase Date: " +  formatDate(purchase) : "-");
+                tvRescueExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
             }
-        }
+        });
 
-        return counts;
-    }
+        controllerRef.get().addOnSuccessListener(ctrlDoc -> {
+            if (ctrlDoc.exists()) {
+                String name = ctrlDoc.getString("name");
+                Long amount = ctrlDoc.getLong("amount");
 
-    public void generateProviderReport(int months) {
-        // TODO: fetch real values from Firestore
-        String childName = "John Doe";
-        String childDob = "August 12, 2006";
-        String parentName = "Jane Doe";
-        String parentContact = "faiza.khanc@gmail.com";
+                Timestamp purchase = ctrlDoc.getTimestamp("purchaseDate");
+                Timestamp expiry = ctrlDoc.getTimestamp("expiryDate");
 
-        List<TriageIncident> incidents = new ArrayList<>();
-        incidents.add(new TriageIncident("Jan 12, 2025", "Wheeze, Cough, Chest Tightness"));
-        incidents.add(new TriageIncident("Feb 03, 2025", "Shortness of Breath"));
+                String display = "";
 
-        PdfDocument pdf = new PdfDocument();
-        Paint titlePaint = new Paint();
-        Paint textPaint = new Paint();
-        Paint boxPaint = new Paint();
-
-        PdfDocument.PageInfo pageInfo =
-                new PdfDocument.PageInfo.Builder(595, 842, 1).create();
-        PdfDocument.Page page = pdf.startPage(pageInfo);
-        Canvas canvas = page.getCanvas();
-
-        titlePaint.setTextAlign(Paint.Align.CENTER);
-        titlePaint.setTextSize(28);
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Provider Report", pageInfo.getPageWidth() / 2f, 80, titlePaint);
-
-        titlePaint.setTextSize(20);
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        canvas.drawText("Last " + months + " Months", pageInfo.getPageWidth() / 2f, 120, titlePaint);
-
-        int left = 40;
-        int top = 160;
-        int right = pageInfo.getPageWidth() - 40;
-        int bottom = top + 180;
-
-        boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(3);
-        canvas.drawRect(left, top, right, bottom, boxPaint);
-
-        textPaint.setTextSize(18);
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        textPaint.setTextAlign(Paint.Align.LEFT);
-
-        int textY = top + 40;
-        int padding = 35;
-
-        canvas.drawText("Child’s Name: " + childName, left + 20, textY, textPaint);
-        canvas.drawText("Date of Birth: " + childDob, left + 20, textY + padding, textPaint);
-        canvas.drawText("Parent’s Name: " + parentName, left + 20, textY + padding * 2, textPaint);
-        canvas.drawText("Parent’s Contact: " + parentContact, left + 20, textY + padding * 3, textPaint);
-
-        int tableTop = bottom + 40;
-        int headerHeight = 50;
-
-        textPaint.setTextSize(18);
-        canvas.drawRect(left, tableTop, right, tableTop + headerHeight, boxPaint);
-        canvas.drawText("Triage Incidents", left + 20, tableTop + 32, textPaint);
-
-        int currentY = tableTop + headerHeight;
-
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        textPaint.setTextSize(16);
-
-        for (TriageIncident incident : incidents) {
-            float symptomsX = left + 200;
-            float availableWidth = right - symptomsX - 20;
-
-            List<String> wrappedLines = wrapTextLines(
-                    "Symptoms: " + incident.symptoms,
-                    textPaint,
-                    availableWidth
-            );
-
-            float lineHeight = textPaint.getTextSize() + 6;
-            float dynamicRowHeight = Math.max(50, lineHeight * wrappedLines.size() + 20);
-
-            canvas.drawRect(left, currentY, right, currentY + dynamicRowHeight, boxPaint);
-            canvas.drawText("• " + incident.date, left + 20, currentY + 32, textPaint);
-
-            float lineY = currentY + 32;
-            for (String line : wrappedLines) {
-                canvas.drawText(line, symptomsX, lineY, textPaint);
-                lineY += lineHeight;
+                if (name != null) display += name;
+                if (amount != null) display += ":  " + amount;
+                tvControllerName.setText(display.isEmpty() ? "" : display);
+                tvControllerPurchase.setText(purchase != null ? "Purchase Date: " + formatDate(purchase) : "-");
+                tvControllerExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
             }
-
-            currentY += dynamicRowHeight;
-        }
-
-        pdf.finishPage(page);
-
-        File path = new File(requireContext().getExternalFilesDir(null), "provider_report.pdf");
-        try {
-            FileOutputStream fos = new FileOutputStream(path);
-            pdf.writeTo(fos);
-            fos.close();
-            Toast.makeText(getContext(), "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-
-        pdf.close();
-        openPdf(path);
+        });
     }
 
-    private List<String> wrapTextLines(String text, Paint paint, float maxWidth) {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder current = new StringBuilder();
-
-        for (String word : words) {
-            String test = current + word + " ";
-            if (paint.measureText(test) > maxWidth) {
-                lines.add(current.toString());
-                current = new StringBuilder(word + " ");
-            } else {
-                current.append(word).append(" ");
-            }
-        }
-
-        if (current.length() > 0) {
-            lines.add(current.toString());
-        }
-        return lines;
+    private String formatDate(Timestamp ts) {
+        Date date = ts.toDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+        return sdf.format(date);
     }
 
-    private void openPdf(File file) {
-        Uri uri = FileProvider.getUriForFile(
-                requireContext(),
-                requireContext().getPackageName() + ".provider",
-                file
-        );
-
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri, "application/pdf");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "No PDF viewer found", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     public static class TriageIncident {
         String date;
