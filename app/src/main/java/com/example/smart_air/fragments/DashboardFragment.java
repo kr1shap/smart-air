@@ -36,6 +36,7 @@ import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.InventoryData;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -91,12 +92,16 @@ public class DashboardFragment extends Fragment {
     TextView tvLastRescue;
     private LinearLayout cardLastRescue, cardWeekly, inventoryGroup, trendSection;
     private Button btnManage, btnProviderReport;
+    //For shared label tag on top
+    View sharedProviderLabel;
+    TextView sharedLabelText;
     // CACHES
     private final Map<String, Map<String, Pair<String, Integer>>> zoneCache = new HashMap<>(); //uid - > date -> (zonecol, zonenum)
     private final Map<String, List<DocumentSnapshot>> weeklyRescueCache = new HashMap<>();
     private final Map<String, Date> latestRescueCache = new HashMap<>();
     private final Map<String, List<DocumentSnapshot>> pefCache = new HashMap<>();
     private final Map<String, InventoryData> inventoryCache = new HashMap<>();
+    private final Map<String, Map<String, Boolean>> childSharingCache = new HashMap<>(); //for parent - as parent can only change cache
     //LISTENER FOR TOGGLES
     private ListenerRegistration childListener;
 
@@ -148,6 +153,9 @@ public class DashboardFragment extends Fragment {
         //load the not avail text
         rescueChartUnavailableRescue = view.findViewById(R.id.rescueChartUnavailableRescue);
         rescueChartUnavailablePEF = view.findViewById(R.id.rescueChartUnavailablePEF);
+        //load the shared provider tag
+        sharedProviderLabel = view.findViewById(R.id.sharedProviderLabel);
+        sharedLabelText = view.findViewById(R.id.sharedLabelText);
 
         btnManage = view.findViewById(R.id.btnManageChildren);
         btnProviderReport = view.findViewById(R.id.btnProviderReport);
@@ -268,7 +276,10 @@ public class DashboardFragment extends Fragment {
             correspondingUid = children.get(idx).getChildUid();
             if (!"child".equals(userRole)) {
                 Child child = children.get(idx);
-                tvTitle.setText(child.getName() + "’s Dashboard");
+                //extract name only
+                String fullName = child.getName();
+                String displayName = fullName.replaceFirst("\\[.*", "").trim();
+                tvTitle.setText(displayName + "’s Dashboard");
                 loadDashboardForChild(correspondingUid);
             }
         });
@@ -278,6 +289,9 @@ public class DashboardFragment extends Fragment {
             List<Child> list = sharedModel.getAllChildren().getValue();
             if (list == null || list.isEmpty() || idx == null) return;
             correspondingUid = list.get(idx).getChildUid();
+            if("parent".equals(userRole)) {
+                loadTogglesParent(correspondingUid); //load the current toggles for the child
+            }
             if (!"child".equals(userRole)) {
                 tvTitle.setText(sharedModel.getCurrentChildName() + "’s Dashboard");
                 loadDashboardForChild(correspondingUid);
@@ -328,6 +342,57 @@ public class DashboardFragment extends Fragment {
     }
     private void unfreezeAllPages() {
         for (int i = 0; i < trendsCarousel.getChildCount(); i++) { trendsCarousel.getChildAt(i).setVisibility(View.VISIBLE); }
+    }
+
+    //Load toggles for the parent
+    private void loadTogglesParent(String childUid) {
+        if (childUid == null) return;
+
+        // check cache first
+        if (childSharingCache.containsKey(childUid)) { applySharingTogglesParent(childSharingCache.get(childUid)); return; }
+
+        // fetch
+        db.collection("children")
+                .document(childUid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc == null || !doc.exists()) return;
+                    Map<String, Boolean> sharing = (Map<String, Boolean>) doc.get("sharing");
+                    if (sharing == null) sharing = new HashMap<>();
+                    //default to false
+                    sharing.putIfAbsent("rescue", false);
+                    sharing.putIfAbsent("controller", false);
+                    sharing.putIfAbsent("pef", false);
+                    sharing.putIfAbsent("charts", false);
+                    // cache
+                    childSharingCache.put(childUid, sharing);
+                    // apply toggles to the UI for parent
+                    applySharingTogglesParent(sharing);
+                });
+    }
+
+    private void applySharingTogglesParent(Map<String, Boolean> sharing) {
+        //now apply the 'visible to provider' tag on top
+        if (sharing == null || sharing.isEmpty()) {
+            sharedLabelText.setText("Shared with Provider: None");
+            sharedProviderLabel.setVisibility(View.GONE);
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Shared with Provider: ");
+        boolean first = true;
+
+        for (Map.Entry<String, Boolean> entry : sharing.entrySet()) {
+            if (entry.getValue() != null && entry.getValue()) {
+                String labelText = StringFormatters.getLabelForKey(entry.getKey());
+                if (!first) sb.append(", "); //dont append comma if its not first
+                sb.append(labelText);
+                first = false;
+            }
+        }
+
+        if (first) { sharedLabelText.setText("Shared with Provider: None"); }
+        else { sharedLabelText.setText(sb.toString()); }
+        sharedProviderLabel.setVisibility(View.VISIBLE);
     }
 
     private void loadDashboardForChild(String childUid) {
@@ -524,7 +589,6 @@ public class DashboardFragment extends Fragment {
                 counts[index] += 1; // count 1 per document
             }
         }
-
         drawRescueChartDynamic(counts, days);
     }
 

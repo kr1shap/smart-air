@@ -23,4 +23,25 @@ public class StringFormatters {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         return fmt.format(new Date()); // today's date string
     }
+
+    public static String getLabelForKey(String key) {
+        switch (key) {
+            case "rescue":
+                return "Rescue Logs";
+            case "controller":
+                return "Controller Summary";
+            case "pef":
+                return "PEF Trend";
+            case "charts":
+                return "Charts";
+            case "symptoms":
+                return "Symptoms";
+            case "triggers":
+                return "Triggers";
+            case "triage":
+                return "Triage Incidents";
+            default:
+                return key; // fallback
+        }
+    }
 }
