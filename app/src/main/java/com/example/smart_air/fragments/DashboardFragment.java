@@ -18,6 +18,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -93,6 +94,13 @@ public class DashboardFragment extends Fragment {
     private AuthRepository repo;
     private TextView tvLatestRescue;
     private int currentTrendIndex = 0;
+    private boolean allowRescue;
+    private boolean allowController;
+    private boolean allowPEF;
+    View tvRescuesWeekly;
+    TextView tvLastRescue;
+    TextView RescueInventory;
+    TextView ControllerInventory;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -224,7 +232,7 @@ public class DashboardFragment extends Fragment {
 
             userRole = role;
 
-            if (role.equals("child")|| role.equals("provider")) {
+            if (role.equals("child")) {
 
                 // loads childId and childName from firestore db
                 loadUserAndChildIds(tvTitle, () -> {
@@ -257,6 +265,82 @@ public class DashboardFragment extends Fragment {
 
 
             }
+            else if (role.equals("provider")) {
+
+                btnManage.setVisibility(View.GONE);
+                btnProviderReport.setVisibility(View.GONE);
+
+                loadUserAndChildIds(tvTitle, () -> {
+
+                    correspondingUid = childId;
+
+                    FirebaseFirestore.getInstance()
+                            .collection("children")
+                            .document(correspondingUid)
+                            .get()
+                            .addOnSuccessListener(doc -> {
+
+                                allowRescue = true;
+                                allowController = true;
+                                allowPEF = true;
+
+                                Map<String, Object> sharing = (Map<String, Object>) doc.get("sharing");
+                                if (sharing != null) {
+
+                                    Object rescueVal = sharing.get("rescue");
+                                    Object controllerVal = sharing.get("controller");
+                                    Object pefVal = sharing.get("pef");
+
+                                    if (rescueVal instanceof Boolean) {
+                                        allowRescue = (Boolean) rescueVal;
+                                    }
+                                    if (controllerVal instanceof Boolean) {
+                                        allowController = (Boolean) controllerVal;
+                                    }
+                                    if (pefVal instanceof Boolean) {
+                                        allowPEF = (Boolean) pefVal;
+                                    }
+                                }
+
+
+
+                                tvRescuesWeekly = requireView().findViewById(R.id.tvRescuesWeekly);
+                                tvLastRescue = requireView().findViewById(R.id.tvLatestRescue);
+
+
+                                RescueInventory = requireView().findViewById(R.id.RescueInventory);
+                                ControllerInventory = requireView().findViewById(R.id.ControllerInventory);
+
+
+                                rescueChart = requireView().findViewById(R.id.rescueChart);
+                                pefChart = requireView().findViewById(R.id.pefChart);
+
+                                tvRescuesWeekly.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                                tvLastRescue.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+
+                                RescueInventory.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                                ControllerInventory.setVisibility(allowController ? View.VISIBLE : View.GONE);
+
+                                rescueChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                                pefChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+
+
+                                View trendsCarousel = requireView().findViewById(R.id.trendsCarousel);
+
+                                if (!allowRescue && !allowPEF) {
+                                    trendsCarousel.setVisibility(View.GONE);
+                                } else {
+                                    trendsCarousel.setVisibility(View.VISIBLE);
+                                }
+
+                                loadDashboardForChild(correspondingUid);
+                            });
+                });
+            }
+
+
+
+
         });
 
         // after getting full list of children
@@ -386,16 +470,12 @@ public class DashboardFragment extends Fragment {
         }
     }
 
+
     private void loadDashboardForChild(String childUid) {
         if (childUid == null) return;
-
-        this.childId = childUid;
-
-        loadTodayZone();
-        loadZoneHistory();
-        loadWeeklyRescues(7);
-        loadLatestRescueDate();
-        loadPEFTrend(7);
+        this.childId = childUid; loadTodayZone();
+        loadZoneHistory(); loadWeeklyRescues(7);
+        loadLatestRescueDate(); loadPEFTrend(7);
         loadInventory();
     }
 
@@ -466,6 +546,11 @@ public class DashboardFragment extends Fragment {
     private void loadWeeklyRescues(int days) {
         if (childId == null) return;
 
+        if ("provider".equals(userRole) && !allowRescue){
+            tvWeeklyRescues.setText("Not Available");
+            return;
+        }
+
         LocalDate cutoff = LocalDate.now().minusDays(days - 1);
 
         db.collection("incidentLog")
@@ -526,13 +611,18 @@ public class DashboardFragment extends Fragment {
     private void loadLatestRescueDate() {
         if (childId == null) return;
 
+        if ("provider".equals(userRole) && !allowRescue){
+            tvLatestRescue.setText("Not Available");
+            return;
+        }
+
         db.collection("incidentLog")
                 .document(childId)
                 .collection("triageSessions")
                 .orderBy("date", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
+                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLatestRescue);
 
                     if (snapshot.isEmpty()) {
                         tvLatestRescue.setText("No rescues yet");
@@ -567,6 +657,10 @@ public class DashboardFragment extends Fragment {
 
     private void drawRescueChartDynamic(int[] counts, int days) {
         if (rescueChart == null) return;
+
+        if ("provider".equals(userRole) && !allowRescue){
+            return;
+        }
 
 
         ArrayList<BarEntry> entries = new ArrayList<>();
@@ -633,6 +727,10 @@ public class DashboardFragment extends Fragment {
 
     private void loadPEFTrend(int days) {
         if (childId == null) return;
+
+        if ("provider".equals(userRole) && !allowRescue){
+            return;
+        }
 
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(days - 1);
@@ -809,54 +907,68 @@ public class DashboardFragment extends Fragment {
     private void loadInventory() {
         if (childId == null) return;
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        if ("provider".equals(userRole) && !allowRescue){
+            tvRescueName.setText("Not Available");
+            tvRescueExpiry.setText(" ");
+            tvRescuePurchase.setText(" ");
+        }
+        if ("provider".equals(userRole) && !allowController){
+            tvControllerName.setText("Not Available");
+            tvControllerExpiry.setText(" ");
+            tvControllerPurchase.setText(" ");
+        }
+        else{
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        DocumentReference rescueRef = db.collection("children")
-                .document(childId)
-                .collection("inventory")
-                .document("rescue");
+            DocumentReference rescueRef = db.collection("children")
+                    .document(childId)
+                    .collection("inventory")
+                    .document("rescue");
 
-        DocumentReference controllerRef = db.collection("children")
-                .document(childId)
-                .collection("inventory")
-                .document("controller");
+            DocumentReference controllerRef = db.collection("children")
+                    .document(childId)
+                    .collection("inventory")
+                    .document("controller");
 
-        rescueRef.get().addOnSuccessListener(rescueDoc -> {
-            if (rescueDoc.exists()) {
-                String name = rescueDoc.getString("name");
-                Long amount = rescueDoc.getLong("amount");
+            rescueRef.get().addOnSuccessListener(rescueDoc -> {
+                if (rescueDoc.exists()) {
+                    String name = rescueDoc.getString("name");
+                    Long amount = rescueDoc.getLong("amount");
 
-                Timestamp purchase = rescueDoc.getTimestamp("purchaseDate");
-                Timestamp expiry = rescueDoc.getTimestamp("expiryDate");
+                    Timestamp purchase = rescueDoc.getTimestamp("purchaseDate");
+                    Timestamp expiry = rescueDoc.getTimestamp("expiryDate");
 
-                String display = "";
+                    String display = "";
 
-                if (name != null) display += name;
-                if (amount != null) display += ":  " + amount;
-                tvRescueName.setText(display.isEmpty() ? "" : display);
+                    if (name != null) display += name;
+                    if (amount != null) display += ":  " + amount;
+                    tvRescueName.setText(display.isEmpty() ? "" : display);
 
-                tvRescuePurchase.setText(purchase != null ? "Purchase Date: " +  formatDate(purchase) : "-");
-                tvRescueExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
-            }
-        });
+                    tvRescuePurchase.setText(purchase != null ? "Purchase Date: " +  formatDate(purchase) : "-");
+                    tvRescueExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
+                }
+            });
 
-        controllerRef.get().addOnSuccessListener(ctrlDoc -> {
-            if (ctrlDoc.exists()) {
-                String name = ctrlDoc.getString("name");
-                Long amount = ctrlDoc.getLong("amount");
+            controllerRef.get().addOnSuccessListener(ctrlDoc -> {
+                if (ctrlDoc.exists()) {
+                    String name = ctrlDoc.getString("name");
+                    Long amount = ctrlDoc.getLong("amount");
 
-                Timestamp purchase = ctrlDoc.getTimestamp("purchaseDate");
-                Timestamp expiry = ctrlDoc.getTimestamp("expiryDate");
+                    Timestamp purchase = ctrlDoc.getTimestamp("purchaseDate");
+                    Timestamp expiry = ctrlDoc.getTimestamp("expiryDate");
 
-                String display = "";
+                    String display = "";
 
-                if (name != null) display += name;
-                if (amount != null) display += ":  " + amount;
-                tvControllerName.setText(display.isEmpty() ? "" : display);
-                tvControllerPurchase.setText(purchase != null ? "Purchase Date: " + formatDate(purchase) : "-");
-                tvControllerExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
-            }
-        });
+                    if (name != null) display += name;
+                    if (amount != null) display += ":  " + amount;
+                    tvControllerName.setText(display.isEmpty() ? "" : display);
+                    tvControllerPurchase.setText(purchase != null ? "Purchase Date: " + formatDate(purchase) : "-");
+                    tvControllerExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
+                }
+            });
+
+        }
+
     }
 
     private String formatDate(Timestamp ts) {

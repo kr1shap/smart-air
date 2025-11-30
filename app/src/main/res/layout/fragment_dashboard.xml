@@ -72,6 +72,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/RescueGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -91,6 +92,7 @@
                 android:layout_marginEnd="8dp">
 
                 <TextView
+                    android:id="@+id/tvRescuesWeekly"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -135,6 +137,7 @@
                 android:layout_marginStart="8dp">
 
                 <TextView
+                    android:id="@+id/tvLatestRescue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Last Rescue"
@@ -156,7 +159,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="6 days ago"
+                    android:text="Loading..."
                     android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
                     android:layout_marginTop="8dp"
@@ -167,7 +170,7 @@
 
         <!-- Inventory -->
         <LinearLayout
-            android:id="@+id/inventorySection"
+            android:id="@+id/inventoryGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -192,81 +195,95 @@
                 android:layout_marginTop="6dp"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- Rescue -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/RescueInventory"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Rescue:"
-                android:textSize="18sp"
-                android:fontFamily="@font/dm_sans_bold"
-                android:textColor="@color/colour_darkBlue"/>
+                android:orientation="vertical">
+                <!-- Rescue -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rescue:"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textColor="@color/colour_darkBlue"/>
 
-            <TextView
-                android:id="@+id/tvRescueName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textColor="@color/colour_darkBlue"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/tvRescueName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textColor="@color/colour_darkBlue"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
 
-            <TextView
-                android:id="@+id/tvRescuePurchase"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textColor="@color/colour_darkBlue"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/tvRescuePurchase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
 
-            <TextView
-                android:id="@+id/tvRescueExpiry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textColor="@color/colour_darkBlue"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/tvRescueExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
 
-            <!-- Controller -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Controller:"
-                android:textSize="18sp"
-                android:fontFamily="@font/dm_sans_bold"
-                android:textColor="@color/colour_darkBlue" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvControllerName"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/ControllerInventory"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="-"
-                android:textColor="@color/colour_darkBlue"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
-            <TextView
-                android:id="@+id/tvControllerPurchase"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textColor="@color/colour_darkBlue"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
-            <TextView
-                android:id="@+id/tvControllerExpiry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textColor="@color/colour_darkBlue"
-                android:fontFamily="@font/dm_sans_medium"
-                android:textSize="16sp"
-                android:layout_marginBottom="10dp"/>
+                android:orientation="vertical">
+
+                <!-- Controller -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Controller:"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textColor="@color/colour_darkBlue" />
+
+                <TextView
+                    android:id="@+id/tvControllerName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/tvControllerPurchase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/tvControllerExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
