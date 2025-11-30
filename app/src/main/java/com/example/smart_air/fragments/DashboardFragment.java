@@ -280,6 +280,7 @@ public class DashboardFragment extends Fragment {
                 String fullName = child.getName();
                 String displayName = fullName.replaceFirst("\\[.*", "").trim();
                 tvTitle.setText(displayName + "’s Dashboard");
+                if("parent".equals(userRole)) loadTogglesParent(correspondingUid); //load the current toggles for the child
                 loadDashboardForChild(correspondingUid);
             }
         });
@@ -293,7 +294,10 @@ public class DashboardFragment extends Fragment {
                 loadTogglesParent(correspondingUid); //load the current toggles for the child
             }
             if (!"child".equals(userRole)) {
-                tvTitle.setText(sharedModel.getCurrentChildName() + "’s Dashboard");
+                //extract name only
+                String fullName = list.get(idx).getName();
+                String displayName = fullName.replaceFirst("\\[.*", "").trim();
+                tvTitle.setText(displayName + "’s Dashboard");
                 loadDashboardForChild(correspondingUid);
             }
         });
