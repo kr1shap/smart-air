@@ -167,9 +167,10 @@ public class MainActivity extends AppCompatActivity {
 
             if (id == R.id.home) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof DashboardFragment)) {
-                    selectedFragment = new DashboardFragment();
-                }
+                // TODO
+//                if (!(current instanceof DashboardFragment)) {
+//                    selectedFragment = new DashboardFragment();
+//                }
             } else if (id == R.id.triage) {
                 // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
@@ -301,9 +302,10 @@ public class MainActivity extends AppCompatActivity {
                             setBottomNavButtoms(false);
                             // go back to home fragment if no children
                             Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                            if (!(current instanceof DashboardFragment)) {
-                                selectedFragment = new DashboardFragment();
-                            }
+                            // TODO
+//                            if (!(current instanceof DashboardFragment)) {
+//                                selectedFragment = new DashboardFragment();
+//                            }
                         } else {
                             setBottomNavButtoms(true);
                         }
@@ -472,9 +474,10 @@ public class MainActivity extends AppCompatActivity {
                 setBottomNavButtoms(false);
                 // go back to home fragment if no children
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                if (!(current instanceof DashboardFragment)) {
-                    selectedFragment = new DashboardFragment();
-                }
+                // TODO
+//                if (!(current instanceof DashboardFragment)) {
+//                    selectedFragment = new DashboardFragment();
+//                }
             } else {
                 setBottomNavButtoms(true);
             }

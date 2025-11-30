@@ -183,20 +183,20 @@ public class HistoryFragment extends Fragment {
             // set date to compare too based on it
             Calendar today = Calendar.getInstance();
             switch (selected) {
+                case "Past 5 months":
+                    today.add(Calendar.MONTH, -5);
+                    break;
+                case "Past 4 months":
+                    today.add(Calendar.MONTH, -4);
+                    break;
                 case "Past 3 months":
                     today.add(Calendar.MONTH, -3);
                     break;
+                case "Past 2 months":
+                    today.add(Calendar.MONTH, -2);
+                    break;
                 case "Past month":
                     today.add(Calendar.MONTH, -1);
-                    break;
-                case "Past 2 weeks":
-                    today.add(Calendar.DAY_OF_YEAR, -14);
-                    break;
-                case "Past week":
-                    today.add(Calendar.DAY_OF_YEAR, -7);
-                    break;
-                case "Past 2 days":
-                    today.add(Calendar.DAY_OF_YEAR, -2);
                     break;
                 default:
                     today.add(Calendar.MONTH, -6);
@@ -544,7 +544,7 @@ public class HistoryFragment extends Fragment {
         String [] coughingLevelOptions = {"","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
         String [] triggersOptions = {"","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
         String [] triageOptions = {"","Days with Triage","Days without Triage"};
-        String [] dateOptions = {"", "Past 3 months", "Past month", "Past 2 weeks", "Past week", "Past 2 days"};
+        String [] dateOptions = {"", "Past 5 months", "Past 4 months", "Past 3 months", "Past 2 months", "Past month"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);
