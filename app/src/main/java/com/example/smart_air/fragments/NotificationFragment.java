@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,6 +23,7 @@ import com.example.smart_air.R;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.adapter.NotificationsAdapter;
 import com.example.smart_air.modelClasses.Notification;
+import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -39,7 +41,7 @@ public class NotificationFragment extends Fragment {
     private List<Notification> notificationList = new ArrayList<>();
     private ListenerRegistration notificationListener;
     private ProgressBar progressBar;
-    private Map<String, String> childNameCache = new HashMap<>(); //to not fetch 100 times
+    NotificationViewModel viewModel;
 
     @Nullable
     @Override
@@ -67,84 +69,17 @@ public class NotificationFragment extends Fragment {
         //set adapter for recycle view
         adapter = new NotificationsAdapter(notificationList, this::markNotificationAsRead);
         recyclerView.setAdapter(adapter);
-        fetchUserAndNotifications();
-    }
-
-    private void fetchUserAndNotifications() {
-        if (repo.getCurrentUser() == null) {
-            redirectToLogin(); return;
-        }
-        String uid = repo.getCurrentUser().getUid();
-        repo.getUserDoc(uid)
-            .addOnSuccessListener(userDoc -> {
-                if (!userDoc.exists()) { redirectToLogin(); return; }
-                String role = userDoc.getString("role");
-                if (role != null && role.equals("parent")) {
-                    listenForNotifications(uid);
-                } else redirectToHome();
-            })
-            .addOnFailureListener(e -> redirectToLogin());
-    }
-
-    //function listens for notifications given uid for parent
-    private void listenForNotifications(String uid) {
-        // show loading
-        progressBar.setVisibility(View.VISIBLE);
-        notificationListener = notifRepo.listenForNotifications(uid, (value, error) -> {
-            progressBar.setVisibility(View.GONE); //done loading
-            if (error != null || value == null) return;
+        //use viewmodel
+        viewModel = new ViewModelProvider(requireActivity()).get(NotificationViewModel.class);
+        viewModel.getNotifications().observe(getViewLifecycleOwner(), list -> {
             notificationList.clear();
-            //get all documents
-            for (DocumentSnapshot doc : value.getDocuments()) {
-                Notification notif = doc.toObject(Notification.class);
-                if (notif != null) {
-                    notif.setNotifUid(doc.getId());
-                    notif.setChildName("N/A"); //default (just in case)
-                    notificationList.add(notif); // add immediately
-                }
-            }
-
+            notificationList.addAll(list);
             updateEmptyState();
-            sortAndUpdate();
-            adapter.notifyDataSetChanged(); // update ui
-
-            // fetch child names async
-            for (Notification notif : notificationList) {
-                String childUid = notif.getChildUid();
-                if (childUid == null || childUid.isEmpty()) continue;
-
-                if (childNameCache.containsKey(childUid)) { //if in cache, all good
-                    notif.setChildName(childNameCache.get(childUid));
-                    continue;
-                }
-                //fetch if not in cache
-                notifRepo.fetchNotifChildName(childUid)
-                        .addOnSuccessListener(childDoc -> {
-                            if (childDoc.exists()) {
-                                String name = childDoc.getString("name");
-                                childNameCache.put(childUid, name);
-                                //update all notifs with that uid with that name
-                                for (Notification n : notificationList) {
-                                    if (childUid.equals(n.getChildUid())) { n.setChildName(name); }
-                                }
-                                adapter.notifyDataSetChanged();
-                            }
-                        })
-                        .addOnFailureListener(e -> Log.e("Notif fragment", "Failed to fetch child name", e));
-            }
+            adapter.notifyDataSetChanged();
+            progressBar.setVisibility(View.GONE);
         });
-    }
-
-    //sort list
-    private void sortAndUpdate() {
-        notificationList.sort((a, b) ->
-                Long.compare(
-                        Notification.convertTimestampToMillis(b.getTimestamp()),
-                        Notification.convertTimestampToMillis(a.getTimestamp())
-                )
-        );
-        adapter.notifyDataSetChanged();
-        updateEmptyState();
+        //listen after everything is setup
+        viewModel.startListening(repo.getCurrentUser().getUid());
     }
 
     //update state if no notifs
@@ -162,7 +97,6 @@ public class NotificationFragment extends Fragment {
         String notifId = notification.getNotifUid();
 
         notificationList.remove(notification);
-        sortAndUpdate();
 
         notifRepo.markNotificationAsRead(uid, notifId)
                 .addOnSuccessListener(aVoid -> {
@@ -179,12 +113,6 @@ public class NotificationFragment extends Fragment {
         Toast.makeText(getContext(), "Please sign in again", Toast.LENGTH_SHORT).show();
         startActivity(new Intent(getActivity(), LandingPageActivity.class));
         getActivity().finish();
-    }
-
-    private void redirectToHome() {
-        if (getActivity() == null) return;
-        Toast.makeText(getContext(), "Unauthorized page", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(getActivity(), MainActivity.class));
     }
 
     @Override

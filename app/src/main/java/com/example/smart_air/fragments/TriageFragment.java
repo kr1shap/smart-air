@@ -576,7 +576,7 @@ public class TriageFragment extends Fragment {
                 });
     }
     /*
-    get child's name
+    get the child's name
      */
     public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -621,9 +621,7 @@ public class TriageFragment extends Fragment {
                         }
                         NotificationRepository notifRepo = new NotificationRepository();
                         for (String pUid : parentUids) {
-                            if (pUid == null){
-                                continue;
-                            }
+                            if (pUid == null){ continue; }
                             Notification notif = new Notification(cUid, false, Timestamp.now(), NotifType.TRIAGE, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
