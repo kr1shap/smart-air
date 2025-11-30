@@ -373,9 +373,12 @@ public class LogDoseFragment extends Fragment {
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
-
                         long updatedAmount = currentAmount - puffs;
-
+                        // sends alert if medication is less than 20% of threshold
+                        if (updatedAmount <= lessthan20) {
+                            Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
+                            sendAlert(uid,0); //since only parent has access to inventory
+                        }
                         // update the *same doc* we just read
                         doc.getReference()
                                 .update("amount", updatedAmount)
@@ -495,8 +498,7 @@ public class LogDoseFragment extends Fragment {
    }
    /*
     used to send rapid rescue or inventory notifications to all parents
-    if child use: get uid
-    if parent use: get sharedmodel stored childuid
+
    */
    public void sendAlert(String cUid, int choice) {
        if (cUid == null) {
