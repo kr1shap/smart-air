@@ -57,6 +57,8 @@ public class HistoryItem {
 
         // setting up card based parent or child
 
+        boolean childMissing = (coughingChild < 0 || activityChild < 0);
+        boolean parentMissing = (coughingParent < 0 || activityParent < 0);
         this.date = date;
         this.nightChild = nightChild;
         this.nightParent = nightParent;
@@ -68,13 +70,13 @@ public class HistoryItem {
         int coughingAvg = 0;
         int activityAvg = 0;
 
-        if(coughingChild == -5 && coughingParent != -5){
+        if(childMissing && !parentMissing){
             cardType = typeOfCard.parentOnly;
             this.activityChild = 0;
             coughingAvg = this.coughingParent / 33;
             activityAvg = this.activityParent / 10;
         }
-        else if(coughingChild != -5 && coughingParent == -5){
+        else if(!childMissing && parentMissing){
             cardType = typeOfCard.childOnly;
             this.activityParent = 0;
             coughingAvg = this.coughingChild / 33;
