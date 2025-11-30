@@ -19,7 +19,7 @@
     <string name="login">Login</string>
     <string name="signup">Signup</string>
     <string name="username_placeholder">Enter your username...</string>
-    <string name="dummyDomain">@smartAir.com</string>
+    <string name="dummyDomain">\@smartAir.com</string>
     <string name="forgot_password">Forgot password?</string>
     <string-array name="role_options">
         <item>Parent</item>

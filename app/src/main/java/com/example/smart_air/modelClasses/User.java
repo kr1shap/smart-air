@@ -1,6 +1,7 @@
 package com.example.smart_air.modelClasses;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 public class User implements Serializable {
@@ -8,7 +9,7 @@ public class User implements Serializable {
     private String email;
     private String username;
     private String role; // "parent", "provider", "child"
-    private List<String> parentUid; // provider and child linkage
+    private List<String>  parentUid; // provider and child linkage
     private List<String> childrenUid; //for parents
     private long createdAt;
 
@@ -38,8 +39,10 @@ public class User implements Serializable {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 
-    public List<String> getParentUid() { return parentUid; }
-    public void setParentUid(List<String> parentUid) { this.parentUid = parentUid; }
+    public List<String> getParentUid() {
+        return parentUid;
+    }
+    public void setParentUid(List<String> parentUid) { this.parentUid = parentUid;}
 
     public List<String> getChildrenUid() { return childrenUid; }
     public void setChildrenUid(List<String> childrenUid) { this.childrenUid = childrenUid; }

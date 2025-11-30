@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:text="Generate Provider Report"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Spinner
+        android:id="@+id/spinnerMonths"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/dm_sans_bold"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/btnGenerate"
+        android:text="Generate PDF"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/btn_rounded"
+        android:backgroundTint="@null"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textSize="18sp"
+        android:textColor="@color/colour_white"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnCancel"
+        android:text="Cancel"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/btn_rounded"
+        android:backgroundTint="@null"
+        android:fontFamily="@font/dm_sans_bold"
+        android:textSize="18sp"
+        android:textColor="@color/colour_white"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"/>
+
+</LinearLayout>
