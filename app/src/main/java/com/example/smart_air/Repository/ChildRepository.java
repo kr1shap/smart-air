@@ -7,6 +7,7 @@ import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -21,8 +22,13 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -119,7 +125,7 @@ public class ChildRepository {
     }
 
     // validate invite code
-    public void validateInviteCode(String code, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
+    public void validateInviteCode(String code, String role, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
         Log.d(TAG, "Validating invite code: " + code);
 
         db.collection("invites")
@@ -137,6 +143,12 @@ public class ChildRepository {
                     Invite invite = documentSnapshot.toObject(Invite.class);
                     if (invite == null) {
                         Log.e(TAG, "Failed to parse invite object");
+                        onFailure.onFailure(new Exception("Invalid code"));
+                        return;
+                    }
+
+                    //check if role is not matching
+                    if(invite.getTargetRole() != null && !invite.getTargetRole().equals(role)) {
                         onFailure.onFailure(new Exception("Invalid code"));
                         return;
                     }
@@ -166,21 +178,38 @@ public class ChildRepository {
                 });
     }
 
-    // use invite code (mark as used and link user)
+    // use invite code [PROVIDER] [MARK AS READ AND USED]
     public void useInviteCode(String code, String userUid, String role, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+        validateInviteCode(code, role, invite -> {
+            db.collection("users").document(userUid).get()
+                    .addOnSuccessListener(userSnapshot -> {
+                        if (userSnapshot.exists()) {
+                            List<String> parentUids = (List<String>) userSnapshot.get("parentUid");
+                            if (parentUids != null && parentUids.contains(invite.getParentUid())) {
+                                onFailure.onFailure(new Exception("You are already connected to this person."));
+                                return;
+                            }
+                        }
 
-        validateInviteCode(code, invite -> {
-            // mark invite as used
-            db.collection("invites")
-                    .document(code)
-                    .update("used", true)
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "Invite marked as used");
-                        // link user to parent based on role
-                        linkUserToParent(userUid, invite.getParentUid(), role, onSuccess, onFailure);
+                        // if not connected use the invite code
+                        db.collection("invites")
+                                .document(code)
+                                .update(
+                                        "usedByUid", userUid,
+                                        "used", true,
+                                        "usedByEmail", FirebaseInitalizer.getAuth().getCurrentUser().getEmail()
+                                )
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "Invite marked as used");
+                                    linkUserToParent(userUid, invite.getParentUid(), role, onSuccess, onFailure);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error marking invite as used", e);
+                                    onFailure.onFailure(e);
+                                });
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error marking invite as used", e);
+                        Log.e(TAG, "Error checking user's connections", e);
                         onFailure.onFailure(e);
                     });
         }, onFailure);
@@ -460,6 +489,8 @@ public class ChildRepository {
                     boolean rescueBadge = false;
                     int techniqueStreak = 0;
                     int controllerStreak = 0;
+                    String techniqueDate = null;
+                    String controllerDate = null;
 
                     if (snap.exists()) {
                         // badges map
@@ -478,6 +509,8 @@ public class ChildRepository {
                         if (techniqueStats != null) {
                             techniqueStreak = techniqueStats.get("currentStreak") != null ?
                                     ((Number) techniqueStats.get("currentStreak")).intValue() : 0;
+                            techniqueDate = techniqueStats.get("lastSessionDate") != null ?
+                                    (String) techniqueStats.get("lastSessionDate") : null;
                         }
 
                         // controllerStats map
@@ -486,8 +519,14 @@ public class ChildRepository {
 //                        if (controllerStats != null) {
 //                            controllerStreak = controllerStats.get("currentStreak") != null ?
 //                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
+                      //  controllerDate = controllerStats.get("lastSessionDate") != null ?
+                            //    (String) techniqueStats.get("lastSessionDate") : null;
 //                        }
+
                     }
+                    //UI change for technique streak - if streak invalid just change to 0 ui-based
+                    //next time child logs in a new session an actual change will be made
+                    if(techniqueDate != null && (StringFormatters.getToday().equals(techniqueDate) || StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
                     BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
                     taskSource.setResult(data);
                 })
