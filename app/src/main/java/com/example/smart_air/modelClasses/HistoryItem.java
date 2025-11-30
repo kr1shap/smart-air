@@ -59,6 +59,10 @@ public class HistoryItem {
         this.passFilter = true;
         this.pef = pef;
 
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
+
 
         // setting up card based parent or child
 
@@ -190,6 +194,10 @@ public class HistoryItem {
     // constructor for Triage Card
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
         this.passFilter = true;
+
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
         this.accDate = accDate;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         this.time = sdf.format(accDate);

@@ -58,6 +58,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.example.smart_air.fragments.MedicineTabFragment;
+
 
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
@@ -181,7 +183,10 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                //medicine fragment
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof MedicineTabFragment)) {
+                    selectedFragment = new MedicineTabFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
