@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedChildViewModel sharedModel;
     private ListenerRegistration parentListener; // listener for when parent gets new child
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
-    private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
+    private boolean removePage = true; // boolean for parent when they have no children and thus pages should be locked
 
 
     @Override
@@ -166,14 +166,16 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                // add fragment for dashboard
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else if (id == R.id.triage) {
                 // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof TriageFragment)) {
                     selectedFragment = new TriageFragment();
                 }
-                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
@@ -291,23 +293,20 @@ public class MainActivity extends AppCompatActivity {
                         List<String> list = user.getChildrenUid();
                         // if list is empty now removes daily check in
                         if (list.isEmpty()) {
-                            removeDailyCheckIn = true;
+                            removePage = true;
                         } else {
-                            removeDailyCheckIn = false;
+                            removePage = false;
                         }
-                        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-                        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-                        if (removeDailyCheckIn) {
-                            dailyCheckIn.setEnabled(false);
-                            dailyCheckIn.setCheckable(false);
-                            dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                            // TODO: go back to home fragment if on check in fragment
+                        if (removePage) {
+                            setBottomNavButtoms(false);
+                            // go back to home fragment if no children
+                            Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                            if (!(current instanceof DashboardFragment)) {
+                                selectedFragment = new DashboardFragment();
+                            }
                         } else {
-                            dailyCheckIn.setEnabled(true);
-                            dailyCheckIn.setCheckable(true);
-                            dailyCheckIn.setIcon(R.drawable.checkin);
+                            setBottomNavButtoms(true);
                         }
-                        dailyCheckIn.setVisible(true);
                         convertToNames(list);
                     }
                 });
@@ -315,6 +314,42 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(userRole.equals("provider")){
             getProviderChildren();
+        }
+    }
+
+    // changes bottom navigation button based on parent's child list
+    private void setBottomNavButtoms (boolean access){
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+        MenuItem history = bottomNavigationView.getMenu().findItem(R.id.history);
+        MenuItem medicine = bottomNavigationView.getMenu().findItem(R.id.medicine);
+
+        dailyCheckIn.setEnabled(access);
+        dailyCheckIn.setCheckable(access);
+        triage.setEnabled(access);
+        triage.setCheckable(access);
+        history.setEnabled(access);
+        history.setCheckable(access);
+        medicine.setEnabled(access);
+        medicine.setCheckable(access);
+
+        dailyCheckIn.setVisible(true);
+        triage.setVisible(true);
+        history.setVisible(true);
+        medicine.setVisible(true);
+
+        if(access){
+            dailyCheckIn.setIcon(R.drawable.checkin);
+            triage.setIcon(R.drawable.triage);
+            history.setIcon(R.drawable.history);
+            medicine.setIcon(R.drawable.medicine_24);
+        }
+        else{
+            dailyCheckIn.setIcon(R.drawable.checkinlocked);
+            triage.setIcon(R.drawable.triage_lock);
+            history.setIcon(R.drawable.history_lock);
+            medicine.setIcon(R.drawable.medicine_lock);
         }
     }
 
@@ -433,17 +468,16 @@ public class MainActivity extends AppCompatActivity {
         else if(userRole.equals("parent")){
             switchChildButton.setVisibility(View.VISIBLE);
             // enable dailycheckin
-            if (removeDailyCheckIn) {
-                dailyCheckIn.setEnabled(false);
-                dailyCheckIn.setCheckable(false);
-                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                // TODO: go back to home fragment if on check in fragment
+            if (removePage) {
+                setBottomNavButtoms(false);
+                // go back to home fragment if no children
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else {
-                dailyCheckIn.setEnabled(true);
-                dailyCheckIn.setCheckable(true);
-                dailyCheckIn.setIcon(R.drawable.checkin);
+                setBottomNavButtoms(true);
             }
-            dailyCheckIn.setVisible(true);
 
 
             // enable triage
