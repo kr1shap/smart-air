@@ -139,7 +139,11 @@
         <item name="chipBackgroundColor">@color/chip_background_selector</item>
 
     </style>
-
+    <style name="SmartAirDatePicker" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorPrimary">@color/colour_blue</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/colour_blue</item>
+    </style>
     <!-- Alert dialog  -->
     <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
         <item name="android:background">@color/white</item>

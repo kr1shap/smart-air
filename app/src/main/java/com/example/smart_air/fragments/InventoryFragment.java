@@ -6,6 +6,7 @@ import static androidx.core.content.ContextCompat.getSystemService;
 
 import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -54,6 +56,8 @@ public class InventoryFragment extends Fragment {
 
     private LinearLayout controllerContainer;
     private LinearLayout rescueContainer;
+    private DatePickerDialog datepick;
+    private Button dateButton;
     int threshold=300;
     double lessthan20=threshold*0.2;
     private SharedChildViewModel sharedModel;
@@ -69,6 +73,7 @@ public class InventoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         controllerContainer = view.findViewById(R.id.controller_card_container);
         rescueContainer    = view.findViewById(R.id.rescue_card_container);
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         // set checks for expiring medication
         Context appContext = requireContext().getApplicationContext();
         SharedPreferences prefs = appContext.getSharedPreferences("expiry_prefs", Context.MODE_PRIVATE);
@@ -92,26 +97,16 @@ public class InventoryFragment extends Fragment {
             denyAccess();
             return;
         }
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users")
-                .document(user.getUid())
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()==false) {
-                        denyAccess();
-                        return;
-                    }
-                    String role = doc.getString("role");
-                    if ("parent".equals(role)==false) {
-                        denyAccess();
-                        return;
-                    }
-                    setupchildinventory();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("InventoryFragment", "Error loading user role", e);
-                    denyAccess();
-                });
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role == null){
+                return;
+            }
+            if (!"parent".equals(role)) {
+                denyAccess();
+                return;
+            }
+            setupchildinventory();
+        });
     }
 
     /*
@@ -195,7 +190,7 @@ public class InventoryFragment extends Fragment {
                     Long amount = doc.getLong("amount");
                     com.google.firebase.Timestamp purchaseTs = doc.getTimestamp("purchaseDate");
                     com.google.firebase.Timestamp expiryTs   = doc.getTimestamp("expiryDate");
-                    java.text.DateFormat df = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
+                    java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
                     // load and format values
                     if (name != null){
                         nameEt.setText(name);
@@ -225,37 +220,37 @@ public class InventoryFragment extends Fragment {
     public void editdialog(String childUid, String docId, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv) {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         View dialogView = inflater.inflate(R.layout.dialog_inventory_edit, null);
-        // set input fields and button
-        EditText etName     = dialogView.findViewById(R.id.et_child_name);
-        EditText etAmount   = dialogView.findViewById(R.id.et_amount);
-        EditText etPurchase = dialogView.findViewById(R.id.et_personal_best);
-        EditText etExpiry   = dialogView.findViewById(R.id.et_badge_threshold_tech);
-        Button btnSave      = dialogView.findViewById(R.id.btn_save_edits);
-        // get inputted values
+        // fields in the dialog
+        EditText etName   = dialogView.findViewById(R.id.et_child_name);
+        EditText etAmount = dialogView.findViewById(R.id.et_amount);
+        Button btnPurchase = dialogView.findViewById(R.id.datepickerpur);
+        Button btnExpiry   = dialogView.findViewById(R.id.datepickerexp);
+        Button btnSave     = dialogView.findViewById(R.id.btn_save_edits);
+        // read existing values from the card
         String currentNameText     = nameEtOriginal.getText().toString().trim();
         String currentAmountText   = amountTv.getText().toString().replace("Amount:", "").trim();
         String currentPurchaseText = purchaseTv.getText().toString().replace("Purchase Date:", "").trim();
         String currentExpiryText   = expiryTv.getText().toString().replace("Expiry Date:", "").trim();
-        // pre fill previous values
+        // prefill name + amount
         etName.setText(currentNameText);
         etAmount.setText(currentAmountText);
-        etPurchase.setText(currentPurchaseText);
-        etExpiry.setText(currentExpiryText);
-        // create dialog
+        if (currentPurchaseText.isEmpty()==false) btnPurchase.setText(currentPurchaseText);
+        if (currentExpiryText.isEmpty()==false) btnExpiry.setText(currentExpiryText);
+        btnPurchase.setOnClickListener(v -> opendatepick(btnPurchase));
+        btnExpiry.setOnClickListener(v -> opendatepick(btnExpiry));
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
-        // set save button to save edits
         btnSave.setOnClickListener(v -> {
-            saveedits(childUid, docId, etName, etAmount, etPurchase, etExpiry, nameEtOriginal, amountTv, purchaseTv, expiryTv, dialog);
+            saveedits(childUid, docId, etName, etAmount, btnPurchase, btnExpiry, nameEtOriginal, amountTv, purchaseTv, expiryTv, dialog);
         });
-        // show as dialog
         dialog.show();
     }
 
+
     /*
     check validity and save edited inventory into Firebase
-    */
-    public void saveedits(String childUid, String docId, EditText etName, EditText etAmount, EditText etPurchase, EditText etExpiry, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv, AlertDialog dialog) {
-        // get user to store to in Firebase
+ */
+    public void saveedits(String childUid, String docId, EditText etName, EditText etAmount, Button btnPurchase, Button btnExpiry, EditText nameEtOriginal, TextView amountTv, TextView purchaseTv, TextView expiryTv, AlertDialog dialog) {
+        Integer newAmountval = null;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             dialog.dismiss();
@@ -263,70 +258,62 @@ public class InventoryFragment extends Fragment {
         }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> updates = new HashMap<>();
-        // read name from dialog
         String nameStr = etName.getText().toString().trim();
         if (nameStr.isEmpty()==false) {
             updates.put("name", nameStr);
         }
-        // read amount from dialog
         String amountStr = etAmount.getText().toString().trim();
         if (amountStr.isEmpty()==false) {
             try {
-                int newAmount = Integer.parseInt(amountStr);
+                int newAmount=Integer.parseInt(amountStr);
                 // make sure amount isnt more then threshold
                 if (newAmount > threshold) {
                     Toast.makeText(requireContext(), "Amount cannot exceed 300.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // sends alert if medication is less than 20% of threshold
-                if (newAmount <= lessthan20) {
-                    Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
-                    sendinventoryAlert(childUid);
-                }
-                // update amount
+                newAmountval=newAmount;
                 updates.put("amount", newAmount);
-
-            } catch (NumberFormatException e) {
+            }
+            catch (NumberFormatException e) {
                 Toast.makeText(requireContext(), "Please enter a valid number.", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
-
-        java.text.DateFormat df = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
-        // read purchase date from dialog
-        String purchaseStr = etPurchase.getText().toString().trim();
-        if (purchaseStr.isEmpty()==false) {
+        java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
+        String purchaseStr = btnPurchase.getText().toString().trim();
+        if (purchaseStr.isEmpty()==false && !purchaseStr.equalsIgnoreCase("Select purchase date")) {
             try {
                 Date p = df.parse(purchaseStr);
                 updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
-            } catch (Exception e) {
-                Toast.makeText(requireContext(),
-                        "Purchase date format should be like: November 29, 2025",
-                        Toast.LENGTH_SHORT).show();
+            }
+            catch (Exception e) {
+                Toast.makeText(requireContext(), "Purchase date format should be like: November 29 2025", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
-        // read expiry date from dialog
-        String expiryStr = etExpiry.getText().toString().trim();
-        if (expiryStr.isEmpty()==false) {
+        String expiryStr = btnExpiry.getText().toString().trim();
+        if (expiryStr.isEmpty()==false && !expiryStr.equalsIgnoreCase("Select expiry date")) {
             try {
-                Date e = df.parse(expiryStr);
-                updates.put("expiryDate", new com.google.firebase.Timestamp(e));
-            } catch (Exception ex) {
-                Toast.makeText(requireContext(),
-                        "Expiry date format should be like: November 19, 2025",
-                        Toast.LENGTH_SHORT).show();
+                Date d = df.parse(expiryStr);
+                updates.put("expiryDate", new com.google.firebase.Timestamp(d));
+            }
+            catch (Exception ex) {
+                Toast.makeText(requireContext(), "Expiry date format should be like: November 29 2025", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
-        // store into Firebase database
+        final boolean invalertsend=(newAmountval!=null&&newAmountval<=lessthan20); // decide if we should send inventory alert
         db.collection("children")
                 .document(childUid)
                 .collection("inventory")
                 .document(docId)
                 .set(updates, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-                    // update UI fields
+                    if (invalertsend==true) {
+                        Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
+                        sendinventoryAlert(childUid);
+                    }
+                    // update UI fields on the card
                     if (updates.containsKey("name")) {
                         nameEtOriginal.setText(nameStr);
                     }
@@ -339,7 +326,6 @@ public class InventoryFragment extends Fragment {
                     if (updates.containsKey("expiryDate")) {
                         expiryTv.setText("Expiry Date: " + expiryStr);
                     }
-                    // close dialog
                     dialog.dismiss();
                 })
                 .addOnFailureListener(e -> {
@@ -350,33 +336,11 @@ public class InventoryFragment extends Fragment {
     }
 
     /*
-    get child's name
-     */
-    public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-        // store into Firebase
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("children")
-                .document(childUid)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        String childName = doc.getString("name");
-                        onSuccess.onSuccess(childName);
-                    }
-                    else {
-                        onFailure.onFailure(new Exception("Child document not found"));
-                    }
-                })
-                .addOnFailureListener(onFailure);
-    }
-
-    /*
       send inventory-related notifications to all parents of this child
      */
     public void sendinventoryAlert(String childUid) {
         Log.d("Inventory", "sendinventoryAlert for childUid = " + childUid);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        getchildname(childUid, childName -> {
             db.collection("users")
                     .document(childUid)
                     .get()
@@ -396,7 +360,7 @@ public class InventoryFragment extends Fragment {
                             if (pUid == null){
                                 continue;
                             }
-                            Notification notif = new Notification(childUid, false, Timestamp.now(), NotifType.INVENTORY, childName);
+                            Notification notif = new Notification(childUid, false, Timestamp.now(), NotifType.INVENTORY);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
                                             Log.d("NotificationRepo", "Inventory notification created for parent " + pUid))
@@ -406,15 +370,11 @@ public class InventoryFragment extends Fragment {
                     })
                     .addOnFailureListener(e ->
                             Log.e("Inventory", "Failed to load child user doc", e));
-        }, error -> {
-            Log.e("Inventory", "Failed to fetch child name in sendinventoryAlert", error);
-        });
     }
     /*
-    schedule when to check if mediciations are expired
+    schedule when to check if medications are expired
      */
     public void scheduleexpirycheck(Context context, int hour, int minute) {
-
         Intent intent = new Intent(context, ExpiryCheck.class);
         intent.setAction("CHECK_EXPIRY");
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
@@ -442,5 +402,54 @@ public class InventoryFragment extends Fragment {
         // schedule repeating every day
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
         Log.d("Alarm", "Expiry alarm set for: " + calendar.getTime());
+    }
+    /*
+    to format date into string
+     */
+    public String datestring(int day, int month, int year)
+    {
+        return formatmonth(month) + " " + day + " " + year;
+    }
+    /*
+    converts month number to string
+     */
+    public String formatmonth(int month)
+    {
+        if(month == 1) return "Jan";
+        if(month == 2) return "Feb";
+        if(month == 3) return "Mar";
+        if(month == 4) return "Apr";
+        if(month == 5) return "May";
+        if(month == 6) return "Jun";
+        if(month == 7) return "Jul";
+        if(month == 8) return "Aug";
+        if(month == 9) return "Sep";
+        if(month == 10) return "Oct";
+        if(month == 11) return "Nov";
+        if(month == 12) return "Dec";
+        return "Jan"; // default, not reached
+    }
+    /*
+    calendar dialog to choose expiry/purchase date
+     */
+    public void opendatepick(Button targetBtn) {
+        // gets today's date to start at it
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR);
+        int month = cal.get(Calendar.MONTH);
+        int day = cal.get(Calendar.DAY_OF_MONTH);
+        // creates calendar dialog
+        DatePickerDialog dialog = new DatePickerDialog(
+                requireContext(),
+                R.style.SmartAirDatePicker,
+                // handle user selection
+                (view, y, m, d) -> {
+                    m++; // due to index of months starting from 0
+                    String formatted = datestring(d, m, y);
+                    targetBtn.setText(formatted);
+                },
+                year, month, day
+        );
+        dialog.show(); // show dialog
     }
 }

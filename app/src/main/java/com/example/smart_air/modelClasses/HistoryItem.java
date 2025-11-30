@@ -194,9 +194,8 @@ public class HistoryItem {
     // constructor for Triage Card
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
         this.passFilter = true;
-
         if (accDate == null) {
-            accDate = new Date();  // or any default you prefer
+            accDate = new Date();
         }
         this.accDate = accDate;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
