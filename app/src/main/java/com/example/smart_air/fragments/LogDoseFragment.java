@@ -51,7 +51,8 @@ public class LogDoseFragment extends Fragment {
     private FirebaseFirestore db;
     /** This will always hold the *current child’s* UID (or the child user’s own UID). */
     private String uid;
-
+    int lessthan20=60;
+    int threshold=300;
     private SharedChildViewModel sharedModel;
     private String userRole = "";
 
@@ -282,6 +283,9 @@ public class LogDoseFragment extends Fragment {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
+                        if ("rescue".equals(logType)) {
+                            rapidrescuealerts();
+                        }
                         getAndUpdateInventory(logType, puffs);
                     })
                     .addOnFailureListener(e ->
@@ -443,7 +447,6 @@ public class LogDoseFragment extends Fragment {
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Error accessing inventory.", Toast.LENGTH_SHORT).show());
     }
-     */
     // rapid rescue alerts section
    /*
    check if 3+ rescue attempts made in 3 hours
@@ -453,7 +456,17 @@ public class LogDoseFragment extends Fragment {
        if (user == null){
            return;
        }
-       String childUid = user.getUid();
+       String childUid;
+       if ("child".equals(userRole)) {
+           childUid = user.getUid();
+       }
+       else {
+           childUid=uid;
+       }
+       if (childUid == null || childUid.isEmpty()) {
+           Log.e("RescueCheck", "childUid is null");
+           return;
+       }
        long now=System.currentTimeMillis();
        long threeHours=3*60*60*1000;
        FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -473,7 +486,7 @@ public class LogDoseFragment extends Fragment {
                        }
                    }
                    if (count >= 3) {
-                       //sendAlert();
+                       sendAlert(childUid,1);
                    }
                })
                .addOnFailureListener(e -> {
@@ -536,6 +549,7 @@ public class LogDoseFragment extends Fragment {
            Log.e("Rapid Rescue", "Failed to fetch child name", error);
        });
    }
+
    /*
    get child's name
     */
