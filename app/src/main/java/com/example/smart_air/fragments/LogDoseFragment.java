@@ -37,6 +37,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -283,7 +284,7 @@ public class LogDoseFragment extends Fragment {
                         }
                     }
                     if (count >= 3) {
-                        sendAlert();
+                        //sendAlert();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -291,27 +292,39 @@ public class LogDoseFragment extends Fragment {
                 });
     }
     /*
-   Used to send notifications to parent
+    used to send rapid rescue or inventory notifications to all parents
     */
-    public void sendAlert() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
+    public void sendAlert(String cUid, int choice) {
+        if (cUid == null) {
+            Log.e("Rapid Rescue", "sendAlert called with null childUid");
             return;
         }
-        String cUid = user.getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         getchildname(cUid, childName -> {
             db.collection("users")
                     .document(cUid)
                     .get()
                     .addOnSuccessListener(doc -> {
-                        if (!doc.exists()) {
+                        if (doc.exists()==false) {
                             Log.e("Rapid Rescue", "Child user document missing");
                             return;
                         }
-                        List<String> parentUids = (List<String>) doc.get("parentUid");
-                        if (parentUids == null || parentUids.isEmpty()) {
+                        List<?> rawParentUids = doc.get("parentUid", List.class);
+                        if (rawParentUids == null || rawParentUids.isEmpty()) {
                             Log.e("Rapid Rescue", "No parentUid array found");
+                            return;
+                        }
+                        // Convert to List<String> safely
+                        List<String> parentUids = new ArrayList<>();
+                        for (Object o : rawParentUids) {
+                            if (o instanceof String) {
+                                parentUids.add((String) o);
+                            } else {
+                                Log.w("Rapid Rescue", "Invalid parentUid entry: " + o);
+                            }
+                        }
+                        if (parentUids.isEmpty()) {
+                            Log.e("Rapid Rescue", "parentUid array had no valid String values");
                             return;
                         }
                         NotificationRepository notifRepo = new NotificationRepository();
@@ -319,23 +332,31 @@ public class LogDoseFragment extends Fragment {
                             if (pUid == null){
                                 continue;
                             }
-                            Notification notif = new Notification(cUid, false, Timestamp.now(), NotifType.RAPID_RESCUE, childName);
+                            NotifType type;
+
+                            if (choice == 1) {
+                                type = NotifType.RAPID_RESCUE;
+                            }
+                            else {
+                                type = NotifType.INVENTORY;
+                            }
+                            Notification notif = new Notification(cUid, false, Timestamp.now(), type, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
-                                            Log.d("NotificationRepo", "Notification created for parent " + pUid))
+                                            Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
                                     .addOnFailureListener(e ->
-                                            Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
+                                            Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
                         }
 
                     })
                     .addOnFailureListener(e ->
-                            Log.e("Rapid Rescue", "Failed to load child document", e)
-                    );
+                            Log.e("Rapid Rescue", "Failed to load child document", e));
 
         }, error -> {
             Log.e("Rapid Rescue", "Failed to fetch child name", error);
         });
     }
+
     /*
     get child's name
      */

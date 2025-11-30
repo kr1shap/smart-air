@@ -116,7 +116,7 @@ public class ExpiryCheck extends BroadcastReceiver {
                         Log.e("ExpiryCheck", "Child user doc missing in users collection: " + childUid);
                         return;
                     }
-                    @SuppressWarnings("unchecked")
+                    @SuppressWarnings("unchecked") //surpresses warnings
                     List<String> parentUids = (List<String>) doc.get("parentUid");
                     if (parentUids == null || parentUids.isEmpty()) {
                         Log.e("ExpiryCheck", "No parentUid array found for child " + childUid);

@@ -377,7 +377,7 @@ public class InventoryFragment extends Fragment {
                             Log.e("Inventory", "Child user document missing in users collection");
                             return;
                         }
-                        @SuppressWarnings("unchecked")
+                        @SuppressWarnings("unchecked") // surpresses warnings
                         List<String> parentUids = (List<String>) doc.get("parentUid");
                         if (parentUids == null || parentUids.isEmpty()) {
                             Log.e("Inventory", "No parentUid array found on child user doc");
@@ -391,11 +391,9 @@ public class InventoryFragment extends Fragment {
                             Notification notif = new Notification(childUid, false, Timestamp.now(), NotifType.INVENTORY, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
-                                            Log.d("NotificationRepo",
-                                                    "Inventory notification created for parent " + pUid))
+                                            Log.d("NotificationRepo", "Inventory notification created for parent " + pUid))
                                     .addOnFailureListener(e ->
-                                            Log.e("NotificationRepo",
-                                                    "Failed to notify parent " + pUid, e));
+                                            Log.e("NotificationRepo", "Failed to notify parent " + pUid, e));
                         }
                     })
                     .addOnFailureListener(e ->
