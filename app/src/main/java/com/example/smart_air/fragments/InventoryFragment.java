@@ -67,12 +67,20 @@ public class InventoryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        controllerContainer = view.findViewById(R.id.controller_card_container);
+        rescueContainer    = view.findViewById(R.id.rescue_card_container);
         // set checks for expiring medication
         Context appContext = requireContext().getApplicationContext();
-        scheduleexpirycheck(appContext, 0, 0); // set time to check in 24 hour clock
-        // creates container to store rescue and controller info
-        controllerContainer = view.findViewById(R.id.controller_card_container);
-        rescueContainer     = view.findViewById(R.id.rescue_card_container);
+        SharedPreferences prefs = appContext.getSharedPreferences("expiry_prefs", Context.MODE_PRIVATE);
+        boolean alreadyScheduled = prefs.getBoolean("expiry_alarm_scheduled", false);
+        if (alreadyScheduled==false) {
+            scheduleexpirycheck(appContext, 0, 0); // set 24h time
+            prefs.edit().putBoolean("expiry_alarm_scheduled", true).apply();
+            Log.d("Alarm", "First time scheduling expiry alarm from InventoryFragment");
+        }
+        else {
+            Log.d("Alarm", "Expiry alarm already scheduled, not scheduling again");
+        }
         // back button functionality
         Button backButton   = view.findViewById(R.id.btn_back_meds);
         backButton.setOnClickListener(v ->

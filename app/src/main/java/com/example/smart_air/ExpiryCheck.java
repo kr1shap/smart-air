@@ -53,13 +53,14 @@ public class ExpiryCheck extends BroadcastReceiver {
                     Log.e("ExpiryCheck", "Error loading children collection", e);
                 });
     }
-
     /*
     gets expired timestamp from each rescue and controller document
-     */
+    */
     public void checkexpirytimestamp(String childUid, String childName) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String[] types = new String[] {"controller", "rescue"};
+        final boolean[] hasExpired = { false }; // track if any medications expired
+        final int[] remaining = { types.length }; // track if rescue or controller documents need to be checked
         for (String type : types) {
             db.collection("children")
                     .document(childUid)
@@ -69,24 +70,43 @@ public class ExpiryCheck extends BroadcastReceiver {
                     .addOnSuccessListener(invDoc -> {
                         if (invDoc.exists()==false) {
                             Log.d("ExpiryCheck", "No " + type + " inventory for " + childUid);
-                            return;
                         }
-                        Timestamp expiryTs = invDoc.getTimestamp("expiryDate");
-                        if (expiryTs == null) {
-                            Log.d("ExpiryCheck", "No expiryDate on " + type + " for " + childUid);
-                            return;
+                        else {
+                            Timestamp expiryTs = invDoc.getTimestamp("expiryDate");
+                            if (expiryTs==null) {
+                                Log.d("ExpiryCheck", "No expiryDate on " + type + " for " + childUid);
+                            }
+                            else {
+                                Date expiryDate = expiryTs.toDate();
+                                if (isexpired(expiryDate)) {
+                                    Log.d("ExpiryCheck", "Inventory " + type + " is expired/expiring soon for child " + childUid);
+                                    hasExpired[0] = true;
+                                }
+                            }
                         }
-                        Date expiryDate = expiryTs.toDate();
-                        if (isexpired(expiryDate)) {
-                            Log.d("ExpiryCheck", "Inventory " + type + " is expired/expiring soon for child " + childUid);
-                            sendinventoryAlert(childUid, childName);
-                        }
+                        // mark check as done
+                        remaining[0]--;
+                        sendalertdecision(childUid, childName, hasExpired, remaining);
                     })
                     .addOnFailureListener(e -> {
                         Log.e("ExpiryCheck", "Error loading inventory " + type + " for " + childUid, e);
+                        // even on failure, mark this check as done
+                        remaining[0]--;
+                        sendalertdecision(childUid, childName, hasExpired, remaining);
                     });
         }
     }
+
+    /*
+    decide whether or not to send alert
+     */
+    private void sendalertdecision(String childUid, String childName, boolean[] hasExpired, int[] remaining) {
+        if (remaining[0] <= 0 && hasExpired[0]) { // if at least one rescue or controller medication is expired, send notif
+            // one notification per child per full check
+            sendinventoryAlert(childUid, childName);
+        }
+    }
+
     /*
     checks if expiry date has passed
      */
