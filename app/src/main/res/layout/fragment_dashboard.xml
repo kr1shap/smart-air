@@ -98,7 +98,7 @@
                     android:layout_weight="1"
                     android:text="Weekly Rescues"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="16sp"
+                    android:textSize="13sp"
                     android:textColor="@color/colour_darkBlue"
                     android:textStyle="bold" />
 
@@ -142,7 +142,7 @@
                     android:layout_height="wrap_content"
                     android:text="Last Rescue"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="16sp"
+                    android:textSize="13sp"
                     android:textColor="@color/colour_darkBlue"
                     android:textStyle="bold" />
 
@@ -373,6 +373,17 @@
                         android:id="@+id/rescueChart"
                         android:layout_width="match_parent"
                         android:layout_height="260dp"/>
+
+                    <TextView
+                        android:id="@+id/rescueChartUnavailableRescue"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Chart Not Available for you to view."
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -398,6 +409,16 @@
                         android:id="@+id/pefChart"
                         android:layout_width="match_parent"
                         android:layout_height="260dp"/>
+
+                    <TextView
+                        android:id="@+id/rescueChartUnavailablePEF"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Chart Not Available for you to view."
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
                 </LinearLayout>
 
             </ViewFlipper>

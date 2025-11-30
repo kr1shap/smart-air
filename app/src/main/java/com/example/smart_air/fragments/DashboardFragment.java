@@ -9,6 +9,7 @@ import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,9 +31,11 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.modelClasses.InventoryData;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -51,6 +54,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
 import java.io.File;
@@ -67,40 +71,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public class DashboardFragment extends Fragment {
     private SharedChildViewModel sharedModel;
     private float x1, x2;
     private static final int MIN_DISTANCE = 150;
     private ViewFlipper trendsCarousel;
-    private View zoneBar;
-    private View barContainer;
+    private View zoneBar, barContainer;
     private LineChart pefChart;
     private BarChart rescueChart;
-    private String zoneColour = "none";
-    private String parentId;
-    private String childId;
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private boolean isChildUser = false;
-    private TextView tvWeeklyRescues;
-    private TextView tvRescueName;
-    private TextView tvRescuePurchase;
-    private TextView tvRescueExpiry;
-    private TextView tvControllerName;
-    private TextView tvControllerPurchase;
-    private TextView tvControllerExpiry;
-    private String correspondingUid;
-    private String userRole;
+    private final FirebaseFirestore db = FirebaseInitalizer.getDb();
+    private TextView tvWeeklyRescues, tvRescueName, tvRescuePurchase, tvRescueExpiry, tvControllerName, tvControllerPurchase, tvControllerExpiry;
+    private TextView rescueChartUnavailableRescue, rescueChartUnavailablePEF;
+    private String correspondingUid, userRole;
     private AuthRepository repo;
-    private TextView tvLatestRescue;
     private int currentTrendIndex = 0;
-    private boolean allowRescue;
-    private boolean allowController;
-    private boolean allowPEF;
-    View tvRescuesWeekly;
+    private boolean allowRescue = false, allowController = false, allowPEF = false, allowCharts = false;
     TextView tvLastRescue;
-    TextView RescueInventory;
-    TextView ControllerInventory;
+    private LinearLayout cardLastRescue, cardWeekly, inventoryGroup, trendSection;
+    private Button btnManage, btnProviderReport;
+    // CACHES
+    private final Map<String, Map<String, Pair<String, Integer>>> zoneCache = new HashMap<>(); //uid - > date -> (zonecol, zonenum)
+    private final Map<String, List<DocumentSnapshot>> weeklyRescueCache = new HashMap<>();
+    private final Map<String, Date> latestRescueCache = new HashMap<>();
+    private final Map<String, List<DocumentSnapshot>> pefCache = new HashMap<>();
+    private final Map<String, InventoryData> inventoryCache = new HashMap<>();
+    //LISTENER FOR TOGGLES
+    private ListenerRegistration childListener;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -118,11 +116,12 @@ public class DashboardFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         repo = new AuthRepository();
+        if(repo.getCurrentUser() == null) { return; } //unauth
+
         TextView tvTitle = view.findViewById(R.id.tvDashboardTitle);
         View root = view;
 
         // using viewmodel to load dashboard
-
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
 
         // linking xml ids to fragment
@@ -139,11 +138,19 @@ public class DashboardFragment extends Fragment {
         tvControllerName = view.findViewById(R.id.tvControllerName);
         tvControllerPurchase = view.findViewById(R.id.tvControllerPurchase);
         tvControllerExpiry = view.findViewById(R.id.tvControllerExpiry);
-        tvLatestRescue = view.findViewById(R.id.tvLastRescue);
+        tvLastRescue = view.findViewById(R.id.tvLastRescue);
 
+        //load the cards for toggling
+        cardWeekly = view.findViewById(R.id.cardWeekly);
+        cardLastRescue = view.findViewById(R.id.cardLastRescue);
+        inventoryGroup = view.findViewById(R.id.inventoryGroup);
+        trendSection = view.findViewById(R.id.trendSection);
+        //load the not avail text
+        rescueChartUnavailableRescue = view.findViewById(R.id.rescueChartUnavailableRescue);
+        rescueChartUnavailablePEF = view.findViewById(R.id.rescueChartUnavailablePEF);
 
-        Button btnManage = view.findViewById(R.id.btnManageChildren);
-        Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
+        btnManage = view.findViewById(R.id.btnManageChildren);
+        btnProviderReport = view.findViewById(R.id.btnProviderReport);
 
 
         Spinner trendSpinner = view.findViewById(R.id.spinnerTrendRange);
@@ -160,12 +167,10 @@ public class DashboardFragment extends Fragment {
             public void onAnimationStart(Animation animation) {
                 freezeOtherPage();
             }
-
             @Override
             public void onAnimationEnd(Animation animation) {
                 unfreezeAllPages();
             }
-
             @Override public void onAnimationRepeat(Animation animation) {}
         };
 
@@ -192,9 +197,7 @@ public class DashboardFragment extends Fragment {
 
                         // swipe right
                         if (deltaX > 0) {
-                            if (currentTrendIndex == 0) {
-                                return true;
-                            }
+                            if (currentTrendIndex == 0) { return true; }
 
                             trendsCarousel.setInAnimation(getContext(), R.anim.slide_in_left);
                             trendsCarousel.setOutAnimation(getContext(), R.anim.slide_out_right);
@@ -205,9 +208,7 @@ public class DashboardFragment extends Fragment {
 
                         // swipe left
                         else {
-                            if (currentTrendIndex == 1) {
-                                return true;
-                            }
+                            if (currentTrendIndex == 1) { return true; }
 
                             trendsCarousel.setInAnimation(getContext(), R.anim.slide_in_right);
                             trendsCarousel.setOutAnimation(getContext(), R.anim.slide_out_left);
@@ -215,142 +216,56 @@ public class DashboardFragment extends Fragment {
 
                             currentTrendIndex++;
                         }
-
                         updateDots(currentTrendIndex, root);
                     }
-
                     return true;
             }
             return false;
         });
 
-        // use viewmodel to load role and dashboard
+
+        btnProviderReport.setOnClickListener(v -> {
+            if(correspondingUid == null) return;
+            ProviderReportFragment frag = new ProviderReportFragment();
+            Bundle args = new Bundle();
+            args.putString("childId", correspondingUid);
+            frag.setArguments(args);
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction().replace(R.id.fragment_container, frag)
+                    .addToBackStack(null).commit();
+        });
 
         // first checks the role
         sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
             if (role == null) return;
-
             userRole = role;
-
             if (role.equals("child")) {
-
-                // loads childId and childName from firestore db
-                loadUserAndChildIds(tvTitle, () -> {
-                    correspondingUid = childId;
-                    loadDashboardForChild(correspondingUid);
-                });
-
+                correspondingUid = repo.getCurrentUser().getUid(); //load right UID right away
                 btnProviderReport.setVisibility(View.GONE);
                 btnManage.setVisibility(View.GONE);
-            } else if (role.equals("parent")) {
-
+                tvTitle.setText("Your Dashboard");
+                //in general, inventory is parent-only
+                inventoryGroup.setVisibility(View.GONE);
+                loadDashboardForChild(correspondingUid);
+            }
+            if(role.equals("parent")) {
                 // show full dashboard
                 btnProviderReport.setVisibility(View.VISIBLE);
                 btnManage.setVisibility(View.VISIBLE);
-
-                btnProviderReport.setOnClickListener(v -> {
-                    ProviderReportFragment frag = new ProviderReportFragment();
-
-                    Bundle args = new Bundle();
-                    args.putString("childId", correspondingUid);
-                    frag.setArguments(args);
-
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, frag)
-                            .addToBackStack(null)
-                            .commit();
-                });
-
-
-
-            }
-            else if (role.equals("provider")) {
-
+            } else if(role.equals("provider")) {
                 btnManage.setVisibility(View.GONE);
-                btnProviderReport.setVisibility(View.GONE);
-
-                loadUserAndChildIds(tvTitle, () -> {
-
-                    correspondingUid = childId;
-
-                    FirebaseFirestore.getInstance()
-                            .collection("children")
-                            .document(correspondingUid)
-                            .get()
-                            .addOnSuccessListener(doc -> {
-
-                                allowRescue = true;
-                                allowController = true;
-                                allowPEF = true;
-
-                                Map<String, Object> sharing = (Map<String, Object>) doc.get("sharing");
-                                if (sharing != null) {
-
-                                    Object rescueVal = sharing.get("rescue");
-                                    Object controllerVal = sharing.get("controller");
-                                    Object pefVal = sharing.get("pef");
-
-                                    if (rescueVal instanceof Boolean) {
-                                        allowRescue = (Boolean) rescueVal;
-                                    }
-                                    if (controllerVal instanceof Boolean) {
-                                        allowController = (Boolean) controllerVal;
-                                    }
-                                    if (pefVal instanceof Boolean) {
-                                        allowPEF = (Boolean) pefVal;
-                                    }
-                                }
-
-
-
-                                tvRescuesWeekly = requireView().findViewById(R.id.tvRescuesWeekly);
-                                tvLastRescue = requireView().findViewById(R.id.tvLatestRescue);
-
-
-                                RescueInventory = requireView().findViewById(R.id.RescueInventory);
-                                ControllerInventory = requireView().findViewById(R.id.ControllerInventory);
-
-
-                                rescueChart = requireView().findViewById(R.id.rescueChart);
-                                pefChart = requireView().findViewById(R.id.pefChart);
-
-                                tvRescuesWeekly.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
-                                tvLastRescue.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
-
-                                RescueInventory.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
-                                ControllerInventory.setVisibility(allowController ? View.VISIBLE : View.GONE);
-
-                                rescueChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
-                                pefChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
-
-
-                                View trendsCarousel = requireView().findViewById(R.id.trendsCarousel);
-
-                                if (!allowRescue && !allowPEF) {
-                                    trendsCarousel.setVisibility(View.GONE);
-                                } else {
-                                    trendsCarousel.setVisibility(View.VISIBLE);
-                                }
-
-                                loadDashboardForChild(correspondingUid);
-                            });
-                });
+                //in general, inventory is parent-only
+                inventoryGroup.setVisibility(View.GONE);
             }
-
-
-
 
         });
 
-        // after getting full list of children
+        // use viewmodel to load role and dashboard
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> {
             if (children == null || children.isEmpty()) return;
             Integer idx = sharedModel.getCurrentChild().getValue();
             if (idx == null) idx = 0;
-
             correspondingUid = children.get(idx).getChildUid();
-
             if (!"child".equals(userRole)) {
                 Child child = children.get(idx);
                 tvTitle.setText(child.getName() + "’s Dashboard");
@@ -358,157 +273,164 @@ public class DashboardFragment extends Fragment {
             }
         });
 
-        // for when parent switches child
+        // for when parent or provider switches child
         sharedModel.getCurrentChild().observe(getViewLifecycleOwner(), idx -> {
             List<Child> list = sharedModel.getAllChildren().getValue();
             if (list == null || list.isEmpty() || idx == null) return;
-
             correspondingUid = list.get(idx).getChildUid();
-
             if (!"child".equals(userRole)) {
+                tvTitle.setText(sharedModel.getCurrentChildName() + "’s Dashboard");
                 loadDashboardForChild(correspondingUid);
             }
         });
 
-        // trend dropdown
+        //adapter to switch between days
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.spinner_item_black, //so text is black instead of white
                 new String[]{"Past 7 Days", "Past 30 Days"}
         );
         trendSpinner.setAdapter(adapter);
-
         trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
-                if (childId == null) return;
-
+                if (correspondingUid == null) return;
+                if (userRole.equals("provider") && !allowCharts) { return; }
+                //else move on with positions
                 if (position == 0) {
-                    loadWeeklyRescues(7);
-                    loadPEFTrend(7);
+                    if (userRole.equals("provider")) {
+                        if(allowPEF)  loadPEFTrend(7);
+                        if(allowRescue)  loadWeeklyRescues(7);
+                        return;
+                    }
+                    loadWeeklyRescues(7); loadPEFTrend(7);
                 } else {
-                    loadWeeklyRescues(30);
-                    loadPEFTrend(30);
+                    if (userRole.equals("provider")) {
+                        if(allowPEF)  loadPEFTrend(30);
+                        if(allowRescue)  loadWeeklyRescues(30);
+                        return;
+                    }
+                    loadWeeklyRescues(30); loadPEFTrend(30);
                 }
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
     }
 
-    private void loadUserAndChildIds(TextView titleView, @Nullable Runnable onComplete) {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) {
-            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        db.collection("children")
-                .document(uid)
-                .get()
-                .addOnSuccessListener(childDoc -> {
-
-                    if (childDoc.exists()) {
-
-                        isChildUser = true;
-                        childId = uid;
-                        parentId = childDoc.getString("parentUid");
-
-                        String childName = childDoc.getString("name");
-                        if (childName != null) {
-                            titleView.setText(childName + "’s Dashboard");
-                        }
-
-                        if (onComplete != null) onComplete.run();
-                        return;
-                    }
-
-                    db.collection("users")
-                            .document(uid)
-                            .get()
-                            .addOnSuccessListener(parentDoc -> {
-                                if (parentDoc.exists()) {
-                                    isChildUser = false;
-                                    parentId = uid;
-
-                                    List<String> children = (List<String>) parentDoc.get("childrenUid");
-                                    if (children == null || children.isEmpty()) {
-                                        Toast.makeText(requireContext(), "No children linked", Toast.LENGTH_LONG).show();
-                                        return;
-                                    }
-
-                                    childId = children.get(0);
-
-                                    titleView.setText("Dashboard");
-
-                                    if (onComplete != null) onComplete.run();
-                                } else {
-                                    Toast.makeText(requireContext(),
-                                            "Profile not found in users or children",
-                                            Toast.LENGTH_LONG).show();
-                                }
-                            });
-                });
-    }
-
     private void freezeOtherPage() {
         int displayed = trendsCarousel.getDisplayedChild();
-
         for (int i = 0; i < trendsCarousel.getChildCount(); i++) {
             View child = trendsCarousel.getChildAt(i);
-
-            if (i != displayed) {
-                child.setVisibility(View.INVISIBLE);
-            }
+            if (i != displayed) { child.setVisibility(View.INVISIBLE); }
         }
     }
-
     private void unfreezeAllPages() {
-        for (int i = 0; i < trendsCarousel.getChildCount(); i++) {
-            trendsCarousel.getChildAt(i).setVisibility(View.VISIBLE);
-        }
+        for (int i = 0; i < trendsCarousel.getChildCount(); i++) { trendsCarousel.getChildAt(i).setVisibility(View.VISIBLE); }
     }
-
 
     private void loadDashboardForChild(String childUid) {
         if (childUid == null) return;
-        this.childId = childUid; loadTodayZone();
-        loadZoneHistory(); loadWeeklyRescues(7);
-        loadLatestRescueDate(); loadPEFTrend(7);
-        loadInventory();
+        this.correspondingUid = childUid;
+        loadTodayZone(); //for everyone (zone)
+        if(userRole!= null && userRole.equals("provider")) {
+            attachChildToggleListener(childUid); //load toggles for child and then init dashboard
+            //do not load inventory for provider
+        } else if( userRole != null && userRole.equals("child")) {
+            loadWeeklyRescues(7);
+            loadPEFTrend(7);
+            loadLatestRescueDate();
+            //do not load inventory for child
+        }
+        else if(userRole != null && userRole.equals("parent")) {
+            loadInventory(); //parent only thing
+            loadWeeklyRescues(7);
+            loadPEFTrend(7);
+            loadLatestRescueDate();
+        }
+
     }
 
+    //Helper function for toggle listener
+    private void attachChildToggleListener(String childUid) {
+        // remove prev listener if child switched
+        if (childListener != null) { childListener.remove(); }
+        //fetch toggles
+        childListener = db.collection("children")
+                .document(childUid)
+                .addSnapshotListener((doc, e) -> {
+                    if (e != null || doc == null || !doc.exists()) return;
+                    //re-init all to false
+                    allowRescue = false;
+                    allowController = false;
+                    allowPEF = false;
+                    allowCharts = false;
+                    Map<String, Boolean> sharing = (Map<String, Boolean>) doc.get("sharing");
+                    //change sharing toggles
+                    if (sharing != null) {
+                        allowRescue = sharing.getOrDefault("rescue", false);
+                        allowController = sharing.getOrDefault("controller", false);
+                        allowPEF = sharing.getOrDefault("pef", false);
+                        allowCharts = sharing.getOrDefault("charts", false);
+                    }
+                    // provider dashboard visibility update
+                    cardWeekly.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                    cardLastRescue.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                    trendSection.setVisibility(allowCharts ? View.VISIBLE : View.GONE);
+                    //visibility updates on the charts as well
+                    rescueChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+                    pefChart.setVisibility(allowPEF ? View.VISIBLE : View.GONE);
+                    //visibility updates on whether chart available or not
+                    rescueChartUnavailablePEF.setVisibility(allowPEF ? View.GONE : View.VISIBLE);
+                    rescueChartUnavailableRescue.setVisibility(allowRescue ? View.GONE : View.VISIBLE);
+                    // reload data based on toggles
+                    if (allowRescue) { loadWeeklyRescues(7); loadLatestRescueDate(); }
+                    if (allowPEF) { loadPEFTrend(7); }
+                });
+    }
 
+    /* Functions to load different sections of the dashboard */
+
+    //Function loads the 'today zone bar'
     private void loadTodayZone() {
-        if (childId == null) return;
-
+        if (correspondingUid == null) return;
         String dateKey = LocalDate.now().toString();
-
+        // check cache first
+        if (zoneCache.containsKey(correspondingUid) && Objects.requireNonNull(zoneCache.get(correspondingUid)).containsKey(dateKey)) {
+            Pair<String, Integer> cached = zoneCache.get(correspondingUid).get(dateKey);
+            updateZoneBar(cached.first, cached.second);
+            return;
+        }
+        //if not cached fetch
         db.collection("dailyCheckins")
-                .document(childId)
+                .document(correspondingUid)
                 .collection("entries")
                 .document(dateKey)
                 .get()
                 .addOnSuccessListener(doc -> {
-
+                    String zoneColour;
+                    int zoneNum;
                     if (doc.exists()) {
-
                         zoneColour = doc.getString("zoneColour");
                         if (zoneColour == null) zoneColour = "none";
 
-                        Long zoneNum = doc.getLong("zoneNumber");
-                        if (zoneNum == null) zoneNum = 0L;
-
-                        updateZoneBar(zoneColour, zoneNum.intValue());
-
+                        Long zoneNumber = doc.getLong("zoneNumber");
+                        zoneNum = (zoneNumber != null) ? zoneNumber.intValue() : 0;
                     } else {
-                        updateZoneBar("none", 0);
+                        zoneColour = "none";
+                        zoneNum = 0;
                     }
+                    // cache the result
+                    zoneCache
+                            .computeIfAbsent(correspondingUid, k -> new HashMap<>())
+                            .put(dateKey, new Pair<>(zoneColour, zoneNum));
+                    updateZoneBar(zoneColour, zoneNum);
                 })
                 .addOnFailureListener(e -> updateZoneBar("none", 0));
     }
 
+    //Function updates the zone bar
     private void updateZoneBar(String zoneColour, int zoneNum) {
         if (barContainer == null || zoneBar == null) return;
 
@@ -543,125 +465,257 @@ public class DashboardFragment extends Fragment {
         });
     }
 
+    /*
+     * Function loads the weekly rescue data and caches data
+     */
     private void loadWeeklyRescues(int days) {
-        if (childId == null) return;
-
-        if ("provider".equals(userRole) && !allowRescue){
-            tvWeeklyRescues.setText("Not Available");
-            return;
-        }
+        if (correspondingUid == null) return;
 
         LocalDate cutoff = LocalDate.now().minusDays(days - 1);
 
-        db.collection("incidentLog")
-                .document(childId)
-                .collection("triageSessions")
+        List<DocumentSnapshot> cachedDocs = weeklyRescueCache.get(correspondingUid);
+        if (cachedDocs != null) { processWeeklyRescueDocuments(cachedDocs, cutoff, days); processWeeklyRescueStat(cachedDocs); return; }
+        //if not cache all snapshots (childre/{childUid}/rescueLog
+        db.collection("children")
+                .document(correspondingUid)
+                .collection("rescueLog")
                 .get()
                 .addOnSuccessListener(snap -> {
-
-                    int[] counts = new int[days];
-
-                    for (DocumentSnapshot doc : snap) {
-
-                        Object rawRescue = doc.get("rescueAttempts");
-                        int rescueCount = 0;
-
-                        if (rawRescue instanceof Number) {
-                            rescueCount = ((Number) rawRescue).intValue();
-                        } else if (rawRescue instanceof String) {
-                            try {
-                                rescueCount = Integer.parseInt((String) rawRescue);
-                            } catch (Exception ignored) {}
-                        }
-
-                        if (rescueCount <= 0) continue;
-
-
-                        Timestamp ts = doc.getTimestamp("date");
-                        if (ts == null) continue;
-
-
-                        LocalDate rescueDate = ts.toDate()
-                                .toInstant()
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate();
-
-                        if (rescueDate.isBefore(cutoff)) continue;
-
-
-                        int index = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
-
-                        if (index >= 0 && index < days) {
-                            counts[index] += rescueCount;
-                        }
-                    }
-
-                    drawRescueChartDynamic(counts, days);
-
-                    int total = 0;
-                    for (int c : counts) total += c;
-
-                    if (tvWeeklyRescues != null) {
-                        tvWeeklyRescues.setText(total + " rescues");
-                    }
-
+                    List<DocumentSnapshot> docs = snap.getDocuments();
+                    weeklyRescueCache.put(correspondingUid, docs);
+                    processWeeklyRescueDocuments(docs, cutoff, days);
+                    processWeeklyRescueStat(docs);
                 });
     }
 
-    private void loadLatestRescueDate() {
-        if (childId == null) return;
+    //Function processes the weekly rescue stat independently (one week fixed)
+    private void processWeeklyRescueStat(List<DocumentSnapshot> docs) {
+        //define week threshold
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+        int weeklyTotal = 0;
+        for (DocumentSnapshot doc : docs) {
+            Timestamp ts = doc.getTimestamp("timeTaken");
+            if (ts == null) continue;
+            LocalDate rescueDate = ts.toDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            //if doc in current week we count it
+            if (!rescueDate.isBefore(weekStart) && !rescueDate.isAfter(weekEnd)) { weeklyTotal += 1; }
+        }
+        if (tvWeeklyRescues != null) { tvWeeklyRescues.setText(weeklyTotal > 0 ? weeklyTotal + " rescue(s)" : "No rescues yet"); }
+    }
 
-        if ("provider".equals(userRole) && !allowRescue){
-            tvLatestRescue.setText("Not Available");
+
+    //process each document independently
+    private void processWeeklyRescueDocuments(List<DocumentSnapshot> docs, LocalDate cutoff, int days) {
+        int[] counts = new int[days];
+        for (DocumentSnapshot doc : docs) {
+            Timestamp ts = doc.getTimestamp("timeTaken");
+            if (ts == null) continue;
+            LocalDate rescueDate = ts.toDate().toInstant()
+                    .atZone(ZoneId.systemDefault()).toLocalDate();
+
+            if (rescueDate.isBefore(cutoff)) continue;
+
+            int index = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
+            if (index >= 0 && index < days) {
+                counts[index] += 1; // count 1 per document
+            }
+        }
+
+        drawRescueChartDynamic(counts, days);
+    }
+
+
+    /*
+    * Function loads the latest rescue date with one fetch call and caches data
+    */
+    private void loadLatestRescueDate() {
+        if (correspondingUid == null) return;
+        // check cache first
+        if (latestRescueCache.containsKey(correspondingUid)) {
+            Date cachedDate = latestRescueCache.get(correspondingUid);
+            if (cachedDate == null) {tvLastRescue.setText("No rescues yet"); }
+            else {
+                String formatted = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                        .format(cachedDate);
+                tvLastRescue.setText(formatted);
+            }
             return;
         }
 
-        db.collection("incidentLog")
-                .document(childId)
-                .collection("triageSessions")
-                .orderBy("date", Query.Direction.DESCENDING)
+        db.collection("children")
+                .document(correspondingUid)
+                .collection("rescueLog")
+                .orderBy("timeTaken", Query.Direction.DESCENDING)
+                .limit(1) // only need one
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLatestRescue);
-
                     if (snapshot.isEmpty()) {
-                        tvLatestRescue.setText("No rescues yet");
+                        tvLastRescue.setText("No rescues yet");
+                        latestRescueCache.put(correspondingUid, null);
                         return;
                     }
 
-                    Date latestRescueDate = null;
+                    DocumentSnapshot doc = snapshot.getDocuments().get(0);
+                    Timestamp ts = doc.getTimestamp("timeTaken");
+                    Date latestRescueDate = (ts != null) ? ts.toDate() : null;
 
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        Long count = doc.getLong("rescueAttempts");
-                        Timestamp ts = doc.getTimestamp("date");
+                    // cache the result
+                    latestRescueCache.put(correspondingUid, latestRescueDate);
 
-                        if (count != null && ts != null && count >= 1) {
-                            latestRescueDate = ts.toDate();
-                            break;
-                        }
-                    }
-
-                    if (latestRescueDate == null) {
-                        tvLatestRescue.setText("No rescues yet");
-                    } else {
+                    if (latestRescueDate == null) { tvLastRescue.setText("No rescues yet"); }
+                    else {
                         String formatted = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
                                 .format(latestRescueDate);
-                        tvLatestRescue.setText(formatted);
+                        tvLastRescue.setText(formatted);
                     }
                 })
-                .addOnFailureListener(e -> {
-                    TextView tvLatestRescue = requireView().findViewById(R.id.tvLastRescue);
-                    tvLatestRescue.setText("Error loading");
+                .addOnFailureListener(e -> tvLastRescue.setText("Error loading"));
+    }
+
+    //Function loads the PEF trend and also caches data
+    private void loadPEFTrend(int days) {
+        if (correspondingUid == null) return;
+        if ("provider".equals(userRole) && !allowRescue) return;
+
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(days - 1);
+
+        List<DocumentSnapshot> cachedDocs = pefCache.get(correspondingUid);
+        if (cachedDocs != null) {
+            processPEFDocuments(cachedDocs, startDate, today, days);
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("dailyCheckins")
+                .document(correspondingUid)
+                .collection("entries")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<DocumentSnapshot> docs = snapshot.getDocuments();
+                    pefCache.put(correspondingUid, docs); // cache if not in there yet
+                    processPEFDocuments(docs, startDate, today, days);
                 });
+    }
+
+    //process each document independently
+    private void processPEFDocuments(List<DocumentSnapshot> docs, LocalDate startDate, LocalDate endDate, int days) {
+        Map<LocalDate, Integer> pefByDate = new HashMap<>();
+
+        for (DocumentSnapshot doc : docs) {
+            LocalDate entryDate;
+            try {
+                entryDate = LocalDate.parse(doc.getId());
+            } catch (Exception e) {
+                continue;
+            }
+
+            if (entryDate.isBefore(startDate) || entryDate.isAfter(endDate)) continue;
+
+            Long pef = doc.getLong("pef");
+            if (pef != null) pefByDate.put(entryDate, pef.intValue());
+        }
+
+        int[] pefValues = new int[days];
+        for (int i = 0; i < days; i++) {
+            LocalDate d = startDate.plusDays(i);
+            pefValues[i] = pefByDate.getOrDefault(d, 0);
+        }
+
+        drawPEFLineChart(pefValues, days);
+    }
+
+    // inventory [NOT CACHED]
+    private void loadInventory() {
+        if (correspondingUid == null) return;
+
+        // Check permissions first
+        if ("provider".equals(userRole) && !allowRescue) {
+            tvRescueName.setText("Not Available");
+            tvRescueExpiry.setText(" ");
+            tvRescuePurchase.setText(" ");
+        }
+        if ("provider".equals(userRole) && !allowController) {
+            tvControllerName.setText("Not Available");
+            tvControllerExpiry.setText(" ");
+            tvControllerPurchase.setText(" ");
+        }
+
+        //check if in cache
+        InventoryData cached = inventoryCache.get(correspondingUid);
+        if (cached != null) { updateInventoryUI(cached); return; }
+
+        //load data references; inventory -> rescue & controller
+        DocumentReference rescueRef = db.collection("children")
+                .document(correspondingUid)
+                .collection("inventory")
+                .document("rescue");
+
+        DocumentReference controllerRef = db.collection("children")
+                .document(correspondingUid)
+                .collection("inventory")
+                .document("controller");
+
+        InventoryData data = new InventoryData();
+
+        rescueRef.get().addOnSuccessListener(rescueDoc -> {
+            if (rescueDoc.exists()) {
+                data.rescueName = rescueDoc.getString("name");
+                data.rescueAmount = rescueDoc.getLong("amount");
+                data.rescuePurchase = rescueDoc.getTimestamp("purchaseDate");
+                data.rescueExpiry = rescueDoc.getTimestamp("expiryDate");
+            }
+
+            controllerRef.get().addOnSuccessListener(ctrlDoc -> {
+                if (ctrlDoc.exists()) {
+                    data.controllerName = ctrlDoc.getString("name");
+                    data.controllerAmount = ctrlDoc.getLong("amount");
+                    data.controllerPurchase = ctrlDoc.getTimestamp("purchaseDate");
+                    data.controllerExpiry = ctrlDoc.getTimestamp("expiryDate");
+                }
+
+                //cache data if just fetched
+                inventoryCache.put(correspondingUid, data);
+
+                //update ui
+                updateInventoryUI(data);
+            });
+        });
+    }
+
+    private void updateInventoryUI(InventoryData data) {
+        //rescue
+        if (data.rescueName != null || data.rescueAmount != null) {
+            String display = "";
+            if (data.rescueName != null) display += data.rescueName;
+            if (data.rescueAmount != null) display += ":  " + data.rescueAmount;
+            tvRescueName.setText(display);
+            tvRescuePurchase.setText(data.rescuePurchase != null ?
+                    "Purchase Date: " + formatDate(data.rescuePurchase) : "-");
+            tvRescueExpiry.setText(data.rescueExpiry != null ?
+                    "Expiry Date: " + formatDate(data.rescueExpiry) : "-");
+        }
+
+        //controller
+        if (data.controllerName != null || data.controllerAmount != null) {
+            String display = "";
+            if (data.controllerName != null) display += data.controllerName;
+            if (data.controllerAmount != null) display += ":  " + data.controllerAmount;
+            tvControllerName.setText(display);
+            tvControllerPurchase.setText(data.controllerPurchase != null ?
+                    "Purchase Date: " + formatDate(data.controllerPurchase) : "-");
+            tvControllerExpiry.setText(data.controllerExpiry != null ?
+                    "Expiry Date: " + formatDate(data.controllerExpiry) : "-");
+        }
     }
 
     private void drawRescueChartDynamic(int[] counts, int days) {
         if (rescueChart == null) return;
-
-        if ("provider".equals(userRole) && !allowRescue){
-            return;
-        }
-
+        if ("provider".equals(userRole) && !allowRescue){ return; }
 
         ArrayList<BarEntry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
@@ -683,7 +737,6 @@ public class DashboardFragment extends Fragment {
 
         XAxis xAxis = rescueChart.getXAxis();
 
-
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -698,13 +751,8 @@ public class DashboardFragment extends Fragment {
             }
         });
 
-        if (days == 30) {
-            xAxis.setTextSize(2f);
-            xAxis.setLabelRotationAngle(280f);
-        } else {
-            xAxis.setTextSize(10f);
-            xAxis.setLabelRotationAngle(0f);
-        }
+        if (days == 30) { xAxis.setTextSize(2f); xAxis.setLabelRotationAngle(280f); }
+        else { xAxis.setTextSize(10f); xAxis.setLabelRotationAngle(0f); }
 
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setLabelCount(days);
@@ -723,56 +771,6 @@ public class DashboardFragment extends Fragment {
 
         rescueChart.setData(barData);
         rescueChart.invalidate();
-    }
-
-    private void loadPEFTrend(int days) {
-        if (childId == null) return;
-
-        if ("provider".equals(userRole) && !allowRescue){
-            return;
-        }
-
-        LocalDate today = LocalDate.now();
-        LocalDate startDate = today.minusDays(days - 1);
-
-        Map<LocalDate, Integer> pefByDate = new HashMap<>();
-
-        FirebaseFirestore.getInstance()
-                .collection("dailyCheckins")
-                .document(childId)
-                .collection("entries")
-                .get()
-                .addOnSuccessListener(snapshot -> {
-
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        String dateKey = doc.getId();
-                        LocalDate entryDate;
-
-                        try {
-                            entryDate = LocalDate.parse(dateKey);
-                        } catch (Exception e) {
-                            continue;
-                        }
-
-                        if (entryDate.isBefore(startDate) || entryDate.isAfter(today)) {
-                            continue;
-                        }
-
-                        Long pef = doc.getLong("pef");
-                        if (pef != null) {
-                            pefByDate.put(entryDate, pef.intValue());
-                        }
-                    }
-
-                    int[] pefValues = new int[days];
-                    for (int i = 0; i < days; i++) {
-                        LocalDate d = startDate.plusDays(i);
-                        Integer val = pefByDate.get(d);
-                        pefValues[i] = (val != null) ? val : 0;
-                    }
-
-                    drawPEFLineChart(pefValues, days);
-                });
     }
 
     private void drawPEFLineChart(int[] pefValues, int days) {
@@ -818,7 +816,6 @@ public class DashboardFragment extends Fragment {
         }
 
         if (days == 7) {
-
             xAxis.setEnabled(true);
             xAxis.setValueFormatter(new IndexAxisValueFormatter(xLabels));
             xAxis.setLabelCount(7, true);
@@ -850,141 +847,15 @@ public class DashboardFragment extends Fragment {
         }
     }
 
-    private void loadZoneHistory() {
-        if (childId == null) return;
-
-        LocalDate today = LocalDate.now();
-        Entry[] entryArray = new Entry[7];
-
-        for (int i = 0; i < 7; i++) {
-            LocalDate day = today.minusDays(6 - i);
-            String dateKey = day.toString();
-            int index = i;
-
-            db.collection("dailyCheckins")
-                    .document(childId)
-                    .collection("entries")
-                    .document(dateKey)
-                    .get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc.exists()) {
-                            String zone = doc.getString("zoneColour");
-                            if (zone == null) {
-                                entryArray[index] = new Entry(index, 0);
-                            } else {
-                                switch (zone.toLowerCase()) {
-                                    case "green":
-                                        entryArray[index] = new Entry(index, 1);
-                                        break;
-                                    case "yellow":
-                                        entryArray[index] = new Entry(index, 2);
-                                        break;
-                                    case "red":
-                                        entryArray[index] = new Entry(index, 3);
-                                        break;
-                                    default:
-                                        entryArray[index] = new Entry(index, 0);
-                                }
-                            }
-                        } else {
-                            entryArray[index] = new Entry(index, 0);
-                        }
-
-                        checkIfComplete(entryArray);
-                    });
-        }
-    }
-
-    private void checkIfComplete(Entry[] entryArray) {
-        for (Entry e : entryArray) {
-            if (e == null) return;
-        }
-    }
-
-
-    // inventory
-
-    private void loadInventory() {
-        if (childId == null) return;
-
-        if ("provider".equals(userRole) && !allowRescue){
-            tvRescueName.setText("Not Available");
-            tvRescueExpiry.setText(" ");
-            tvRescuePurchase.setText(" ");
-        }
-        if ("provider".equals(userRole) && !allowController){
-            tvControllerName.setText("Not Available");
-            tvControllerExpiry.setText(" ");
-            tvControllerPurchase.setText(" ");
-        }
-        else{
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-            DocumentReference rescueRef = db.collection("children")
-                    .document(childId)
-                    .collection("inventory")
-                    .document("rescue");
-
-            DocumentReference controllerRef = db.collection("children")
-                    .document(childId)
-                    .collection("inventory")
-                    .document("controller");
-
-            rescueRef.get().addOnSuccessListener(rescueDoc -> {
-                if (rescueDoc.exists()) {
-                    String name = rescueDoc.getString("name");
-                    Long amount = rescueDoc.getLong("amount");
-
-                    Timestamp purchase = rescueDoc.getTimestamp("purchaseDate");
-                    Timestamp expiry = rescueDoc.getTimestamp("expiryDate");
-
-                    String display = "";
-
-                    if (name != null) display += name;
-                    if (amount != null) display += ":  " + amount;
-                    tvRescueName.setText(display.isEmpty() ? "" : display);
-
-                    tvRescuePurchase.setText(purchase != null ? "Purchase Date: " +  formatDate(purchase) : "-");
-                    tvRescueExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
-                }
-            });
-
-            controllerRef.get().addOnSuccessListener(ctrlDoc -> {
-                if (ctrlDoc.exists()) {
-                    String name = ctrlDoc.getString("name");
-                    Long amount = ctrlDoc.getLong("amount");
-
-                    Timestamp purchase = ctrlDoc.getTimestamp("purchaseDate");
-                    Timestamp expiry = ctrlDoc.getTimestamp("expiryDate");
-
-                    String display = "";
-
-                    if (name != null) display += name;
-                    if (amount != null) display += ":  " + amount;
-                    tvControllerName.setText(display.isEmpty() ? "" : display);
-                    tvControllerPurchase.setText(purchase != null ? "Purchase Date: " + formatDate(purchase) : "-");
-                    tvControllerExpiry.setText(expiry != null ? "Expiry Date: " + formatDate(expiry) : "-");
-                }
-            });
-
-        }
-
-    }
-
     private String formatDate(Timestamp ts) {
         Date date = ts.toDate();
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         return sdf.format(date);
     }
 
-
-    public static class TriageIncident {
-        String date;
-        String symptoms;
-
-        public TriageIncident(String date, String symptoms) {
-            this.date = date;
-            this.symptoms = symptoms;
-        }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (childListener != null) childListener.remove();
     }
 }
