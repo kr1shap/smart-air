@@ -1,19 +1,11 @@
 package com.example.smart_air;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
-import java.util.TimerTask;
-import androidx.core.app.NotificationManagerCompat;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,10 +15,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -39,9 +28,12 @@ import com.example.smart_air.fragments.DashboardFragment;
 import com.example.smart_air.fragments.TechniqueHelperFragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -66,11 +58,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
-    ImageButton notification;
-    private ListenerRegistration unreadNotifListener;
+    ImageButton notification, providerCodeBtn;
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
+    private NotificationViewModel notifVM;
     User user;
     private String userRole;
 
@@ -102,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
         notifRepo = new NotificationRepository();
 
         //if no user signed in
-        repo = new AuthRepository();
         if(repo.getCurrentUser() == null) {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
@@ -115,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
         MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        //add code button for provider
+        providerCodeBtn = findViewById(R.id.providerCodeBtn);
 
         //get user role
         sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
@@ -128,11 +121,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // showing child dropdown pop up
-        switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
-        });
+        switchChildButton.setOnClickListener(v -> { showChildPopup(); });
 
-        //notif button
+        //notif button & notif VM setup
+        notifVM = new ViewModelProvider(this).get(NotificationViewModel.class);
+        notifVM.setChildVM(sharedModel);
         notification = findViewById(R.id.notificationButton);
 
         //add listen on click
@@ -155,6 +148,14 @@ public class MainActivity extends AppCompatActivity {
                 repo.signOut();
                 startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
                 finish();
+            }
+        });
+
+        //providerCodeBtn button
+        providerCodeBtn.setOnClickListener(v -> {
+            if(userRole != null && userRole.equals("provider")) {
+                DialogCodeFragment dialog = new DialogCodeFragment();
+                dialog.show(getSupportFragmentManager(), "DialogCodeFragment");
             }
         });
 
@@ -184,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.medicine) {
                 // Add medicine fragment
 
+                //medicine fragment
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
@@ -336,9 +338,55 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                     startChildrenListener();
                     });
+    }
+
+    private void convertToNamesAndDob(List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        if(uid.isEmpty()){
+            sharedModel.setChildren(children);
+            return;
+        }
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        String dob = "";
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                            if (doc.contains("dob")){
+                                Timestamp dobTimestamp = doc.getTimestamp("dob");
+                                Date date = dobTimestamp.toDate();
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                dob = sdf.format(date);
+                            }
+                        }
+                        if(!dob.isEmpty()){
+                            name = name + " [" + dob + "]";
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
+                            int currentIndex = sharedModel.getCurrentChild().getValue();
+                            if(currentIndex >= children.size()){ // if last child gets deleted
+                                sharedModel.setCurrentChild(0);
+                            }
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
     }
 
 
@@ -375,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
 
     // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
-        if(userRole.equals("child")){
+        if(userRole.equals("child")) {
             // enable dailycheckin and triage
              dailyCheckIn.setEnabled(true);
              dailyCheckIn.setCheckable(true);
@@ -385,9 +433,12 @@ public class MainActivity extends AppCompatActivity {
              triage.setVisible(true);
              //disable notification
              notification.setVisibility(View.GONE);
+             //disable add code btn
+             providerCodeBtn.setVisibility(View.GONE);
+             providerCodeBtn.setEnabled(false);
              return;
         }
-        else if(userRole.equals("parent")){
+        else if(userRole.equals("parent")) {
             switchChildButton.setVisibility(View.VISIBLE);
             // enable dailycheckin
             if (removeDailyCheckIn) {
@@ -407,6 +458,9 @@ public class MainActivity extends AppCompatActivity {
             triage.setEnabled(true);
             triage.setCheckable(true);
             triage.setVisible(true);
+            //disable add code btn
+            providerCodeBtn.setVisibility(View.GONE);
+            providerCodeBtn.setEnabled(false);
             // update child switching list when new child is added / deleted
             listenerToParent(repo.getCurrentUser().getUid(), true);
             //setup notification listener and icon
@@ -425,6 +479,9 @@ public class MainActivity extends AppCompatActivity {
             triage.setVisible(false);
             //disable notification
             notification.setVisibility(View.GONE);
+            //enable add code
+            providerCodeBtn.setVisibility(View.VISIBLE);
+            providerCodeBtn.setEnabled(true);
         }
 
     }
@@ -466,18 +523,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUnreadNotificationsBadge(String uid) {
-         unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
-            if (error != null || value == null) return;
-            int size = value.size();
-            if (prevNotifCount == -1) prevNotifCount = size;
-            updateToolbarBadge(size); //unread count
-            if(!notifOnLogin) notifOnLogin = true; //on login, notification toast only shows when a new one comes and they're online
-            else if (prevNotifCount < size) Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show();
-            prevNotifCount = size; //only show changes when size of document increases
-         });
+        if (!"parent".equals(userRole)) return;
+        notifVM.getUnreadCount().observe(this, count -> {
+            if (count == null) return;
+            updateToolbarBadge(count);
+            // first time, don't show new notif
+            if (!notifOnLogin) { notifOnLogin = true; }
+            // new or future notif notifications
+            else if (prevNotifCount < count) { Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show(); }
+            prevNotifCount = count;
+        });
+        //start listening once only
+        notifVM.startListening(uid);
     }
 
-    public void updateToolbarBadge(int count) {
+    private void updateToolbarBadge(int count) {
         TextView badge = findViewById(R.id.badge_text);
         if (count > 0) {
             badge.setVisibility(View.VISIBLE);
@@ -506,7 +566,7 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                 });
     }
 

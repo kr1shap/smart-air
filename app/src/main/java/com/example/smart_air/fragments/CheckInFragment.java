@@ -1,7 +1,9 @@
 package com.example.smart_air.fragments;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,11 +22,16 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.CheckInRepository;
+import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Child;
+import com.example.smart_air.modelClasses.Notification;
+import com.example.smart_air.modelClasses.enums.NotifType;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.slider.Slider;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -36,10 +43,12 @@ public class CheckInFragment extends Fragment {
     private View view;
     int personalBest;
     String userRole = "";
-    String correspondingUid;
+    public String correspondingUid;
     String currentTriggers = "Tap to Select";
     String [] triggers = {"Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
     private SharedChildViewModel sharedModel;
+
+    CheckInRepository repo;
 
     @Nullable
     @Override
@@ -56,7 +65,7 @@ public class CheckInFragment extends Fragment {
         this.view = view;
         this.personalBest = 400; //TODO: get personal best from parent's original set up
 
-        CheckInRepository repo = new CheckInRepository();
+        repo = new CheckInRepository();
 
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
@@ -104,6 +113,11 @@ public class CheckInFragment extends Fragment {
         // clicking save button and adding to firestore
         MaterialButton save = view.findViewById(R.id.buttonSave);
         save.setOnClickListener(v-> {
+            // null check
+            if (correspondingUid == null || correspondingUid.isEmpty()) {
+                android.widget.Toast.makeText(getContext(), "Please wait, loading...", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
             RadioGroup radioNight = view.findViewById(R.id.radioNight); // night waking
             boolean nightWaking = (radioNight.getCheckedRadioButtonId() == R.id.radioYes);
             SeekBar seekBar = view.findViewById(R.id.seekBar);          // activity limit
@@ -114,7 +128,8 @@ public class CheckInFragment extends Fragment {
             if(userRole.equals("parent")){
                 EditText myNumberEditText = view.findViewById(R.id.editTextNumber);
                 String myNumberEditTextString = myNumberEditText.getText().toString().trim();
-                int inputPef = Integer.parseInt(myNumberEditTextString);
+                int inputPef;
+                inputPef = Integer.parseInt(myNumberEditTextString);
 
                 EditText preText = view.findViewById(R.id.editTextPreMed);
                 String preTextString = preText.getText().toString().trim();
@@ -149,6 +164,12 @@ public class CheckInFragment extends Fragment {
 
         // switch entry page
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            // null check
+            if (correspondingUid == null || correspondingUid.isEmpty()) {
+                android.widget.Toast.makeText(getContext(), "Please wait, loading...", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (checkedId == R.id.buttonParent && isChecked){
                 buttonChild.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_default_bg));
                 buttonParent.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.role_selected_bg));
@@ -173,8 +194,39 @@ public class CheckInFragment extends Fragment {
         });
     }
 
-    // change screen for new children based on toggle
+    private void refreshToggleButtons(CheckInRepository repo) {
+        if(correspondingUid == null || correspondingUid.isEmpty() || userRole.isEmpty()) {
+            return; // not ready yet
+        }
+
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
+        int checkedId = toggleGroup.getCheckedButtonId();
+
+        if (checkedId == R.id.buttonParent){
+            if(userRole.equals("child")){
+                repo.getUserInputOther(CheckInFragment.this, correspondingUid, userRole);
+            }
+            else if(userRole.equals("parent")) {
+                repo.getUserInput(this, userRole, correspondingUid);
+            }
+        }
+        else if (checkedId == R.id.buttonChild){
+            if (userRole.equals("child")){
+                repo.getUserInput(this, userRole, correspondingUid);
+            }
+            else if (userRole.equals("parent")){
+                repo.getUserInputOther(CheckInFragment.this, correspondingUid, userRole);
+            }
+        }
+    }
+
     private void refreshUINewChild(CheckInRepository repo) {
+
+        // null check
+        if (correspondingUid == null || correspondingUid.isEmpty()) {
+            return;
+        }
+
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleRole);
         int checkedId = toggleGroup.getCheckedButtonId();
 
@@ -575,6 +627,11 @@ public class CheckInFragment extends Fragment {
         if(percent >= 50){
             return "yellow";
         }
+        // sending notification for being in red zone
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        String uid = auth.getCurrentUser().getUid();
+        repo.checkIfRed(correspondingUid, uid, this);
+
         return "red";
 
     }

@@ -17,7 +17,7 @@ public class Notification {
     public Notification() {}
 
     public Notification(String childUid,boolean hasRead, Timestamp timestamp, NotifType notifType) {
-        this.childName="N/A";
+        this.childName="";
         this.childUid = childUid;
         this.hasRead = hasRead;
         this.timestamp = timestamp;
