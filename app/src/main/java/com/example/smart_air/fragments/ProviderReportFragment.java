@@ -9,7 +9,6 @@ import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,7 +45,9 @@ public class ProviderReportFragment extends Fragment {
     private String childId;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    public ProviderReportFragment() {}
+    public ProviderReportFragment(){
+        // empty constructor
+    }
 
     @Nullable
     @Override
@@ -58,6 +59,7 @@ public class ProviderReportFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // link xml to fragment
         spinnerMonths = view.findViewById(R.id.spinnerMonths);
         Button btnGenerate = view.findViewById(R.id.btnGenerate);
         Button btnCancel = view.findViewById(R.id.btnCancel);
@@ -79,7 +81,11 @@ public class ProviderReportFragment extends Fragment {
                 "Past 6 months"
         );
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, options);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                options
+        );
         spinnerMonths.setAdapter(adapter);
 
         btnCancel.setOnClickListener(v ->
@@ -93,6 +99,7 @@ public class ProviderReportFragment extends Fragment {
         });
     }
 
+    // where main info is generated
     private void generateProviderReport(int months) {
         LocalDate now = LocalDate.now();
         LocalDate cutoff = now.minusMonths(months);
@@ -109,13 +116,12 @@ public class ProviderReportFragment extends Fragment {
                     String childName = childDoc.getString("name");
                     Timestamp dobTs = childDoc.getTimestamp("dob");
 
-                    String childDob = dobTs != null ?
-                            new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                    .format(dobTs.toDate())
+                    String childDob = dobTs != null
+                            ? new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                            .format(dobTs.toDate())
                             : "-";
 
                     String parentUid = childDoc.getString("parentUid");
-
                     if (parentUid == null) {
                         Toast.makeText(requireContext(), "Parent info missing", Toast.LENGTH_SHORT).show();
                         return;
@@ -125,29 +131,33 @@ public class ProviderReportFragment extends Fragment {
                             .document(parentUid)
                             .get()
                             .addOnSuccessListener(parentDoc -> {
-
                                 String parentEmail = parentDoc.getString("email");
                                 if (parentEmail == null) parentEmail = "-";
 
-                                fetchTriageAndDailyData(
-                                        months,
-                                        cutoff,
-                                        childName,
-                                        childDob,
-                                        parentEmail
-                                );
+                                fetchTriageSessionsForReport(months, cutoff, childName, childDob, parentEmail);
                             });
                 });
     }
 
-    private void fetchTriageAndDailyData(int months, LocalDate cutoff, String childName, String childDob, String parentEmail) {
+    private void fetchTriageSessionsForReport(
+            int months,
+            LocalDate cutoff,
+            String childName,
+            String childDob,
+            String parentEmail
+    ) {
         LocalDate now = LocalDate.now();
 
         int totalDays = (int) ChronoUnit.DAYS.between(cutoff, now) + 1;
         if (totalDays <= 0) totalDays = 1;
 
-        int[] rescueCounts = new int[totalDays];
-        List<TriageIncident> incidents = new ArrayList<>();
+        final int[] rescueCounts = new int[totalDays];
+        final List<TriageIncident> incidents = new ArrayList<>();
+
+        final int[] problemDays = {0};
+        final int[] zoneGreen = {0};
+        final int[] zoneYellow = {0};
+        final int[] zoneRed = {0};
 
         int finalTotalDays = totalDays;
         db.collection("incidentLog")
@@ -163,7 +173,8 @@ public class ProviderReportFragment extends Fragment {
                         if (ts == null) continue;
 
                         LocalDate entryDate = ts.toDate().toInstant()
-                                .atZone(ZoneId.systemDefault()).toLocalDate();
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate();
 
                         if (entryDate.isBefore(cutoff) || entryDate.isAfter(now)) continue;
 
@@ -172,85 +183,71 @@ public class ProviderReportFragment extends Fragment {
                                         .format(ts.toDate());
 
                         Object rawFlags = doc.get("flagList");
-                        String symptoms = "-";
+                        String symptomsText = "-";
+
+                        boolean hasSymptoms = false;
 
                         if (rawFlags instanceof List) {
+                            @SuppressWarnings("unchecked")
                             List<String> list = (List<String>) rawFlags;
-                            if (list != null && !list.isEmpty())
-                                symptoms = TextUtils.join(", ", list);
+                            if (list != null && !list.isEmpty()) {
+                                symptomsText = TextUtils.join(", ", list);
+                                hasSymptoms = true;
+                            }
                         } else if (rawFlags instanceof String) {
-                            symptoms = (String) rawFlags;
+                            String s = ((String) rawFlags).trim();
+                            if (!s.isEmpty()) {
+                                symptomsText = s;
+                                hasSymptoms = true;
+                            }
                         }
 
-                        incidents.add(new TriageIncident(formattedDate, symptoms));
+                        incidents.add(new TriageIncident(formattedDate, symptomsText));
+
+                        if (hasSymptoms) {
+                            problemDays[0]++;
+                        }
+
+                        String zone = doc.getString("zoneColour");
+                        if (zone != null) {
+                            switch (zone.toLowerCase()) {
+                                case "green": zoneGreen[0]++; break;
+                                case "yellow": zoneYellow[0]++; break;
+                                case "red": zoneRed[0]++; break;
+                            }
+                        }
 
                         int rescue = 0;
                         Object rawRescue = doc.get("rescueAttempts");
-                        if (rawRescue instanceof Number) rescue = ((Number) rawRescue).intValue();
-                        else if (rawRescue instanceof String) {
-                            try { rescue = Integer.parseInt((String) rawRescue); } catch (Exception ignored) {}
+                        if (rawRescue instanceof Number) {
+                            rescue = ((Number) rawRescue).intValue();
+                        } else if (rawRescue instanceof String) {
+                            try {
+                                rescue = Integer.parseInt((String) rawRescue);
+                            } catch (Exception ignored) {}
                         }
 
                         if (rescue > 0) {
                             int idx = (int) ChronoUnit.DAYS.between(cutoff, entryDate);
-                            if (idx >= 0 && idx < finalTotalDays) rescueCounts[idx] += rescue;
-                        }
-                    }
-
-                    fetchDailyCheckinsForReport(
-                            months, cutoff, childName, childDob, parentEmail,
-                            incidents, rescueCounts, finalTotalDays
-                    );
-                });
-    }
-
-    private void fetchDailyCheckinsForReport(int months, LocalDate cutoff, String childName, String childDob, String parentEmail, List<TriageIncident> incidents, int[] rescueCounts, int totalDays) {
-        LocalDate now = LocalDate.now();
-
-        final int[] problemDays = {0};
-        final int[] zoneGreen = {0};
-        final int[] zoneYellow = {0};
-        final int[] zoneRed = {0};
-
-        db.collection("dailyCheckins")
-                .document(childId)
-                .collection("entries")
-                .get()
-                .addOnSuccessListener(snap -> {
-
-                    for (DocumentSnapshot doc : snap) {
-                        LocalDate entryDate;
-                        try { entryDate = LocalDate.parse(doc.getId()); }
-                        catch (Exception e) { continue; }
-
-                        if (entryDate.isBefore(cutoff) || entryDate.isAfter(now)) continue;
-
-                        // symptom burden
-                        Object trig = doc.get("triggersparent");
-                        boolean has = false;
-
-                        if (trig instanceof List) {
-                            List<String> list = (List<String>) trig;
-                            has = list != null && !list.isEmpty();
-                        } else if (trig instanceof String) {
-                            has = !((String) trig).trim().isEmpty();
-                        }
-                        if (has) problemDays[0]++;
-
-                        // zone
-                        String zone = doc.getString("zoneColour");
-                        if (zone != null) switch (zone.toLowerCase()) {
-                            case "green": zoneGreen[0]++; break;
-                            case "yellow": zoneYellow[0]++; break;
-                            case "red": zoneRed[0]++; break;
+                            if (idx >= 0 && idx < finalTotalDays) {
+                                rescueCounts[idx] += rescue;
+                            }
                         }
                     }
 
                     createPdfReport(
-                            months, childName, childDob, parentEmail,
-                            incidents, rescueCounts, cutoff,
-                            totalDays, problemDays[0],
-                            zoneGreen[0], zoneYellow[0], zoneRed[0]
+                            months,
+                            childName,
+                            childDob,
+                            parentEmail,
+                            cutoff,
+                            finalTotalDays,
+                            incidents,
+                            rescueCounts,
+                            problemDays[0],
+                            zoneGreen[0],
+                            zoneYellow[0],
+                            zoneRed[0]
                     );
                 });
     }
@@ -265,28 +262,36 @@ public class ProviderReportFragment extends Fragment {
     private void newPage(PdfDocument pdf, PageHolder ph) {
         PdfDocument.PageInfo info =
                 new PdfDocument.PageInfo.Builder(595, 842, ph.pageNumber).create();
-
         ph.page = pdf.startPage(info);
         ph.canvas = ph.page.getCanvas();
         ph.y = 40;
     }
 
+    /**
+     * Ensures there is at least 'needed' vertical space remaining on the current page; if not,
+     * finishes the page and starts a new one.
+     */
     private void ensureSpace(PdfDocument pdf, PageHolder ph, int needed) {
         int margin = 40;
-        int height = 842;
+        int pageHeight = 842;
 
-        if (ph.y + needed < height - margin) return;
+        if (ph.y + needed < pageHeight - margin) return;
 
         pdf.finishPage(ph.page);
         ph.pageNumber++;
         newPage(pdf, ph);
     }
 
-    private int drawWrappedLine(Canvas c, String text, int x, int y, Paint p, int maxWidth) {String[] words = text.split(" ");
+    /**
+     * Draws a wrapped text block within maxWidth; returns updated y.
+     */
+    private int drawWrappedLine(Canvas c, String text, int x, int y, Paint p, int maxWidth) {
+        String[] words = text.split(" ");
         StringBuilder line = new StringBuilder();
 
         for (String w : words) {
-            if (p.measureText(line + w) > maxWidth) {
+            String candidate = line + w + " ";
+            if (p.measureText(candidate) > maxWidth) {
                 c.drawText(line.toString(), x, y, p);
                 y += p.getTextSize() + 6;
                 line = new StringBuilder(w + " ");
@@ -296,58 +301,165 @@ public class ProviderReportFragment extends Fragment {
         }
 
         c.drawText(line.toString(), x, y, p);
-        return y + (int)(p.getTextSize() + 6);
+        return y + (int) (p.getTextSize() + 6);
     }
 
-    private void drawRescueMiniChart(Canvas canvas, int[] values, int left, int top, int right, int bottom) {
+    private void drawRescueMiniChart(Canvas canvas,
+                                     int[] values,
+                                     LocalDate startDate,
+                                     int left, int top, int right, int bottom) {
+
         int width = right - left;
         int height = bottom - top;
+
+        Paint axisPaint = new Paint();
+        axisPaint.setColor(Color.BLACK);
+        axisPaint.setStrokeWidth(2f);
+
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(10f);
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+
+        int axisLeft = left + 30;
+        int axisBottom = bottom - 20;
+        int axisTop = top + 10;
+        int axisRight = right - 10;
+
+        canvas.drawLine(axisLeft, axisTop, axisLeft, axisBottom, axisPaint);
+        canvas.drawLine(axisLeft, axisBottom, axisRight, axisBottom, axisPaint);
 
         int max = 1;
         for (int v : values) if (v > max) max = v;
 
-        float barWidth = width / (float) values.length;
+        int tickCount = 4;
+        for (int i = 0; i <= tickCount; i++) {
+            float frac = i / (float) tickCount;
+            float y = axisBottom - frac * (axisBottom - axisTop);
+            int labelVal = Math.round(frac * max);
 
-        Paint p = new Paint();
-        p.setColor(Color.parseColor("#3F51B5"));
+            canvas.drawLine(axisLeft - 5, y, axisLeft, y, axisPaint);
+            canvas.drawText(String.valueOf(labelVal), axisLeft - 25, y + 4, textPaint);
+        }
 
-        for (int i = 0; i < values.length; i++) {
-            float x1 = left + i * barWidth + barWidth * 0.2f;
-            float x2 = left + i * barWidth + barWidth * 0.8f;
+        int barAreaWidth = axisRight - axisLeft;
+        int barCount = values.length;
+        if (barCount == 0) return;
 
-            float barHeight = (values[i] / (float) max) * (height - 20);
+        float barWidth = barAreaWidth / (float) barCount;
 
-            canvas.drawRect(x1, bottom - barHeight, x2, bottom, p);
+        Paint barPaint = new Paint();
+        barPaint.setColor(Color.parseColor("#3F51B5"));
+        barPaint.setStyle(Paint.Style.FILL);
+
+        for (int i = 0; i < barCount; i++) {
+            float xCenter = axisLeft + (i + 0.5f) * barWidth;
+            float barHeight = (values[i] / (float) max) * (axisBottom - axisTop);
+            float x1 = xCenter - barWidth * 0.3f;
+            float x2 = xCenter + barWidth * 0.3f;
+            float y1 = axisBottom - barHeight;
+
+            canvas.drawRect(x1, y1, x2, axisBottom, barPaint);
+        }
+
+        LocalDate endDate = startDate.plusDays(barCount - 1);
+        LocalDate cursor = startDate.withDayOfMonth(1);
+        if (cursor.isBefore(startDate)) {
+            cursor = cursor.plusMonths(1);
+        }
+
+        while (!cursor.isAfter(endDate)) {
+            long daysFromStart = ChronoUnit.DAYS.between(startDate, cursor);
+            int index = (int) Math.min(Math.max(daysFromStart, 0), barCount - 1);
+
+            float xCenter = axisLeft + (index + 0.5f) * barWidth;
+            String label = cursor.getMonth().toString().substring(0, 3);
+            label = label.charAt(0) + label.substring(1).toLowerCase();
+
+            canvas.drawText(label, xCenter - textPaint.measureText(label) / 2, axisBottom + 15, textPaint);
+
+            cursor = cursor.plusMonths(1);
         }
     }
 
-    private void drawZoneBars(Canvas canvas, int g, int y, int r, int left, int top, int right, int bottom) {
-        int[] vals = {g, y, r};
-        String[] colors = {"#31ad36", "#ffcc12", "#b50000"};
+    private void drawZoneBars(Canvas canvas,
+                              int green, int yellow, int red,
+                              int left, int top, int right, int bottom) {
 
         int width = right - left;
         int height = bottom - top;
 
-        int max = Math.max(vals[0], Math.max(vals[1], vals[2]));
+        Paint axisPaint = new Paint();
+        axisPaint.setColor(Color.BLACK);
+        axisPaint.setStrokeWidth(2f);
+
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(11f);
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+
+        int axisLeft = left + 30;
+        int axisBottom = bottom - 25;
+        int axisTop = top + 10;
+        int axisRight = right - 10;
+
+        canvas.drawLine(axisLeft, axisTop, axisLeft, axisBottom, axisPaint);
+        canvas.drawLine(axisLeft, axisBottom, axisRight, axisBottom, axisPaint);
+
+        int[] vals = {green, yellow, red};
+        String[] labels = {"Green", "Yellow", "Red"};
+        String[] colors = {"#31ad36", "#ffcc12", "#b50000"};
+
+        int max = 0;
+        for (int v : vals) if (v > max) max = v;
         if (max == 0) max = 1;
 
-        float barWidth = width / 3f;
+        int tickCount = 4;
+        for (int i = 0; i <= tickCount; i++) {
+            float frac = i / (float) tickCount;
+            float y = axisBottom - frac * (axisBottom - axisTop);
+            int labelVal = Math.round(frac * max);
+            canvas.drawLine(axisLeft - 5, y, axisLeft, y, axisPaint);
+            canvas.drawText(String.valueOf(labelVal), axisLeft - 25, y + 4, textPaint);
+        }
 
-        Paint p = new Paint();
+        int barAreaWidth = axisRight - axisLeft;
+        float barWidth = barAreaWidth / 3f;
+
+        Paint barPaint = new Paint();
+        barPaint.setStyle(Paint.Style.FILL);
 
         for (int i = 0; i < 3; i++) {
-            p.setColor(Color.parseColor(colors[i]));
+            barPaint.setColor(Color.parseColor(colors[i]));
 
-            float x1 = left + i * barWidth + barWidth * 0.2f;
-            float x2 = left + i * barWidth + barWidth * 0.8f;
+            float xCenter = axisLeft + (i + 0.5f) * barWidth;
+            float barHeight = (vals[i] / (float) max) * (axisBottom - axisTop);
 
-            float barHeight = (vals[i] / (float) max) * (height - 40);
+            float x1 = xCenter - barWidth * 0.3f;
+            float x2 = xCenter + barWidth * 0.3f;
+            float y1 = axisBottom - barHeight;
 
-            canvas.drawRect(x1, bottom - barHeight, x2, bottom, p);
+            canvas.drawRect(x1, y1, x2, axisBottom, barPaint);
+
+            float labelWidth = textPaint.measureText(labels[i]);
+            canvas.drawText(labels[i], xCenter - labelWidth / 2, axisBottom + 15, textPaint);
         }
     }
 
-    private void createPdfReport(int months, String childName, String childDob, String parentEmail, List<TriageIncident> incidents, int[] rescueCounts, LocalDate cutoff, int totalDays, int problemDays, int zoneGreen, int zoneYellow, int zoneRed) {
+    private void createPdfReport(
+            int months,
+            String childName,
+            String childDob,
+            String parentEmail,
+            LocalDate cutoff,
+            int totalDays,
+            List<TriageIncident> incidents,
+            int[] rescueCounts,
+            int problemDays,
+            int zoneGreen,
+            int zoneYellow,
+            int zoneRed
+    ) {
 
         PdfDocument pdf = new PdfDocument();
         PageHolder ph = new PageHolder();
@@ -362,125 +474,146 @@ public class ProviderReportFragment extends Fragment {
 
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
         textPaint.setColor(Color.BLACK);
-        textPaint.setTextSize(14);
+        textPaint.setTextSize(14f);
 
         boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(2);
+        boxPaint.setStrokeWidth(2f);
 
         int left = 40;
         int right = 555;
 
-        titlePaint.setTextSize(26);
+        titlePaint.setTextSize(26f);
         ph.canvas.drawText("Provider Report", 595 / 2f, ph.y, titlePaint);
         ph.y += 40;
 
-        titlePaint.setTextSize(18);
+        titlePaint.setTextSize(18f);
         ph.canvas.drawText("Last " + months + " Months", 595 / 2f, ph.y, titlePaint);
         ph.y += 40;
 
+        // child info box
         ensureSpace(pdf, ph, 150);
-
         int boxTop = ph.y;
         ph.y += 20;
 
-        ph.y = drawWrappedLine(ph.canvas, "Child Name: " + childName, left + 20, ph.y, textPaint, right - left - 40);
-        ph.y = drawWrappedLine(ph.canvas, "Date of Birth: " + childDob, left + 20, ph.y, textPaint, right - left - 40);
-        ph.y = drawWrappedLine(ph.canvas, "Parent Email: " + parentEmail, left + 20, ph.y, textPaint, right - left - 40);
+        ph.y = drawWrappedLine(ph.canvas,
+                "Child Name: " + (childName == null ? "-" : childName),
+                left + 20, ph.y, textPaint, right - left - 40);
+
+        ph.y = drawWrappedLine(ph.canvas,
+                "Date of Birth: " + childDob,
+                left + 20, ph.y, textPaint, right - left - 40);
+
+        ph.y = drawWrappedLine(ph.canvas,
+                "Parent Email: " + parentEmail,
+                left + 20, ph.y, textPaint, right - left - 40);
 
         int boxBottom = ph.y + 20;
         ph.canvas.drawRect(left, boxTop, right, boxBottom, boxPaint);
         ph.y = boxBottom + 30;
 
+        // symptom burden
         ensureSpace(pdf, ph, 100);
-
         int sbTop = ph.y;
         ph.y += 20;
 
-        ph.y = drawWrappedLine(ph.canvas,
+        ph.y = drawWrappedLine(
+                ph.canvas,
                 "Symptom Burden (Problem Days): " + problemDays,
-                left + 20, ph.y, textPaint, right - left - 40);
+                left + 20, ph.y, textPaint, right - left - 40
+        );
 
         int sbBottom = ph.y + 20;
         ph.canvas.drawRect(left, sbTop, right, sbBottom, boxPaint);
         ph.y = sbBottom + 30;
 
+        // triage box
         ensureSpace(pdf, ph, 80);
-        textPaint.setTextSize(16);
+
+        textPaint.setTextSize(16f);
         ph.canvas.drawText("Notable Triage Incidents", left + 10, ph.y, textPaint);
         ph.y += 30;
-
-        textPaint.setTextSize(14);
+        textPaint.setTextSize(14f);
 
         for (TriageIncident incident : incidents) {
-
             ensureSpace(pdf, ph, 160);
 
             int rowTop = ph.y;
             ph.y += 20;
 
-            ph.y = drawWrappedLine(ph.canvas,
+            ph.y = drawWrappedLine(
+                    ph.canvas,
                     "• " + incident.date,
-                    left + 20, ph.y, textPaint, right - left - 40);
+                    left + 20, ph.y, textPaint, right - left - 40
+            );
 
-            ph.y = drawWrappedLine(ph.canvas,
+            ph.y = drawWrappedLine(
+                    ph.canvas,
                     "Symptoms: " + incident.symptoms,
-                    left + 40, ph.y, textPaint, right - left - 60);
+                    left + 40, ph.y, textPaint, right - left - 60
+            );
 
             int rowBottom = ph.y + 20;
-
             ph.canvas.drawRect(left, rowTop, right, rowBottom, boxPaint);
             ph.y = rowBottom + 20;
         }
 
+        // rescue chart
         ensureSpace(pdf, ph, 220);
-
-        textPaint.setTextSize(16);
+        textPaint.setTextSize(16f);
         ph.canvas.drawText("Rescue Attempts Over Time", left + 10, ph.y, textPaint);
         ph.y += 20;
+        textPaint.setTextSize(12f);
 
         int chartTop = ph.y;
-        int chartBottom = chartTop + 150;
+        int chartBottom = chartTop + 180;
 
         ph.canvas.drawRect(left, chartTop, right, chartBottom, boxPaint);
 
         drawRescueMiniChart(
-                ph.canvas, rescueCounts,
+                ph.canvas,
+                rescueCounts,
+                cutoff,
                 left + 10, chartTop + 10,
                 right - 10, chartBottom - 10
         );
 
         ph.y = chartBottom + 30;
 
+        // zone distribution chart
         ensureSpace(pdf, ph, 220);
-
+        textPaint.setTextSize(16f);
         ph.canvas.drawText("Zone Distribution", left + 10, ph.y, textPaint);
         ph.y += 20;
+        textPaint.setTextSize(12f);
 
         int zoneTop = ph.y;
-        int zoneBottom = zoneTop + 150;
+        int zoneBottom = zoneTop + 180;
 
         ph.canvas.drawRect(left, zoneTop, right, zoneBottom, boxPaint);
 
-        drawZoneBars(ph.canvas, zoneGreen, zoneYellow, zoneRed, left + 10, zoneTop + 10, right - 10, zoneBottom - 10);
+        drawZoneBars(
+                ph.canvas,
+                zoneGreen, zoneYellow, zoneRed,
+                left + 10, zoneTop + 10,
+                right - 10, zoneBottom - 10
+        );
 
         ph.y = zoneBottom + 40;
 
         ensureSpace(pdf, ph, 80);
-
-        textPaint.setTextSize(15);
-
-        ph.y = drawWrappedLine(ph.canvas, "Rescue frequency and controller adherence: 50% of planned days completed.", left, ph.y, textPaint, right - left);
+        textPaint.setTextSize(14f);
 
         pdf.finishPage(ph.page);
 
-        File path =
-                new File(requireContext().getExternalFilesDir(null),
-                        "provider_report.pdf");
+        // save file, and generate a new one each time
+        String fileName = "provider_report_" + System.currentTimeMillis() + ".pdf";
+        File path = new File(requireContext().getExternalFilesDir(null), fileName);
 
         try (FileOutputStream fos = new FileOutputStream(path)) {
             pdf.writeTo(fos);
+            Toast.makeText(requireContext(), "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
 
         pdf.close();

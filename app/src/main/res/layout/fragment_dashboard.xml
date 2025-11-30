@@ -93,6 +93,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Weekly Rescues"
                     android:fontFamily="@font/dm_sans_bold"
                     android:textSize="16sp"
@@ -172,7 +173,7 @@
             android:orientation="vertical"
             android:background="@drawable/rounded_card"
             app:cardElevation="4dp"
-            android:padding="18dp"
+            android:padding="20dp"
             android:layout_marginBottom="20dp">
 
             <TextView
@@ -196,6 +197,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Rescue:"
+                android:textSize="18sp"
                 android:fontFamily="@font/dm_sans_bold"
                 android:textColor="@color/colour_darkBlue"/>
 
@@ -205,6 +207,7 @@
                 android:layout_height="wrap_content"
                 android:text="-"
                 android:fontFamily="@font/dm_sans_medium"
+                android:textColor="@color/colour_darkBlue"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
 
@@ -213,6 +216,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
+                android:textColor="@color/colour_darkBlue"
                 android:fontFamily="@font/dm_sans_medium"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
@@ -222,6 +226,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
+                android:textColor="@color/colour_darkBlue"
                 android:fontFamily="@font/dm_sans_medium"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
@@ -231,6 +236,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Controller:"
+                android:textSize="18sp"
                 android:fontFamily="@font/dm_sans_bold"
                 android:textColor="@color/colour_darkBlue" />
 
@@ -239,6 +245,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
+                android:textColor="@color/colour_darkBlue"
                 android:fontFamily="@font/dm_sans_medium"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
@@ -247,6 +254,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
+                android:textColor="@color/colour_darkBlue"
                 android:fontFamily="@font/dm_sans_medium"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
@@ -255,11 +263,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
+                android:textColor="@color/colour_darkBlue"
                 android:fontFamily="@font/dm_sans_medium"
                 android:textSize="16sp"
                 android:layout_marginBottom="10dp"/>
 
-            <!-- Bottom row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
