@@ -18,6 +18,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class NotificationRepository {
     private final FirebaseFirestore db = FirebaseInitalizer.getDb();
@@ -51,9 +52,7 @@ public class NotificationRepository {
         DocumentReference parentDocRef = db.collection("notifications").document(parentUid);
         //check if parent document exists
         return parentDocRef.get().continueWithTask(task -> {
-            if (!task.isSuccessful()) {
-                throw task.getException();
-            }
+            if (!task.isSuccessful()) { throw Objects.requireNonNull(task.getException()); }
 
             DocumentSnapshot snapshot = task.getResult();
 
@@ -76,15 +75,11 @@ public class NotificationRepository {
                 .document(parentUid)
                 .collection("notificationList")
                 .document();
-
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("notifUid", docRef.getId());
-        notification.put("childUid", notificationObj.getChildUid());
-        notification.put("notifType", notificationObj.getNotifType());
-        notification.put("timestamp", Timestamp.now());
-        notification.put("hasRead", false);
+        notificationObj.setNotifUid(docRef.getId());
+        notificationObj.setTimestamp(Timestamp.now());
+        notificationObj.setHasRead(false);
         //write it
-        return docRef.set(notification);
+        return docRef.set(notificationObj);
     }
 
 

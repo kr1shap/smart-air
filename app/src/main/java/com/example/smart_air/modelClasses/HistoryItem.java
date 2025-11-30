@@ -179,6 +179,8 @@ public class HistoryItem {
 
         // getting date
         Calendar cal = Calendar.getInstance();
+        //if date null
+        if(accDate==null) accDate = new Date();
         cal.setTime(accDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);
