@@ -51,13 +51,6 @@
             android:text="My Streaks and Badges"
             android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/btn_name"
-            style="@style/SmartAir.ToggleDefaultButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="ur name pls" />
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

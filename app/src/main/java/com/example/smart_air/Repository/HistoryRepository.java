@@ -1,29 +1,22 @@
 package com.example.smart_air.Repository;
 
-import android.util.Log;
-import android.widget.LinearLayout;
-
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.modelClasses.HistoryItem;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.google.firebase.Timestamp;
-import java.util.Calendar;
 
 public class HistoryRepository {
     private FirebaseFirestore db;
@@ -33,37 +26,14 @@ public class HistoryRepository {
         db = FirebaseFirestore.getInstance();
     }
 
-    // if child gets it's own uid
-    public void getChildUid(HistoryFragment activity) {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        String currentUid = auth.getCurrentUser().getUid();
-
-        db.collection("users").document(currentUid)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document != null && document.exists()) {
-                            boolean isChild = "child".equals(document.getString("role"));
-                            String childUid;
-
-                            if (isChild) {
-                                childUid = currentUid;
-                                activity.setChildUid(childUid);
-                                return;
-                            }
-                            activity.setChildUid("");
-
-                            activity.exitScreen();
-                        }
-                    }
-                });
-    }
-
-
-
     // get's current cards
     public void getCards(String childUid, HistoryFragment activity){
+        // null cehck
+        if(childUid == null || childUid.isEmpty() || activity == null) {
+            android.util.Log.e("HistoryRepository", "getCards called with null parameters");
+            return;
+        }
+
         // queries for both child and parent based on filters
         Query childQuery = filterQuery(activity, childUid,"child");
         Query parentQuery = filterQuery(activity, childUid,"parent");
@@ -72,6 +42,7 @@ public class HistoryRepository {
         List<HistoryItem> results = new ArrayList<>();
 
         childQuery.get().addOnSuccessListener(dailyChild -> {
+
             for (DocumentSnapshot doc : dailyChild) {
                 results.add(buildDailyItem(doc));
             }
@@ -96,8 +67,10 @@ public class HistoryRepository {
 
                                                             removeProviderInfo(results, activity);
                                                             removeUnPassed(results,activity);
-                                                            Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate)); // sort results
 
+                                                            if(activity.role != null && activity.role.equals("parent")) markSharedItems(results, activity);
+                                                            Collections.sort(results, (a, b) -> b.accDate.compareTo(a.accDate)); // sort results
+                                                            
                                                             activity.createRecycleView(results); // create cards on screen
                                                         });
             });
@@ -192,6 +165,69 @@ public class HistoryRepository {
 
         // remove cards that didn't pass
         results.removeIf(result -> !result.passFilter);
+    }
+
+    // marks items as shared w/ provider & what specific data is shared
+    private void markSharedItems(List<HistoryItem> results, HistoryFragment activity) {
+        // safety check
+        if (results == null || activity == null || activity.options == null) {
+            return;
+        }
+
+        // only mark items as shared if user is parent (providers see everything they have access to)
+        // check if any sharing is enabled (at least one option is true)
+        boolean hasSharing = false;
+        for(boolean option : activity.options) {
+            if (option) {
+                hasSharing = true;
+                break;
+            }
+        }
+
+        if(!hasSharing){
+            return; // nothing is shared, no need to mark anything
+        }
+
+        for (HistoryItem card : results) {
+            List<String> sharedData = new ArrayList<>();
+
+            if (card.cardType == HistoryItem.typeOfCard.triage) {
+                // triage cards
+                if (activity.options[3]) { // triage toggle
+                    card.sharedWithProvider = true;
+                    sharedData.add("Triage Data");
+
+                    if (activity.options[0] && card.pef != -10) { // PEF
+                        sharedData.add("PEF");
+                    }
+                    if (activity.options[1] && card.rescueAttempts != -10) { // Rescue
+                        sharedData.add("Rescue Attempts");
+                    }
+                }
+            } else {
+                // daily cards
+                boolean hasSharedData = false;
+
+                if (activity.options[2]) { // symptoms
+                    hasSharedData = true;
+                    sharedData.add("Symptoms");
+                }
+                if (activity.options[4]) { // triggers
+                    hasSharedData = true;
+                    sharedData.add("Triggers");
+                }
+                if (activity.options[0]) { // PEF (if present)
+                    hasSharedData = true;
+                    sharedData.add("PEF");
+                }
+
+                if (hasSharedData) {
+                    card.sharedWithProvider = true;
+                }
+            }
+
+            card.sharedItems = sharedData;
+        }
     }
 
     // given triage info builds HistoryItem triage card

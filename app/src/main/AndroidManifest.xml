@@ -39,7 +39,6 @@
         <receiver
             android:name=".ExpiryCheck"
             android:exported="true" />
-
     </application>
 
 </manifest>

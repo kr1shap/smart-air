@@ -53,22 +53,31 @@ public class Child {
 
     }
 
+    public Child(String name,
+                 String childUid,
+                 String parentUid,
+                 Date dob,
+                 String extraNotes,
+                 int personalBest) {
+
+        this.name = name;
+        this.childUid = childUid;
+        this.parentUid = parentUid;
+        this.dob = dob;
+        this.extraNotes = extraNotes;
+        this.personalBest = personalBest;
+        initializeDefaults();
+
+    }
+
     //initalize defaults
 
     private void initializeDefaults() {
-        this.weeklySchedule = new HashMap<>();
-        weeklySchedule.put("Monday", false);
-        weeklySchedule.put("Tuesday", false);
-        weeklySchedule.put("Wednesday", false);
-        weeklySchedule.put("Thursday", false);
-        weeklySchedule.put("Friday", false);
-        weeklySchedule.put("Saturday", false);
-        weeklySchedule.put("Sunday", false);
+        this.weeklySchedule = initalizeDays();
         // badges
-        this.badges = new HashMap<>();
-        badges.put("techniqueBadge", false);
-        badges.put("controllerBadge", false);
-        badges.put("lowRescueBadge", false);
+        this.badges = initalizeBadges();
+        //toggles
+        this.sharing = initalizeSharing();
 
         // techniqueStats
         this.techniqueStats = new HashMap<>();
@@ -89,7 +98,36 @@ public class Child {
         thresholds.put("rescue_thresh", 0);
     }
 
+    public static Map<String, Boolean> initalizeSharing() {
+        Map<String, Boolean> sharing = new HashMap<>();
+        sharing.put("rescue", false);
+        sharing.put("controller", false);
+        sharing.put("symptoms", false);
+        sharing.put("triggers",false);
+        sharing.put("pef",false);
+        sharing.put("triage",false);
+        sharing.put("charts",false);
+        return sharing;
+    }
+    public static HashMap<String, Boolean> initalizeBadges() {
+        HashMap<String, Boolean> badges = new HashMap<>();
+        badges.put("techniqueBadge", false);
+        badges.put("controllerBadge", false);
+        badges.put("lowRescueBadge", false);
+        return badges;
+    }
 
+    public static HashMap<String, Boolean> initalizeDays() {
+        HashMap<String, Boolean> weeklySchedule = new HashMap<>();
+        weeklySchedule.put("Monday", false);
+        weeklySchedule.put("Tuesday", false);
+        weeklySchedule.put("Wednesday", false);
+        weeklySchedule.put("Thursday", false);
+        weeklySchedule.put("Friday", false);
+        weeklySchedule.put("Saturday", false);
+        weeklySchedule.put("Sunday", false);
+        return weeklySchedule;
+    }
 
     // get and set !
 

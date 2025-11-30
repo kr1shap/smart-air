@@ -19,11 +19,14 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.NotificationRepository;
+import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.modelClasses.enums.NotifType;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
@@ -37,7 +40,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -47,12 +49,18 @@ import java.util.Map;
 public class LogDoseFragment extends Fragment {
 
     private FirebaseFirestore db;
+    /** This will always hold the *current child’s* UID (or the child user’s own UID). */
     private String uid;
-    int lessthan20=60;
 
-    public LogDoseFragment() {
-        // Required empty public constructor
-    }
+    private SharedChildViewModel sharedModel;
+    private String userRole = "";
+
+    // Keep references so we can reload logs when the child changes
+    private LinearLayout controllerLogsContainer;
+    private LinearLayout rescueLogsContainer;
+    private TextView dateView;
+
+    public LogDoseFragment() {}
 
     @Nullable
     @Override
@@ -74,22 +82,112 @@ public class LogDoseFragment extends Fragment {
             return;
         }
 
-        uid = user.getUid();
+        // --- hook into the shared child viewmodel ---
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
 
-        TextView dateView = view.findViewById(R.id.text_today_date);
-        LinearLayout controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
-        LinearLayout rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
+        // Observe role (might be useful if you need different behaviour later)
+        sharedModel.getCurrentRole().observe(
+                getViewLifecycleOwner(),
+                role -> {
+                    if (role != null) {
+                        userRole = role;
+                    }
+                }
+        );
+
+        // When the list of children is available, try to set the current uid from it
+        sharedModel.getAllChildren().observe(
+                getViewLifecycleOwner(),
+                children -> {
+                    if (children != null && !children.isEmpty()) {
+                        Integer idx = sharedModel.getCurrentChild().getValue();
+                        int safeIndex = (idx != null && idx >= 0 && idx < children.size()) ? idx : 0;
+
+                        Child currentChild = children.get(safeIndex);
+                        if (currentChild != null) {
+                            uid = currentChild.getChildUid(); // <-- per-child UID
+                            if (controllerLogsContainer != null && rescueLogsContainer != null) {
+                                // just reload logs if UI already set up
+                                loadLogsFor("controller", controllerLogsContainer);
+                                loadLogsFor("rescue", rescueLogsContainer);
+                            } else {
+                                // first time we have a uid, set up the UI
+                                setupLogDoseUI(view);
+                            }
+                        }
+                    }
+                }
+        );
+
+        // When the *index* changes (user switches child), update uid & reload logs
+        sharedModel.getCurrentChild().observe(
+                getViewLifecycleOwner(),
+                idx -> {
+                    List<Child> children = sharedModel.getAllChildren().getValue();
+                    if (children != null && !children.isEmpty() && idx != null) {
+                        if (idx >= 0 && idx < children.size()) {
+                            Child currentChild = children.get(idx);
+                            if (currentChild != null) {
+                                uid = currentChild.getChildUid();
+                                if (controllerLogsContainer != null && rescueLogsContainer != null) {
+                                    loadLogsFor("controller", controllerLogsContainer);
+                                    loadLogsFor("rescue", rescueLogsContainer);
+                                }
+                            }
+                        }
+                    }
+                }
+        );
+
+        // Immediate attempt: if SharedChildViewModel already has children, use them.
+        List<Child> childrenNow = sharedModel.getAllChildren().getValue();
+        if (childrenNow != null && !childrenNow.isEmpty()) {
+            Integer idx = sharedModel.getCurrentChild().getValue();
+            int safeIndex = (idx != null && idx >= 0 && idx < childrenNow.size()) ? idx : 0;
+            Child currentChild = childrenNow.get(safeIndex);
+            if (currentChild != null) {
+                uid = currentChild.getChildUid();
+                setupLogDoseUI(view);
+                return;
+            }
+        }
+
+        // Fallback: old behaviour (in case ViewModel is not populated for some reason)
+        String currentUid = user.getUid();
+        db.collection("children")
+                .whereEqualTo("parentUid", currentUid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        // use first child as before
+                        uid = querySnapshot.getDocuments().get(0).getId();
+                    } else {
+                        // treat user as child
+                        uid = currentUid;
+                    }
+                    setupLogDoseUI(view);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to identify user / child", Toast.LENGTH_SHORT).show());
+    }
+
+    private void setupLogDoseUI(View view) {
+        dateView = view.findViewById(R.id.text_today_date);
+        controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
+        rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
 
         Button backButton = view.findViewById(R.id.btn_back_log_dose);
         if (backButton != null) {
             backButton.setOnClickListener(v ->
-                    requireActivity().getSupportFragmentManager().popBackStack());
+                    requireActivity()
+                            .getSupportFragmentManager()
+                            .popBackStack());
         }
 
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         dateView.setText(today);
 
-        // Load existing logs
+        // Load logs for the currently selected child
         loadLogsFor("controller", controllerLogsContainer);
         loadLogsFor("rescue", rescueLogsContainer);
 
@@ -107,8 +205,6 @@ public class LogDoseFragment extends Fragment {
         }
     }
 
-    // ===================== DIALOG =====================
-
     private void showLogDialog(String logType, LinearLayout logsContainer) {
         if (getContext() == null) return;
 
@@ -125,26 +221,18 @@ public class LogDoseFragment extends Fragment {
         Button saveBtn = dialogView.findViewById(R.id.btn_save_log);
         Button cancelBtn = dialogView.findViewById(R.id.btn_cancel_log);
 
-        // Title
-        if ("controller".equals(logType)) {
-            titleText.setText("Log Controller Dose");
-        } else {
-            titleText.setText("Log Rescue Dose");
-        }
+        titleText.setText("controller".equals(logType) ? "Log Controller Dose" : "Log Rescue Dose");
 
-        // Short breath slider label
         shortBreathSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 shortBreathValue.setText("Current: " + progress);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         techniqueHelperBtn.setOnClickListener(v ->
-                Toast.makeText(getContext(),
-                        "Technique helper UI coming soon 🙂",
-                        Toast.LENGTH_SHORT).show());
+                Toast.makeText(getContext(), "Technique helper UI coming soon 🙂", Toast.LENGTH_SHORT).show());
 
         AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setView(dialogView)
@@ -159,17 +247,8 @@ public class LogDoseFragment extends Fragment {
             String puffsStr = puffsInput.getText().toString().trim();
             int shortBreathRating = shortBreathSeek.getProgress();
 
-            if (preCheck == null) {
-                Toast.makeText(getContext(), "Please select how you felt before.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (postCheck == null) {
-                Toast.makeText(getContext(), "Please select how you felt after.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (TextUtils.isEmpty(puffsStr)) {
-                puffsInput.setError("Required");
-                puffsInput.requestFocus();
+            if (preCheck == null || postCheck == null || TextUtils.isEmpty(puffsStr)) {
+                Toast.makeText(getContext(), "Please fill out all fields.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -178,9 +257,15 @@ public class LogDoseFragment extends Fragment {
                 puffs = Integer.parseInt(puffsStr);
             } catch (NumberFormatException e) {
                 puffsInput.setError("Enter a valid number");
-                puffsInput.requestFocus();
                 return;
             }
+
+            if (uid == null || uid.isEmpty()) {
+                Toast.makeText(getContext(), "Child not selected yet, please wait...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String medCollection = "controller".equals(logType) ? "controllerLog" : "rescueLog";
 
             Map<String, Object> data = new HashMap<>();
             data.put("preCheck", preCheck);
@@ -189,26 +274,18 @@ public class LogDoseFragment extends Fragment {
             data.put("shortBreathRating", shortBreathRating);
             data.put("timeTaken", FieldValue.serverTimestamp());
 
-            String collectionName = "controller".equals(logType) ? "controllerLog" : "rescueLog";
-
-            CollectionReference logsRef = db.collection("children")
+            db.collection("children")
                     .document(uid)
-                    .collection(collectionName);
-
-            logsRef.add(data)
+                    .collection(medCollection)
+                    .add(data)
                     .addOnSuccessListener(docRef -> {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
-                        if ("rescue".equals(logType)) {
-                            rapidrescuealerts();
-                        }
+                        getAndUpdateInventory(logType, puffs);
                     })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(),
-                                "Failed to log dose: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e ->
+                            Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         });
 
         dialog.show();
@@ -222,10 +299,8 @@ public class LogDoseFragment extends Fragment {
         return rb != null ? rb.getText().toString() : null;
     }
 
-    // ===================== LOAD LOGS =====================
-
     private void loadLogsFor(String logType, LinearLayout container) {
-        if (container == null) return;
+        if (container == null || uid == null || uid.isEmpty()) return;
 
         String collectionName = "controller".equals(logType) ? "controllerLog" : "rescueLog";
 
@@ -243,11 +318,18 @@ public class LogDoseFragment extends Fragment {
                         Long puffs = doc.getLong("puffs");
                         Long shortBreathRating = doc.getLong("shortBreathRating");
 
-                        String summary =
+                        com.google.firebase.Timestamp timestamp = doc.getTimestamp("timeTaken");
+                        String formattedDate = "";
+                        if (timestamp != null) {
+                            Date date = timestamp.toDate();
+                            formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(date);
+                        }
+
+                        String summary = (formattedDate.isEmpty() ? "" : formattedDate + " - ") +
                                 (puffs == null ? "" : (puffs + " puffs")) +
-                                        (shortBreathRating == null ? "" : ", SOB: " + shortBreathRating) +
-                                        (preCheck == null ? "" : ", Pre: " + preCheck) +
-                                        (postCheck == null ? "" : ", Post: " + postCheck);
+                                (shortBreathRating == null ? "" : ", SOB: " + shortBreathRating) +
+                                (preCheck == null ? "" : ", Pre: " + preCheck) +
+                                (postCheck == null ? "" : ", Post: " + postCheck);
 
                         TextView logView = new TextView(getContext());
                         logView.setText(summary);
@@ -256,113 +338,220 @@ public class LogDoseFragment extends Fragment {
                     }
                 });
     }
-    // rapid rescue alerts section
-    /*
-    check if 3+ rescue attempts made in 3 hours
-     */
-    public void rapidrescuealerts() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null){
-            return;
-        }
-        String childUid = user.getUid();
-        long now=System.currentTimeMillis();
-        long threeHours=3*60*60*1000;
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("children")
-                .document(childUid)
-                .collection("rescueLog")
-                .get()
-                .addOnSuccessListener(query -> {
-                    int count = 0;
-                    for (DocumentSnapshot doc : query.getDocuments()) {
-                        Timestamp ts = doc.getTimestamp("timeTaken");
-                        if (ts != null) {
-                            long rescueTime = ts.toDate().getTime();
-                            if (now - rescueTime <= threeHours) {
-                                count++;
-                            }
-                        }
-                    }
-                    if (count >= 3) {
-                        //sendAlert();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("RescueCheck", "Failed to read rescueLog: ", e);
-                });
-    }
-    /*
-     used to send rapid rescue or inventory notifications to all parents
-     if child use: get uid
-     if parent use: get sharedmodel stored childuid
-    */
-    public void sendAlert(String cUid, int choice) {
-        if (cUid == null) {
-            Log.e("Rapid Rescue", "sendAlert called with null childUid");
-            return;
-        }
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        getchildname(cUid, childName -> {
-            db.collection("users")
-                    .document(cUid)
-                    .get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc.exists()==false) {
-                            Log.e("Rapid Rescue", "Child user document missing");
-                            return;
-                        }
-                        @SuppressWarnings("unchecked")
-                        List<String> parentUids = (List<String>) doc.get("parentUid");
-                        if (parentUids == null || parentUids.isEmpty()) {
-                            Log.e("Rapid Rescue", "No parentUid array found");
-                            return;
-                        }
-                        NotificationRepository notifRepo = new NotificationRepository();
-                        for (String pUid : parentUids) {
-                            if (pUid == null){
-                                continue;
-                            }
-                            NotifType type;
-                            if (choice == 1) {
-                                type = NotifType.RAPID_RESCUE;
-                            }
-                            else {
-                                type = NotifType.INVENTORY;
-                            }
-                            Notification notif = new Notification(cUid, false, Timestamp.now(), type, childName);
-                            notifRepo.createNotification(pUid, notif)
-                                    .addOnSuccessListener(aVoid ->
-                                            Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
-                                    .addOnFailureListener(e ->
-                                            Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
-                        }
 
-                    })
-                    .addOnFailureListener(e ->
-                            Log.e("Rapid Rescue", "Failed to load child document", e));
+    private void getAndUpdateInventory(String medType, int puffs) {
+        if (uid == null || uid.isEmpty()) return;
 
-        }, error -> {
-            Log.e("Rapid Rescue", "Failed to fetch child name", error);
-        });
-    }
-    /*
-    get child's name
-     */
-    public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        // Firestore structure: children/{uid}/inventory/{controller|rescue}
+        String docName = "controller".equals(medType) ? "controller" : "rescue";
+
         db.collection("children")
-                .document(childUid)
+                .document(uid)
+                .collection("inventory")
+                .document(docName)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        String childName = doc.getString("name");
-                        onSuccess.onSuccess(childName);
+                    if (doc.exists() && doc.contains("amount")) {
+                        Long currentAmountLong = doc.getLong("amount");
+
+                        if (currentAmountLong == null) {
+                            Toast.makeText(getContext(),
+                                    "Inventory data is corrupted or missing.",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long currentAmount = currentAmountLong;
+
+                        if (currentAmount < puffs) {
+                            Toast.makeText(getContext(),
+                                    "Not enough doses left in inventory.",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long updatedAmount = currentAmount - puffs;
+
+                        // update the *same doc* we just read
+                        doc.getReference()
+                                .update("amount", updatedAmount)
+                                .addOnSuccessListener(unused ->
+                                        Toast.makeText(getContext(),
+                                                "Inventory updated.",
+                                                Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(getContext(),
+                                                "Failed to update inventory.",
+                                                Toast.LENGTH_SHORT).show());
+
                     } else {
-                        onFailure.onFailure(new Exception("Child document not found"));
+                        Toast.makeText(getContext(),
+                                "Inventory not set up yet.",
+                                Toast.LENGTH_SHORT).show();
                     }
                 })
-                .addOnFailureListener(onFailure);
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(),
+                                "Error accessing inventory.",
+                                Toast.LENGTH_SHORT).show());
     }
 
+
+    /*
+    private void getAndUpdateInventory(String medType, int puffs) {
+        if (uid == null || uid.isEmpty()) return;
+
+        String collection = "controller".equals(medType) ? "controllerInventory" : "rescueInventory";
+
+        db.collection("children")
+                .document(uid)
+                .collection(collection)
+                .document("main")
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists() && doc.contains("amount")) {
+                        Long currentAmountLong = doc.getLong("amount");
+
+                        if (currentAmountLong == null) {
+                            Toast.makeText(getContext(), "Inventory data is corrupted or missing.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long currentAmount = currentAmountLong;
+
+                        if (currentAmount < puffs) {
+                            Toast.makeText(getContext(), "Not enough doses left in inventory.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        long updatedAmount = currentAmount - puffs;
+
+                        db.collection("children")
+                                .document(uid)
+                                .collection(collection)
+                                .document("main")
+                                .update("amount", updatedAmount)
+                                .addOnSuccessListener(unused ->
+                                        Toast.makeText(getContext(), "Inventory updated.", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(getContext(), "Failed to update inventory.", Toast.LENGTH_SHORT).show());
+
+                    } else {
+                        Toast.makeText(getContext(), "Inventory not set up yet.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Error accessing inventory.", Toast.LENGTH_SHORT).show());
+    }
+     */
+    // rapid rescue alerts section
+   /*
+   check if 3+ rescue attempts made in 3 hours
+    */
+   public void rapidrescuealerts() {
+       FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+       if (user == null){
+           return;
+       }
+       String childUid = user.getUid();
+       long now=System.currentTimeMillis();
+       long threeHours=3*60*60*1000;
+       FirebaseFirestore db = FirebaseFirestore.getInstance();
+       db.collection("children")
+               .document(childUid)
+               .collection("rescueLog")
+               .get()
+               .addOnSuccessListener(query -> {
+                   int count = 0;
+                   for (DocumentSnapshot doc : query.getDocuments()) {
+                       Timestamp ts = doc.getTimestamp("timeTaken");
+                       if (ts != null) {
+                           long rescueTime = ts.toDate().getTime();
+                           if (now - rescueTime <= threeHours) {
+                               count++;
+                           }
+                       }
+                   }
+                   if (count >= 3) {
+                       //sendAlert();
+                   }
+               })
+               .addOnFailureListener(e -> {
+                   Log.e("RescueCheck", "Failed to read rescueLog: ", e);
+               });
+   }
+   /*
+    used to send rapid rescue or inventory notifications to all parents
+    if child use: get uid
+    if parent use: get sharedmodel stored childuid
+   */
+   public void sendAlert(String cUid, int choice) {
+       if (cUid == null) {
+           Log.e("Rapid Rescue", "sendAlert called with null childUid");
+           return;
+       }
+       FirebaseFirestore db = FirebaseFirestore.getInstance();
+       getchildname(cUid, childName -> {
+           db.collection("users")
+                   .document(cUid)
+                   .get()
+                   .addOnSuccessListener(doc -> {
+                       if (doc.exists()==false) {
+                           Log.e("Rapid Rescue", "Child user document missing");
+                           return;
+                       }
+                       @SuppressWarnings("unchecked")
+                       List<String> parentUids = (List<String>) doc.get("parentUid");
+                       if (parentUids == null || parentUids.isEmpty()) {
+                           Log.e("Rapid Rescue", "No parentUid array found");
+                           return;
+                       }
+                       NotificationRepository notifRepo = new NotificationRepository();
+                       for (String pUid : parentUids) {
+                           if (pUid == null){
+                               continue;
+                           }
+                           NotifType type;
+                           if (choice == 1) {
+                               type = NotifType.RAPID_RESCUE;
+                           }
+                           else {
+                               type = NotifType.INVENTORY;
+                           }
+                           Notification notif = new Notification(cUid, false, Timestamp.now(), type, childName);
+                           notifRepo.createNotification(pUid, notif)
+                                   .addOnSuccessListener(aVoid ->
+                                           Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
+                                   .addOnFailureListener(e ->
+                                           Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
+                       }
+
+
+                   })
+                   .addOnFailureListener(e ->
+                           Log.e("Rapid Rescue", "Failed to load child document", e));
+
+
+       }, error -> {
+           Log.e("Rapid Rescue", "Failed to fetch child name", error);
+       });
+   }
+   /*
+   get child's name
+    */
+   public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+       FirebaseFirestore db = FirebaseFirestore.getInstance();
+       db.collection("children")
+               .document(childUid)
+               .get()
+               .addOnSuccessListener(doc -> {
+                   if (doc.exists()) {
+                       String childName = doc.getString("name");
+                       onSuccess.onSuccess(childName);
+                   } else {
+                       onFailure.onFailure(new Exception("Child document not found"));
+                   }
+               })
+               .addOnFailureListener(onFailure);
+   }
 }

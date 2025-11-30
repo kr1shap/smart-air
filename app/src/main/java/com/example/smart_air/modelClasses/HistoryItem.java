@@ -49,10 +49,19 @@ public class HistoryItem {
     public int rescueAttempts;
     public String emergencyCall;
 
+    // tracking for whats shared w/ provider
+    public boolean sharedWithProvider = false;
+    public List<String> sharedItems = new ArrayList<>(); // specific items shared (e.g., "symptoms", "triggers", "PEF")
+
+
     // constructor for Daily Card
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.passFilter = true;
         this.pef = pef;
+
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
 
 
         // setting up card based parent or child
@@ -185,6 +194,10 @@ public class HistoryItem {
     // constructor for Triage Card
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
         this.passFilter = true;
+
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
         this.accDate = accDate;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         this.time = sdf.format(accDate);

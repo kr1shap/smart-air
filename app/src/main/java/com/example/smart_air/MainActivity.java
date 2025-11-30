@@ -9,15 +9,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.util.Calendar;
+import java.security.CodeSigner;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.TimerTask;
 import androidx.core.app.NotificationManagerCompat;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -28,38 +29,32 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
+
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
 import com.example.smart_air.fragments.HistoryFragment;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.fragments.NotificationFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import android.widget.Toast;
@@ -70,16 +65,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.example.smart_air.fragments.MedicineTabFragment;
-
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
-    ImageButton notification;
+    ImageButton notification, providerCodeBtn;
     private ListenerRegistration unreadNotifListener;
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
     User user;
+    private String userRole;
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
@@ -103,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
         notifRepo = new NotificationRepository();
 
         //if no user signed in
-        repo = new AuthRepository();
         if(repo.getCurrentUser() == null) {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
@@ -111,9 +105,32 @@ public class MainActivity extends AppCompatActivity {
         //check if child account is useless, then delete
         checkChildDeletion();
 
+        // get menu item to disable/enable and switch child button
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        //add code button for provider
+        providerCodeBtn = findViewById(R.id.providerCodeBtn);
+
+        //get user role
+        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
+        getUserRole();
+        sharedModel.getCurrentRole().observe(this, role -> {
+            if (role != null) {
+                this.userRole = role;
+                setUpButtonAndListener(switchChildButton, dailyCheckIn, triage); // set up button
+                getChildren();
+            }
+        });
+
+        // showing child dropdown pop up
+        switchChildButton.setOnClickListener(v -> {
+            showChildPopup();
+        });
+
         //notif button
         notification = findViewById(R.id.notificationButton);
-        setupNotificationIcon(); //checks current user and role
 
         //add listen on click
         notification.setOnClickListener(new View.OnClickListener() {
@@ -138,8 +155,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //providerCodeBtn button
+        providerCodeBtn.setOnClickListener(v -> {
+            if(userRole != null && userRole.equals("provider")) {
+                DialogCodeFragment dialog = new DialogCodeFragment();
+                dialog.show(getSupportFragmentManager(), "DialogCodeFragment");
+            }
+        });
+
         //bottom nav view
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.home);
 
         bottomNavigationView.setOnItemSelectedListener(page -> {
@@ -164,6 +188,10 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.medicine) {
                 selectedFragment = new MedicineTabFragment();
                 // add fragment for medicine
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof MedicineTabFragment)) {
+                    selectedFragment = new MedicineTabFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
@@ -182,20 +210,20 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // get menu item to disable/enable
-        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+    }
 
-        // switch child button
-        sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
-        getChildren(); // fill array list of children in share modal
-        ImageButton switchChildButton = findViewById(R.id.switchChildButton);
-        setUpButtonAndListener(switchChildButton, dailyCheckIn, triage); // set up button
-        switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
-        });
-
-
+    private void getUserRole() {
+        repo.getUserDoc(repo.getCurrentUser().getUid())
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        user = doc.toObject(User.class);
+                        if (user == null){
+                            return;
+                        }
+                        String role = user.getRole();
+                        sharedModel.setCurrentRole(role);
+                    }
+                });
     }
 
     private void checkChildDeletion() {
@@ -259,47 +287,45 @@ public class MainActivity extends AppCompatActivity {
 
     // calls right function to get children based on role
     private void getChildren(){
-        repo.getUserDoc(repo.getCurrentUser().getUid())
+        if(userRole.equals("child")){
+            return;
+        }
+        else if(userRole.equals("parent")){
+            repo.getUserDoc(repo.getCurrentUser().getUid())
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         user = doc.toObject(User.class);
-                        if (user == null){
+                        if (user == null) {
                             return;
                         }
-                        String role = user.getRole();
-                        if(role.equals("child")){
-                            return;
+                        List<String> list = user.getChildrenUid();
+                        // if list is empty now removes daily check in
+                        if (list.isEmpty()) {
+                            removeDailyCheckIn = true;
+                        } else {
+                            removeDailyCheckIn = false;
                         }
-                        if(role.equals("parent") ){
-                            List<String> list = user.getChildrenUid();
-                            // if list is empty now removes daily check in
-                            if(list.isEmpty()){
-                                removeDailyCheckIn = true;
-                            }
-                            else{
-                                removeDailyCheckIn = false;
-                            }
-                            BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-                            MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-                            if(removeDailyCheckIn) {
-                                dailyCheckIn.setEnabled(false);
-                                dailyCheckIn.setCheckable(false);
-                                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                                // TODO: go back to home fragment if on check in fragment
-                            }
-                            else{
-                                dailyCheckIn.setEnabled(true);
-                                dailyCheckIn.setCheckable(true);
-                                dailyCheckIn.setIcon(R.drawable.checkin);
-                            }
-                            dailyCheckIn.setVisible(true);
-                            convertToNames(list);
+                        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+                        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+                        if (removeDailyCheckIn) {
+                            dailyCheckIn.setEnabled(false);
+                            dailyCheckIn.setCheckable(false);
+                            dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                            // TODO: go back to home fragment if on check in fragment
+                        } else {
+                            dailyCheckIn.setEnabled(true);
+                            dailyCheckIn.setCheckable(true);
+                            dailyCheckIn.setIcon(R.drawable.checkin);
                         }
-                        if(role.equals("provider")){
-                            getProviderChildren();
-                        }
+                        dailyCheckIn.setVisible(true);
+                        convertToNames(list);
                     }
                 });
+
+        }
+        else if(userRole.equals("provider")){
+            getProviderChildren();
+        }
     }
 
     // gets providers children from "children" collection
@@ -317,9 +343,55 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                     startChildrenListener();
                     });
+    }
+
+    private void convertToNamesAndDob(List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        if(uid.isEmpty()){
+            sharedModel.setChildren(children);
+            return;
+        }
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        String dob = "";
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                            if (doc.contains("dob")){
+                                Timestamp dobTimestamp = doc.getTimestamp("dob");
+                                Date date = dobTimestamp.toDate();
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                dob = sdf.format(date);
+                            }
+                        }
+                        if(!dob.isEmpty()){
+                            name = name + " [" + dob + "]";
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
+                            int currentIndex = sharedModel.getCurrentChild().getValue();
+                            if(currentIndex >= children.size()){ // if last child gets deleted
+                                sharedModel.setCurrentChild(0);
+                            }
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
     }
 
 
@@ -356,65 +428,66 @@ public class MainActivity extends AppCompatActivity {
 
     // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user == null){
-                            return;
-                        }
-                        String role = user.getRole();
-                        if(role.equals("child")){
-                            // enable dailycheckin and triage
-                            dailyCheckIn.setEnabled(true);
-                            dailyCheckIn.setCheckable(true);
-                            dailyCheckIn.setVisible(true);
-                            triage.setEnabled(true);
-                            triage.setCheckable(true);
-                            triage.setVisible(true);
-                            return;
-                        }
-                        if(role.equals("parent") ){
-                            switchChildButton.setVisibility(View.VISIBLE);
-                            // enable dailycheckin
-                            if(removeDailyCheckIn) {
-                                dailyCheckIn.setEnabled(false);
-                                dailyCheckIn.setCheckable(false);
-                                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                                // TODO: go back to home fragment if on check in fragment
-                            }
-                            else{
-                                dailyCheckIn.setEnabled(true);
-                                dailyCheckIn.setCheckable(true);
-                                dailyCheckIn.setIcon(R.drawable.checkin);
-                            }
-                            dailyCheckIn.setVisible(true);
+        if(userRole.equals("child")){
+            // enable dailycheckin and triage
+             dailyCheckIn.setEnabled(true);
+             dailyCheckIn.setCheckable(true);
+             dailyCheckIn.setVisible(true);
+             triage.setEnabled(true);
+             triage.setCheckable(true);
+             triage.setVisible(true);
+             //disable notification
+             notification.setVisibility(View.GONE);
+             //disable add code btn
+             providerCodeBtn.setVisibility(View.GONE);
+             providerCodeBtn.setEnabled(false);
+             return;
+        }
+        else if(userRole.equals("parent")){
+            switchChildButton.setVisibility(View.VISIBLE);
+            // enable dailycheckin
+            if (removeDailyCheckIn) {
+                dailyCheckIn.setEnabled(false);
+                dailyCheckIn.setCheckable(false);
+                dailyCheckIn.setIcon(R.drawable.checkinlocked);
+                // TODO: go back to home fragment if on check in fragment
+            } else {
+                dailyCheckIn.setEnabled(true);
+                dailyCheckIn.setCheckable(true);
+                dailyCheckIn.setIcon(R.drawable.checkin);
+            }
+            dailyCheckIn.setVisible(true);
 
-                            // enable triage
-                            triage.setEnabled(true);
-                            triage.setCheckable(true);
-                            triage.setVisible(true);
 
-                            // update child switching list when new child is added / deleted
-                            listenerToParent(repo.getCurrentUser().getUid(), true);
-                        }
-                        if(role.equals("provider")){
-                            // show button
-                            switchChildButton.setVisibility(View.VISIBLE);
-                            // disable dailycheckin and triage
-                            dailyCheckIn.setEnabled(false);
-                            dailyCheckIn.setCheckable(false);
-                            dailyCheckIn.setVisible(false);
-                            triage.setEnabled(false);
-                            triage.setCheckable(false);
-                            triage.setVisible(false);
-
-                        }
-                    }
-                    else{
-                        return;
-                    }
-                });
+            // enable triage
+            triage.setEnabled(true);
+            triage.setCheckable(true);
+            triage.setVisible(true);
+            //disable add code btn
+            providerCodeBtn.setVisibility(View.GONE);
+            providerCodeBtn.setEnabled(false);
+            // update child switching list when new child is added / deleted
+            listenerToParent(repo.getCurrentUser().getUid(), true);
+            //setup notification listener and icon
+            notification.setVisibility(View.VISIBLE);
+            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
+        }
+        else if(userRole.equals("provider")) {
+            // show button
+            switchChildButton.setVisibility(View.VISIBLE);
+            // disable dailycheckin and triage
+            dailyCheckIn.setEnabled(false);
+            dailyCheckIn.setCheckable(false);
+            dailyCheckIn.setVisible(false);
+            triage.setEnabled(false);
+            triage.setCheckable(false);
+            triage.setVisible(false);
+            //disable notification
+            notification.setVisibility(View.GONE);
+            //enable add code
+            providerCodeBtn.setVisibility(View.VISIBLE);
+            providerCodeBtn.setEnabled(true);
+        }
 
     }
 
@@ -454,21 +527,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupNotificationIcon() {
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        user = doc.toObject(User.class);
-                        if (user != null && !user.getRole().equals("parent")) {
-                            notification.setVisibility(View.GONE);
-                        } else {
-                            notification.setVisibility(View.VISIBLE);
-                            setupUnreadNotificationsBadge(repo.getCurrentUser().getUid());
-                        }
-                    }
-                });
-    }
     private void setupUnreadNotificationsBadge(String uid) {
+        if (!"parent".equals(userRole)) {  return;  } //due to async
          unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
             if (error != null || value == null) return;
             int size = value.size();
@@ -488,21 +548,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             badge.setVisibility(View.GONE);
         }
-    }
-    //Callback for main call in general, used to delete account
-    private AuthContract.GeneralCallback deleteCallback() {
-        return new AuthContract.GeneralCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
-                finish();
-            }
-            @Override
-            public void onFailure(String error) {
-                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
-            }
-        };
     }
 
     // checks children to see if current providers list has changed
@@ -524,7 +569,23 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                 });
+    }
+
+    //Callback for main call in general, used to delete account
+    private AuthContract.GeneralCallback deleteCallback() {
+        return new AuthContract.GeneralCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(MainActivity.this, "Account deleted", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
+                finish();
+            }
+            @Override
+            public void onFailure(String error) {
+                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show(); //error in view
+            }
+        };
     }
 }

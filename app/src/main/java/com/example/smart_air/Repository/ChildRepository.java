@@ -3,12 +3,15 @@ package com.example.smart_air.Repository;
 import android.util.Log;
 
 import com.example.smart_air.FirebaseInitalizer;
+import com.example.smart_air.modelClasses.BadgeData;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Invite;
 import com.example.smart_air.modelClasses.User;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -19,8 +22,14 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 public class ChildRepository {
@@ -116,7 +125,7 @@ public class ChildRepository {
     }
 
     // validate invite code
-    public void validateInviteCode(String code, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
+    public void validateInviteCode(String code, String role, OnSuccessListener<Invite> onSuccess, OnFailureListener onFailure) {
         Log.d(TAG, "Validating invite code: " + code);
 
         db.collection("invites")
@@ -134,6 +143,12 @@ public class ChildRepository {
                     Invite invite = documentSnapshot.toObject(Invite.class);
                     if (invite == null) {
                         Log.e(TAG, "Failed to parse invite object");
+                        onFailure.onFailure(new Exception("Invalid code"));
+                        return;
+                    }
+
+                    //check if role is not matching
+                    if(invite.getTargetRole() != null && !invite.getTargetRole().equals(role)) {
                         onFailure.onFailure(new Exception("Invalid code"));
                         return;
                     }
@@ -163,21 +178,38 @@ public class ChildRepository {
                 });
     }
 
-    // use invite code (mark as used and link user)
+    // use invite code [PROVIDER] [MARK AS READ AND USED]
     public void useInviteCode(String code, String userUid, String role, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+        validateInviteCode(code, role, invite -> {
+            db.collection("users").document(userUid).get()
+                    .addOnSuccessListener(userSnapshot -> {
+                        if (userSnapshot.exists()) {
+                            List<String> parentUids = (List<String>) userSnapshot.get("parentUid");
+                            if (parentUids != null && parentUids.contains(invite.getParentUid())) {
+                                onFailure.onFailure(new Exception("You are already connected to this person."));
+                                return;
+                            }
+                        }
 
-        validateInviteCode(code, invite -> {
-            // mark invite as used
-            db.collection("invites")
-                    .document(code)
-                    .update("used", true)
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "Invite marked as used");
-                        // link user to parent based on role
-                        linkUserToParent(userUid, invite.getParentUid(), role, onSuccess, onFailure);
+                        // if not connected use the invite code
+                        db.collection("invites")
+                                .document(code)
+                                .update(
+                                        "usedByUid", userUid,
+                                        "used", true,
+                                        "usedByEmail", FirebaseInitalizer.getAuth().getCurrentUser().getEmail()
+                                )
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "Invite marked as used");
+                                    linkUserToParent(userUid, invite.getParentUid(), role, onSuccess, onFailure);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error marking invite as used", e);
+                                    onFailure.onFailure(e);
+                                });
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error marking invite as used", e);
+                        Log.e(TAG, "Error checking user's connections", e);
                         onFailure.onFailure(e);
                     });
         }, onFailure);
@@ -444,6 +476,63 @@ public class ChildRepository {
                     onSuccess.onSuccess(providers);
                 })
                 .addOnFailureListener(onFailure);
+    }
+
+    //Get badge information from a child (return as task)
+    public Task<BadgeData> getBadgeData(String childUid) {
+        TaskCompletionSource<BadgeData> taskSource = new TaskCompletionSource<>();
+        db.collection("children").document(childUid).get()
+                .addOnSuccessListener(snap -> {
+                    //default
+                    boolean controllerBadge = false;
+                    boolean techniqueBadge = false;
+                    boolean rescueBadge = false;
+                    int techniqueStreak = 0;
+                    int controllerStreak = 0;
+                    String techniqueDate = null;
+                    String controllerDate = null;
+
+                    if (snap.exists()) {
+                        // badges map
+                        Map<String, Object> badges = (Map<String, Object>) snap.get("badges");
+                        if (badges != null) {
+                            controllerBadge = badges.get("controllerBadge") != null ?
+                                    (Boolean) badges.get("controllerBadge") : false;
+                            techniqueBadge = badges.get("techniqueBadge") != null ?
+                                    (Boolean) badges.get("techniqueBadge") : false;
+                            rescueBadge = badges.get("lowRescueBadge") != null ?
+                                    (Boolean) badges.get("lowRescueBadge") : false;
+                        }
+
+                        // techniqueStats map
+                        Map<String, Object> techniqueStats = (Map<String, Object>) snap.get("techniqueStats");
+                        if (techniqueStats != null) {
+                            techniqueStreak = techniqueStats.get("currentStreak") != null ?
+                                    ((Number) techniqueStats.get("currentStreak")).intValue() : 0;
+                            techniqueDate = techniqueStats.get("lastSessionDate") != null ?
+                                    (String) techniqueStats.get("lastSessionDate") : null;
+                        }
+
+                        // controllerStats map
+                        //TODO: uncomment and make it work based on teammates work
+//                        Map<String, Object> controllerStats = (Map<String, Object>) snap.get("controllerStats");
+//                        if (controllerStats != null) {
+//                            controllerStreak = controllerStats.get("currentStreak") != null ?
+//                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
+                      //  controllerDate = controllerStats.get("lastSessionDate") != null ?
+                            //    (String) techniqueStats.get("lastSessionDate") : null;
+//                        }
+
+                    }
+                    //UI change for technique streak - if streak invalid just change to 0 ui-based
+                    //next time child logs in a new session an actual change will be made
+                    if(techniqueDate != null && (StringFormatters.getToday().equals(techniqueDate) || StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
+                    BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
+                    taskSource.setResult(data);
+                })
+                .addOnFailureListener(taskSource::setException);
+
+        return taskSource.getTask();
     }
 
     //PRIVATE HELPER FUNCTIONS
