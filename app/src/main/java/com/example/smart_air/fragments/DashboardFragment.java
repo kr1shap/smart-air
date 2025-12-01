@@ -769,11 +769,18 @@ public class DashboardFragment extends Fragment {
             String display = "";
             if (data.rescueName != null) display += data.rescueName;
             if (data.rescueAmount != null) display += ":  " + data.rescueAmount;
+            tvRescuePurchase.setVisibility(View.VISIBLE);
+            tvRescueExpiry.setVisibility(View.VISIBLE);
             tvRescueName.setText(display);
             tvRescuePurchase.setText(data.rescuePurchase != null ?
                     "Purchase Date: " + formatDate(data.rescuePurchase) : "-");
             tvRescueExpiry.setText(data.rescueExpiry != null ?
                     "Expiry Date: " + formatDate(data.rescueExpiry) : "-");
+        }
+        else{
+            tvRescueName.setText("No Information");
+            tvRescuePurchase.setVisibility(View.GONE);
+            tvRescueExpiry.setVisibility(View.GONE);
         }
 
         //controller
@@ -781,11 +788,18 @@ public class DashboardFragment extends Fragment {
             String display = "";
             if (data.controllerName != null) display += data.controllerName;
             if (data.controllerAmount != null) display += ":  " + data.controllerAmount;
+            tvControllerPurchase.setVisibility(View.VISIBLE);
+            tvControllerExpiry.setVisibility(View.VISIBLE);
             tvControllerName.setText(display);
             tvControllerPurchase.setText(data.controllerPurchase != null ?
                     "Purchase Date: " + formatDate(data.controllerPurchase) : "-");
             tvControllerExpiry.setText(data.controllerExpiry != null ?
                     "Expiry Date: " + formatDate(data.controllerExpiry) : "-");
+        }
+        else{
+            tvControllerName.setText("No Information");
+            tvControllerPurchase.setVisibility(View.GONE);
+            tvControllerExpiry.setVisibility(View.GONE);
         }
     }
 

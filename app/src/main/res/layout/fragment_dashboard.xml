@@ -221,7 +221,7 @@
                     android:id="@+id/tvRescueName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/dm_sans_medium"
                     android:text="-"
                     android:textColor="@color/colour_darkBlue"
@@ -231,7 +231,7 @@
                     android:id="@+id/tvRescuePurchase"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/dm_sans_medium"
                     android:text="-"
                     android:textColor="@color/colour_darkBlue"
@@ -259,10 +259,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
                     android:text="Controller:"
                     android:textSize="18sp"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="#204BA8" />
+                    android:textColor="#204BA8"
+                    android:layout_marginBottom="2dp"/>
 
                 <TextView
                     android:id="@+id/tvControllerName"
@@ -272,7 +274,7 @@
                     android:textColor="@color/colour_darkBlue"
                     android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="2dp"/>
                 <TextView
                     android:id="@+id/tvControllerPurchase"
                     android:layout_width="wrap_content"
@@ -281,7 +283,7 @@
                     android:textColor="@color/colour_darkBlue"
                     android:fontFamily="@font/dm_sans_medium"
                     android:textSize="16sp"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="2dp"/>
                 <TextView
                     android:id="@+id/tvControllerExpiry"
                     android:layout_width="wrap_content"
