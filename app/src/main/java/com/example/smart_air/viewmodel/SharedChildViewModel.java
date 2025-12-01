@@ -39,6 +39,7 @@ public class SharedChildViewModel extends ViewModel {
         return children.get(index).getName();
     }
 
+
     public LiveData<String> getCurrentRole(){
         return role;
     }

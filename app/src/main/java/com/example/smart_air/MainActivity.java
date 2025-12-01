@@ -1,5 +1,15 @@
 package com.example.smart_air;
 
+import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.util.Calendar;
+import java.security.CodeSigner;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -7,6 +17,7 @@ import java.util.Locale;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -33,6 +44,7 @@ import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
 import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -54,7 +66,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import com.example.smart_air.fragments.MedicineTabFragment;
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
@@ -88,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
         //init repo, db
         repo = new AuthRepository();
         notifRepo = new NotificationRepository();
@@ -185,9 +196,10 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                // Add medicine fragment
-
-                //medicine fragment
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof MedicineTabFragment)) {
+                    selectedFragment = new MedicineTabFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
