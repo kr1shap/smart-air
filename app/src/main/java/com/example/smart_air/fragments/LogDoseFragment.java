@@ -329,15 +329,21 @@ public class LogDoseFragment extends Fragment {
                                     .collection(medCollection)
                                     .add(data)
                                     .addOnSuccessListener(docRef -> {
-                                        Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
-                                        dialog.dismiss();
-                                        loadLogsFor(logType, logsContainer);
-                                        if ("rescue".equals(logType)) {
-                                            rapidrescuealerts();
-                                            updateLowRescueBadge();                 // update low rescue badge
-                                        } else if ("controller".equals(logType)) {
-                                            updateControllerBadgeAndAdherence();    // update adherence
-                                        }
+                                        docRef.get().addOnSuccessListener(snapshot -> {
+                                            Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
+                                            // update badge and stat
+                                            if ("rescue".equals(logType)) {
+                                                rapidrescuealerts();
+                                                updateLowRescueBadge(); // low rescue badge
+                                            } else if ("controller".equals(logType)) {
+                                                updateControllerBadgeAndAdherence(); // controller badge & streak
+                                            }
+                                            // refresh the UI
+                                            dialog.dismiss();
+                                            loadLogsFor(logType, logsContainer);
+                                        }).addOnFailureListener(e -> {
+                                            Toast.makeText(getContext(), "Dose logged but failed to read timestamp: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        });
                                     })
                                     .addOnFailureListener(e ->
                                             Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -599,12 +605,10 @@ public class LogDoseFragment extends Fragment {
                     (Map<String, Object>) childDoc.get("thresholds");
 
             @SuppressWarnings("unchecked")
-            Map<String, Boolean> weeklySchedule =
-                    thresholds != null
-                            ? (Map<String, Boolean>) thresholds.get("weeklySchedule")
-                            : null;
+            Map<String, Boolean> weeklySchedule = (Map<String, Boolean>) childDoc.get("weeklySchedule");
 
             if (weeklySchedule == null || weeklySchedule.isEmpty()) {
+                childRef.update("badges.lowRescueBadge", false); //no weekly schedule, so default false
                 return; // nothing to compute against
             }
 
@@ -627,13 +631,15 @@ public class LogDoseFragment extends Fragment {
                 String dow = dayNameForCalendar(cal); // "Monday", "Tuesday", ...
 
                 Boolean shouldTake = weeklySchedule.get(dow);
-                if (Boolean.TRUE.equals(shouldTake)) {
+                if (shouldTake) {
                     plannedDates.add(dateFmt.format(day));
                 }
                 cal.add(Calendar.DAY_OF_YEAR, 1);
             }
 
             if (plannedDates.isEmpty()) {
+                //directly update and return (no planned dates - no streak to follow)
+                childRef.update("controllerStats.controllerBadge", false);
                 return;
             }
 
@@ -642,7 +648,7 @@ public class LogDoseFragment extends Fragment {
                     .whereGreaterThanOrEqualTo("timeTaken", startOfWindow)
                     .get()
                     .addOnSuccessListener(qs -> {
-                        java.util.Set<String> controllerDates = new java.util.HashSet<>();
+                        Set<String> controllerDates = new java.util.HashSet<>();
 
                         for (DocumentSnapshot doc : qs.getDocuments()) {
                             com.google.firebase.Timestamp ts = doc.getTimestamp("timeTaken");
@@ -667,18 +673,9 @@ public class LogDoseFragment extends Fragment {
                         boolean perfectWeek =
                                 (plannedCount > 0 && daysWithDose == plannedCount);
 
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> badges =
-                                (Map<String, Object>) childDoc.get("badges");
-                        boolean controllerBadgeAlready =
-                                badges != null && Boolean.TRUE.equals(badges.get("controllerBadge"));
-
                         Map<String, Object> updates = new HashMap<>();
                         updates.put("controllerStats.adherencePercent", adherencePercent);
-
-                        if (perfectWeek && !controllerBadgeAlready) {
-                            updates.put("badges.controllerBadge", true);
-                        }
+                        updates.put("badges.controllerBadge", perfectWeek);
 
                         if (!updates.isEmpty()) {
                             childRef.update(updates);
