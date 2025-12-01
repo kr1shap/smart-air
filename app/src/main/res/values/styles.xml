@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:name="http://schemas.android.com/apk/res-auto">
     <style name="SmartAir.Button1" parent="Widget.MaterialComponents.Button">
         <item name="cornerRadius">24dp</item>
         <item name="android:paddingTop">12dp</item>
@@ -143,6 +143,7 @@
         <item name="colorPrimary">@color/colour_blue</item>
         <item name="colorOnPrimary">@android:color/white</item>
         <item name="colorSecondary">@color/colour_blue</item>
+        <item name="android:textColorPrimary">@color/colour_indigo</item>
     </style>
     <!-- Alert dialog  -->
     <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
