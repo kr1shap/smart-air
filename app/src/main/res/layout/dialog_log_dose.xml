@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_log_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Log Dose"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:paddingBottom="12dp" />
+
+        <!-- Pre-check -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="How do you feel BEFORE the dose?"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/group_pre_check"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_pre_better"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Better" />
+
+            <RadioButton
+                android:id="@+id/radio_pre_same"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Same" />
+
+            <RadioButton
+                android:id="@+id/radio_pre_worse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Worse" />
+        </RadioGroup>
+
+        <!-- Technique helper -->
+        <Button
+            android:id="@+id/btn_technique_helper"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Open Technique Helper"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Puffs -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="How many puffs did you take?"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
+
+        <EditText
+            android:id="@+id/input_puffs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Number of puffs" />
+
+        <!-- Short breath rating -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Short breath rating (0–10)"
+            android:paddingTop="8dp" />
+
+        <TextView
+            android:id="@+id/text_short_breath_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Current: 0"
+            android:paddingBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seek_short_breath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="10" />
+
+        <!-- Post-check -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="How do you feel AFTER the dose?"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/group_post_check"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_post_better"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Better" />
+
+            <RadioButton
+                android:id="@+id/radio_post_same"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Same" />
+
+            <RadioButton
+                android:id="@+id/radio_post_worse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Worse" />
+        </RadioGroup>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/btn_cancel_log"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel" />
+
+            <Button
+                android:id="@+id/btn_save_log"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
