@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#FFFFFF">
+
+    <!-- Title Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/reportTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Provider Report"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="#1976D2"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/reportPeriod"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Last 3 Months"
+            android:textSize="13sp"
+            android:fontFamily="@font/dm_sans_medium"
+            android:textColor="#424242"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#E0E0E0"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Patient Info Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        >
+
+        <!-- Child Name -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="5dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Child Name:"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_bold"
+                android:textColor="#616161"
+                android:minWidth="120dp" />
+
+            <TextView
+                android:id="@+id/childNameValue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="John Doe"
+                android:textSize="13sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#212121" />
+        </LinearLayout>
+
+        <!-- Date of Birth -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date of Birth:"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_bold"
+                android:textColor="#616161"
+                android:minWidth="120dp" />
+
+            <TextView
+                android:id="@+id/dateOfBirthValue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Jan 15, 2010"
+                android:textSize="13sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#212121" />
+        </LinearLayout>
+
+        <!-- Parent Email -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Parent Email:"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_bold"
+                android:textColor="#616161"
+                android:minWidth="120dp" />
+
+            <TextView
+                android:id="@+id/parentEmailValue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="parent@example.com"
+                android:textSize="13sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:textColor="#212121" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

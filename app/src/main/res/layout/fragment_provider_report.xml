@@ -11,6 +11,7 @@
         android:fontFamily="@font/dm_sans_bold"
         android:textSize="22sp"
         android:textStyle="bold"
+        android:textColor="@color/colour_indigo"
         android:layout_marginBottom="24dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

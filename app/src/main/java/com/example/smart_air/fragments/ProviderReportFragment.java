@@ -1,6 +1,7 @@
 package com.example.smart_air.fragments;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -9,20 +10,24 @@ import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
+import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -36,24 +41,36 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProviderReportFragment extends Fragment {
 
     private Spinner spinnerMonths;
     private String childId;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-    private boolean allowRescue;
-    private boolean allowController;
-    private boolean allowPEF;
-
-    private boolean allowSymptoms;
-    private boolean allowTriage;
-    private boolean allowCharts;
-
+    private boolean allowRescue, allowController, allowPEF, allowSymptoms, allowTriage, allowCharts;
+    //Cache VM for data from dashboard onto here
+    DashboardViewModel cacheVM;
+    // list of rescue log documents
+    List<DocumentSnapshot> rescueLogs;
+    // list of PEF (triage) documents
+    List<DocumentSnapshot> pefLogs;
+    // sharing toggle map
+    Map<String, Boolean> childSharing;
+    //parent information such as name, etc
+    private String parentName, childName, childDob, monthString;
+    //Provider report data
+    int[] rescueCounts;
+    double rescuePercentage; // percentage of days with rescue
+    List<TriageLog> incidents = new ArrayList<>();
+    int[] problemDays = {0};
+    int[] zoneGreen = {0};
+    int[] zoneYellow = {0};
+    int[] zoneRed = {0};
 
     public ProviderReportFragment(){
         // empty constructor
@@ -74,13 +91,45 @@ public class ProviderReportFragment extends Fragment {
         spinnerMonths = view.findViewById(R.id.spinnerMonths);
         Button btnGenerate = view.findViewById(R.id.btnGenerate);
         Button btnCancel = view.findViewById(R.id.btnCancel);
+        //get the cache to re-use data
+        cacheVM = new ViewModelProvider(requireActivity()).get(DashboardViewModel.class);
 
-        if (getArguments() != null) {
-            childId = getArguments().getString("childId");
-        }
+        if (getArguments() != null) { childId = getArguments().getString("childId"); }
 
         if (childId == null) {
             Toast.makeText(requireContext(), "Missing child ID", Toast.LENGTH_SHORT).show();
+            requireActivity().getSupportFragmentManager().popBackStack();
+            return;
+        }
+
+        //get all caches
+
+        // uid - list of rescue log documents
+        Map<String, List<DocumentSnapshot>> weeklyRescueCache = cacheVM.getWeeklyRescueCache();
+        // uid - list of PEF documents
+        Map<String, List<DocumentSnapshot>> pefCache = cacheVM.getPefCache();
+        // child uid - sharing toggle map
+        Map<String, Map<String, Boolean>> childSharingCache = cacheVM.getChildSharingCache();
+        if(!weeklyRescueCache.containsKey(childId) || !pefCache.containsKey(childId) || !childSharingCache.containsKey(childId)) {
+            Toast.makeText(requireContext(), "Missing child data to generate PDF, returning back to home!", Toast.LENGTH_SHORT).show();
+            requireActivity().getSupportFragmentManager().popBackStack();
+            return;
+        }
+        //grab all correct items from cache
+        childSharing = childSharingCache.get(childId);
+        pefLogs = pefCache.get(childId);
+        rescueLogs = weeklyRescueCache.get(childId);
+
+        //grab booleans from cache
+        allowRescue = childSharing.getOrDefault("rescue", false);
+        allowController = childSharing.getOrDefault("controller", false);
+        allowPEF = childSharing.getOrDefault("pef", false);
+        allowSymptoms = childSharing.getOrDefault("symptoms", false);
+        allowTriage = childSharing.getOrDefault("triage", false);
+        allowCharts = childSharing.getOrDefault("charts", false);
+        //prevent pdf generation if no permissions
+        if(!allowCharts && !allowRescue && !allowPEF && !allowSymptoms && !allowTriage && !allowController) {
+            Toast.makeText(requireContext(), "No permissions to make a valid PDF", Toast.LENGTH_SHORT);
             requireActivity().getSupportFragmentManager().popBackStack();
             return;
         }
@@ -94,9 +143,10 @@ public class ProviderReportFragment extends Fragment {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.force_black_text,
                 options
         );
+        adapter.setDropDownViewResource(R.layout.force_black_text);
         spinnerMonths.setAdapter(adapter);
 
         btnCancel.setOnClickListener(v ->
@@ -106,12 +156,14 @@ public class ProviderReportFragment extends Fragment {
         btnGenerate.setOnClickListener(v -> {
             String selected = spinnerMonths.getSelectedItem().toString();
             int months = Integer.parseInt(selected.replaceAll("\\D+", ""));
+            monthString = Integer.toString(months);
             generateProviderReport(months);
         });
     }
 
     // where main info is generated
     private void generateProviderReport(int months) {
+        incidents = new ArrayList<>(); //make empty
         LocalDate now = LocalDate.now();
         LocalDate cutoff = now.minusMonths(months);
 
@@ -124,10 +176,10 @@ public class ProviderReportFragment extends Fragment {
                         return;
                     }
 
-                    String childName = childDoc.getString("name");
+                    childName = childDoc.getString("name");
                     Timestamp dobTs = childDoc.getTimestamp("dob");
 
-                    String childDob = dobTs != null
+                    childDob = dobTs != null
                             ? new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
                             .format(dobTs.toDate())
                             : "-";
@@ -144,193 +196,484 @@ public class ProviderReportFragment extends Fragment {
                             .addOnSuccessListener(parentDoc -> {
                                 String parentEmail = parentDoc.getString("email");
                                 if (parentEmail == null) parentEmail = "-";
-
-                                String finalParentEmail = parentEmail;
-                                loadSharingPermissions(childId, () -> {
-                                    fetchDataForReport(months, cutoff, childName, childDob, finalParentEmail);
-                                });
-
+                                parentName = parentEmail;
+                                fetchData(cutoff);
                             });
                 });
     }
 
-    private void loadSharingPermissions(String childId, Runnable onDone) {
-        db.collection("children")
-                .document(childId)
-                .get()
-                .addOnSuccessListener(doc -> {
-
-                    allowRescue = true;
-                    allowController = true;
-                    allowPEF = true;
-                    allowSymptoms = true;
-                    allowTriage = true;
-                    allowCharts = true;
-
-                    Map<String, Object> sharing = (Map<String, Object>) doc.get("sharing");
-
-                    if (sharing != null) {
-                        Object r = sharing.get("rescue");
-                        Object c = sharing.get("controller");
-                        Object p = sharing.get("pef");
-                        Object s = sharing.get("symptoms");
-                        Object t = sharing.get("triage");
-                        Object ch = sharing.get("charts");
-
-                        if (r instanceof Boolean) allowRescue = (Boolean) r;
-                        if (c instanceof Boolean) allowController = (Boolean) c;
-                        if (p instanceof Boolean) allowPEF = (Boolean) p;
-                        if (s instanceof Boolean) allowSymptoms = (Boolean) s;
-                        if (t instanceof Boolean) allowTriage = (Boolean) t;
-                        if (ch instanceof Boolean) allowCharts = (Boolean) ch;
-                    }
-
-                    if (onDone != null) onDone.run();
-                });
-    }
-
-    private void fetchDataForReport(
-            int months,
-            LocalDate cutoff,
-            String childName,
-            String childDob,
-            String parentEmail
-    ) {
+    //based on toggles fetch data async
+    private void fetchData(LocalDate cutoff) {
         LocalDate now = LocalDate.now();
-
         int totalDays = (int) ChronoUnit.DAYS.between(cutoff, now) + 1;
         if (totalDays <= 0) totalDays = 1;
 
-        final int[] rescueCounts = new int[totalDays];
-        final List<TriageIncident> incidents = new ArrayList<>();
+        //sync due to cache
+        if (allowRescue && rescueLogs != null) { processRescueLogsFromCache(cutoff, now, totalDays); }
+        fetchSymptomBurdenZone(cutoff, now); //zone sync
+        //triage is async
+        if (allowTriage) {
+            int finalTotalDays = totalDays;
+            fetchTriageIncidents(cutoff, now, () -> {
+                // After triage completes
+                Toast.makeText(requireContext(), "Generating PDF...", Toast.LENGTH_SHORT).show();
+                generatePDF(now, cutoff, finalTotalDays);
+            });
+        } else {
+            generatePDF(now, cutoff, totalDays);
+        }
+    }
 
-        final int[] problemDays = {0};
-        final int[] zoneGreen = {0};
-        final int[] zoneYellow = {0};
-        final int[] zoneRed = {0};
 
-        int finalTotalDays = totalDays;
+
+    private void fetchTriageIncidents(LocalDate cutoff, LocalDate now, Runnable onComplete ) {
+        //Fetch the incident docs
         db.collection("incidentLog")
                 .document(childId)
                 .collection("triageSessions")
                 .orderBy("date", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snap -> {
-
                     for (DocumentSnapshot doc : snap) {
-
-                        Timestamp ts = doc.getTimestamp("date");
-                        if (ts == null) continue;
-
-                        LocalDate entryDate = ts.toDate().toInstant()
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate();
-
-                        if (entryDate.isBefore(cutoff) || entryDate.isAfter(now)) continue;
-
-                        String formattedDate =
-                                new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                        .format(ts.toDate());
-
-                        Object rawFlags = doc.get("flagList");
-                        String symptomsText = "-";
-
-                        boolean hasSymptoms = false;
-
-                        if (rawFlags instanceof List) {
-                            @SuppressWarnings("unchecked")
-                            List<String> list = (List<String>) rawFlags;
-                            if (list != null && !list.isEmpty()) {
-                                symptomsText = TextUtils.join(", ", list);
-                                hasSymptoms = true;
-                            }
-                        } else if (rawFlags instanceof String) {
-                            String s = ((String) rawFlags).trim();
-                            if (!s.isEmpty()) {
-                                symptomsText = s;
-                                hasSymptoms = true;
-                            }
-                        }
-
-                        incidents.add(new TriageIncident(formattedDate, symptomsText));
-
-                        if (hasSymptoms) {
-                            problemDays[0]++;
-                        }
-
-                        int rescue = 0;
-                        Object rawRescue = doc.get("rescueAttempts");
-                        if (rawRescue instanceof Number) {
-                            rescue = ((Number) rawRescue).intValue();
-                        } else if (rawRescue instanceof String) {
-                            try {
-                                rescue = Integer.parseInt((String) rawRescue);
-                            } catch (Exception ignored) {}
-                        }
-
-                        if (allowRescue && rescue > 0) {
-                            int idx = (int) ChronoUnit.DAYS.between(cutoff, entryDate);
-                            if (idx >= 0 && idx < finalTotalDays) {
-                                rescueCounts[idx] += rescue;
-                            }
-                        }
-
-                    }
-
-                    // up to 5 triage sessions on report
-                    List<TriageIncident> limitedIncidents;
-                    if (incidents.size() > 5) {
-                        limitedIncidents = incidents.subList(0, 5);
-                    } else {
-                        limitedIncidents = incidents;
-                    }
-
-                    db.collection("dailyCheckins")
-                            .document(childId)
-                            .collection("entries")
-                            .get()
-                            .addOnSuccessListener(checkSnap -> {
-
-                                for (DocumentSnapshot checkDoc : checkSnap) {
-
-                                    Timestamp ts = checkDoc.getTimestamp("date");
-                                    if (ts == null) continue;
-
-                                    LocalDate entryDate = ts.toDate().toInstant()
-                                            .atZone(ZoneId.systemDefault())
-                                            .toLocalDate();
-
-                                    if (entryDate.isBefore(cutoff) || entryDate.isAfter(now))
-                                        continue;
-
-                                    String zone = checkDoc.getString("zoneColour");
-                                    if (zone == null) continue;
-
-                                    switch (zone.toLowerCase()) {
-                                        case "green": zoneGreen[0]++; break;
-                                        case "yellow": zoneYellow[0]++; break;
-                                        case "red": zoneRed[0]++; break;
-                                    }
+                        try {
+                            // get data from document
+                            com.google.firebase.Timestamp timestamp = doc.getTimestamp("date");
+                            Long pefLong = doc.getLong("PEF");
+                            ArrayList<String> flagList = (ArrayList<String>) doc.get("flagList");
+                            ArrayList<String> guidance = (ArrayList<String>) doc.get("guidance");
+                            Long rescueAttemptsLong = doc.getLong("rescueAttempts");
+                            ArrayList<String> userRes = (ArrayList<String>) doc.get("userRes");
+                            // null check and default
+                            if (timestamp == null) continue;
+                            int pef = (pefLong != null) ? pefLong.intValue() : 0;
+                            if (flagList == null) flagList = new ArrayList<>();
+                            if (guidance == null) guidance = new ArrayList<>();
+                            int rescueAttempts = (rescueAttemptsLong != null) ? rescueAttemptsLong.intValue() : 0;
+                            if (userRes == null) userRes = new ArrayList<>();
+                            //convert timestamp to date
+                            Date date = timestamp.toDate();
+                            LocalDate incidentDate = date.toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+                            //check if within range
+                            if ((incidentDate.isEqual(cutoff) || incidentDate.isAfter(cutoff)) &&
+                                    (incidentDate.isEqual(now) || incidentDate.isBefore(now))) {
+                                // made-up notable criteria
+                                if (flagList.size() >= 3 && rescueAttempts > 3) {
+                                    // Format date as string
+                                    String dateString = incidentDate.toString();
+                                    TriageLog log = new TriageLog(dateString, pef, flagList, guidance, rescueAttempts, userRes);
+                                    incidents.add(log);
                                 }
+                            }
 
-                                createPdfReport(
-                                        months,
-                                        childName,
-                                        childDob,
-                                        parentEmail,
-                                        cutoff,
-                                        finalTotalDays,
-                                        limitedIncidents,
-                                        rescueCounts,
-                                        problemDays[0],
-                                        zoneGreen[0],
-                                        zoneYellow[0],
-                                        zoneRed[0]
-                                );
-                            });
+                            // stop once 10 incidents
+                            if (incidents.size() >= 10) { break; }
+
+                        } catch (Exception e) {
+                            Log.e("TriageFetch", "Error processing document: " + doc.getId(), e);
+                        }
+                    }
+                    // Notify completion
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                } );
+
+    }
+
+    private void fetchSymptomBurdenZone(LocalDate cutoff, LocalDate now) {
+        int symptomBurdenCount = 0;
+        if(pefLogs == null) {
+            problemDays[0] = 0;
+            zoneGreen[0] = 0;
+            zoneYellow[0] = 0;
+            zoneRed[0] = 0;
+            return;
+        }
+        for (DocumentSnapshot doc : pefLogs) {
+            try {
+                String docId = doc.getId(); //YYYY-MM-DD
+                LocalDate entryDate;
+                try { entryDate = LocalDate.parse(docId);
+                } catch (Exception e) {
+                    Log.e("SymptomFetch", "Invalid date format in doc ID: " + docId, e);
+                    continue;
+                }
+                // if date is within range
+                if (entryDate.isBefore(cutoff) || entryDate.isAfter(now)) { continue; }
+                // get the symptom values
+                Long activityLimitsLongP = doc.getLong("activityLimitsparent");
+                Long coughingWheezingLongP = doc.getLong("coughingWheezingparent");
+                Long activityLimitsLongC = doc.getLong("activityLimitschild");
+                Long coughingWheezingLongC = doc.getLong("coughingWheezingchild");
+                // check if either field exists and is >= 4
+                boolean isSymptomBurden = false;
+                if (activityLimitsLongP != null && activityLimitsLongP >= 4) { isSymptomBurden = true; }
+                if (coughingWheezingLongP != null && coughingWheezingLongP >= 4) { isSymptomBurden = true; }
+                if (activityLimitsLongC != null && activityLimitsLongC >= 4) { isSymptomBurden = true; }
+                if (coughingWheezingLongC != null && coughingWheezingLongC >= 4) { isSymptomBurden = true; }
+                // count this day if it meets criteria
+                if (isSymptomBurden) { symptomBurdenCount++; }
+                // get and count zone color
+                String zoneColour = doc.getString("zoneColour");
+                if (zoneColour != null) {
+                    switch (zoneColour.toLowerCase()) {
+                        case "green":
+                            zoneGreen[0]++;
+                            break;
+                        case "yellow":
+                            zoneYellow[0]++;
+                            break;
+                        case "red":
+                            zoneRed[0]++;
+                            break;
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e("SymptomFetch", "Error processing document: " + doc.getId(), e);
+            }
+        }
+        // store the result
+        problemDays[0] = symptomBurdenCount;
+        Log.d("SymptomFetch", "Symptom burden days: " + symptomBurdenCount);
+    }
+
+    private void processRescueLogsFromCache(LocalDate cutoff, LocalDate now, int totalDays) {
+        // Initialize the rescue counts array
+        rescueCounts = new int[totalDays];
+        if (rescueLogs == null || rescueLogs.isEmpty()) { return; }
+        int daysWithRescue = 0;
+        boolean[] hasRescueOnDay = new boolean[totalDays]; // Track unique days
+        for (DocumentSnapshot doc : rescueLogs) {
+            try {
+                //get data from document
+                Timestamp timestamp = doc.getTimestamp("timeTaken");
+                if (timestamp == null) continue;
+
+                //local date conversion and check within range
+                Date date = timestamp.toDate();
+                LocalDate rescueDate = date.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+
+                //within range check
+                if (rescueDate.isBefore(cutoff) || rescueDate.isAfter(now)) { continue; }
+                //get index for the day
+                int dayIndex = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
+                //make sure index within bounds
+                if (dayIndex < 0 || dayIndex >= totalDays) { continue; }
+                // inc the count for this day
+                rescueCounts[dayIndex]++;
+                if(rescueCounts[dayIndex]==0) daysWithRescue+=1;
+
+            } catch (Exception e) {
+                Log.e("RescueFetch", "Error processing rescue log: " + doc.getId(), e);
+            }
+        }
+        // calc percentage of days with rescue
+        rescuePercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
+    }
 
 
-                });
+    /* HELPER FUNCTIONS FOR PDF GENERATION */
+
+    private void addTriageCardToPdf(PdfDocument pdf, PageHolder ph, int x, int maxWidth,
+                                    TriageLog log) {
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View triageView = inflater.inflate(R.layout.pdf_card_triage, null, false);
+
+        //text view
+        ((TextView) triageView.findViewById(R.id.triageTitle)).setText("Incident Log - " + log.date);
+        TextView presentFlags = triageView.findViewById(R.id.presentFlags);
+        presentFlags.setText((log.flagList != null && !log.flagList.isEmpty()) ?
+                TextUtils.join(", ", log.flagList) : "None");
+        if(log.PEF == -1) {
+            ((TextView) triageView.findViewById(R.id.pefValue)).setText(String.valueOf("N/A"));
+        }
+        else ((TextView) triageView.findViewById(R.id.pefValue)).setText(String.valueOf(log.PEF));
+
+        ((TextView) triageView.findViewById(R.id.rescueAttempts)).setText(String.valueOf(log.rescueAttempts));
+
+        TextView emergencyCall = triageView.findViewById(R.id.emergencyCall);
+        boolean hasEmergencyCall = log.guidance != null && log.guidance.stream()
+                .anyMatch(g -> g != null && g.toLowerCase().contains("emergency"));
+        emergencyCall.setText(hasEmergencyCall ? "YES" : "NO");
+        emergencyCall.setTextColor(Color.parseColor(hasEmergencyCall ? "#D32F2F" : "#388E3C"));
+
+        TextView userResponseList = triageView.findViewById(R.id.userResponseList);
+        if (log.userRes != null && !log.userRes.isEmpty()) {
+            StringBuilder responseBuilder = new StringBuilder();
+            for (String response : log.userRes) {
+                if (response != null && !response.trim().isEmpty()) {
+                    responseBuilder.append("• ").append(response).append("\n");
+                }
+            }
+            userResponseList.setText(responseBuilder.length() > 0 ? responseBuilder.toString().trim() : "• No response recorded");
+        } else {
+            userResponseList.setText("• No response recorded");
+        }
+
+        //exact width
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        triageView.measure(widthSpec, heightSpec);
+        triageView.layout(0, 0, triageView.getMeasuredWidth(), triageView.getMeasuredHeight());
+
+        int cardHeight = triageView.getMeasuredHeight();
+        ensureSpace(pdf, ph, cardHeight + 10);
+
+        // draw without shrinking
+        Bitmap bitmap = Bitmap.createBitmap(cardHeight > 0 ? triageView.getMeasuredWidth() : maxWidth,
+                cardHeight, Bitmap.Config.ARGB_8888);
+        Canvas tempCanvas = new Canvas(bitmap);
+        tempCanvas.drawColor(Color.WHITE);
+        triageView.draw(tempCanvas);
+
+        ph.canvas.drawBitmap(bitmap, x, ph.y, null);
+
+        ph.y += cardHeight + 10;
+        bitmap.recycle();
+    }
+
+    /* ADDS THE REPORT HEADER TO THE PDF */
+    private int addReportHeaderToPdf(Canvas pdfCanvas, int x, int y, int maxWidth,
+                                     String childName, String dateOfBirth,
+                                     String parentEmail, String months) {
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View headerView = inflater.inflate(R.layout.pdf_provider_summary_header, null, false);
+
+        // Find and populate views
+        TextView reportPeriod = headerView.findViewById(R.id.reportPeriod);
+        TextView childNameValue = headerView.findViewById(R.id.childNameValue);
+        TextView dateOfBirthValue = headerView.findViewById(R.id.dateOfBirthValue);
+        TextView parentEmailValue = headerView.findViewById(R.id.parentEmailValue);
+
+        // set values
+        reportPeriod.setText("Last " + months + " Months");
+        childNameValue.setText(childName != null ? childName : "-");
+        dateOfBirthValue.setText(dateOfBirth != null ? dateOfBirth : "-");
+        parentEmailValue.setText(parentEmail != null ? parentEmail : "-");
+
+        // scale for quality
+        int scaleFactor = 3;
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(maxWidth * scaleFactor, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        headerView.measure(widthSpec, heightSpec);
+        headerView.layout(0, 0, headerView.getMeasuredWidth(), headerView.getMeasuredHeight());
+
+        //bitmap
+        Bitmap bitmap = Bitmap.createBitmap(
+                headerView.getMeasuredWidth(),
+                headerView.getMeasuredHeight(),
+                Bitmap.Config.ARGB_8888
+        );
+        Canvas tempCanvas = new Canvas(bitmap);
+        tempCanvas.drawColor(Color.WHITE);
+        headerView.draw(tempCanvas);
+        //bitmap scale for pdf fitting
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth,
+                headerView.getMeasuredHeight() / scaleFactor, true);
+        //draw to the pdf
+        pdfCanvas.drawBitmap(scaledBitmap, x, y, null);
+        int headerHeight = scaledBitmap.getHeight();
+        //cleanup
+        bitmap.recycle();
+        scaledBitmap.recycle();
+        return y + headerHeight + 20; //next y pos
+    }
+
+    /* ADD THE STATS ROW TO THE PDF */
+    private int addStatsRowToPdf(Canvas pdfCanvas, int x, int y, int maxWidth,
+                                 int symptomBurden, double rescuePercentage,
+                                 int controllerAdherence,
+                                 boolean allowSymptoms, boolean allowRescue,
+                                 boolean allowController) {
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View statsView = inflater.inflate(R.layout.pdf_provider_summary, null, false);
+
+        TextView symptomValue = statsView.findViewById(R.id.symptomBurdenValue);
+        TextView rescueValue = statsView.findViewById(R.id.rescueFrequencyValue);
+        TextView controllerValue = statsView.findViewById(R.id.controllerAdherenceValue);
+
+        if (allowSymptoms) { symptomValue.setText(String.valueOf(symptomBurden)); }
+        else {
+            symptomValue.setText("N/A");
+            symptomValue.setTextColor(Color.parseColor("#9E9E9E"));
+        }
+        if (allowRescue) {
+            rescueValue.setText(String.valueOf(rescuePercentage) + "%");
+        } else {
+            rescueValue.setText("N/A");
+            rescueValue.setTextColor(Color.parseColor("#9E9E9E"));
+        }
+        if (allowController) {
+            controllerValue.setText(String.valueOf(controllerAdherence) + "%");
+        } else {
+            controllerValue.setText("N/A");
+            controllerValue.setTextColor(Color.parseColor("#9E9E9E"));
+        }
+
+        int scaleFactor = 3;
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(maxWidth * scaleFactor, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        statsView.measure(widthSpec, heightSpec);
+        statsView.layout(0, 0, statsView.getMeasuredWidth(), statsView.getMeasuredHeight());
+
+        int rowHeight = statsView.getMeasuredHeight() / scaleFactor;
+
+        //bitmap
+        Bitmap bitmap = Bitmap.createBitmap(
+                statsView.getMeasuredWidth(),
+                statsView.getMeasuredHeight(),
+                Bitmap.Config.ARGB_8888
+        );
+        Canvas tempCanvas = new Canvas(bitmap);
+        tempCanvas.drawColor(Color.WHITE);
+        statsView.draw(tempCanvas);
+        //scale it down for pdf first
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth, rowHeight, true);
+        pdfCanvas.drawBitmap(scaledBitmap, x, y, null);
+        bitmap.recycle();
+        scaledBitmap.recycle();
+
+        return y + rowHeight + 15;
+    }
+
+    /* GENERATES THE PDF */
+    private void generatePDF(LocalDate now, LocalDate cutoff, int totalDays) {
+        PdfDocument pdf = new PdfDocument();
+        PageHolder ph = new PageHolder();
+        newPage(pdf, ph);
+
+        Paint textPaint = new Paint();
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(14f);
+
+        int left = 40;
+        int right = 555;
+
+        // add report header
+        ph.y = addReportHeaderToPdf(
+                ph.canvas,
+                left,
+                ph.y,
+                right - left,
+                childName,
+                childDob,
+                parentName,
+                monthString
+        );
+
+        //stats row part
+        ensureSpace(pdf, ph, 150);
+        ph.y = addStatsRowToPdf(ph.canvas, left, ph.y, right - left,
+                problemDays[0], rescuePercentage, 0,
+                allowSymptoms, allowRescue, allowController); //TODO: change adherence to right value
+
+        ph.y += 20;
+
+        //triage log part
+        if (allowTriage) {
+            ensureSpace(pdf, ph, 50);
+
+            //title
+            Paint titlePaint = new Paint();
+            titlePaint.setTextSize(16f);
+            titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            titlePaint.setColor(Color.BLACK);
+
+            ph.canvas.drawText("Notable Triage Incidents", left + 10, ph.y, titlePaint);
+            ph.y += 25;
+
+            if (incidents == null || incidents.isEmpty()) {
+                ensureSpace(pdf, ph, 60);
+                textPaint.setTextSize(14f);
+                ph.y = drawWrappedLine(ph.canvas,
+                        "No notable triage incidents recorded in this period.",
+                        left + 20, ph.y, textPaint, right - left - 40);
+                ph.y += 30;
+            } else {
+                // Display up to 10 triage cards
+                int displayCount = Math.min(incidents.size(), 10);
+                for (int i = 0; i < displayCount; i++) {
+                    TriageLog log = incidents.get(i);
+
+                    // Pass pdf and ph so the method can call ensureSpace itself
+                    addTriageCardToPdf(pdf, ph, left, right - left, log);
+                }
+
+                ph.y += 10;
+            }
+        }
+
+        //rescue chart section
+        if (allowRescue && allowCharts) {
+            ensureSpace(pdf, ph, 220);
+            Paint titlePaint = new Paint();
+            titlePaint.setTextSize(16f);
+            titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            titlePaint.setColor(Color.BLUE);
+            ph.canvas.drawText("Rescue Attempts Over Time", left + 10, ph.y, titlePaint);
+            ph.y += 20;
+            int chartTop = ph.y;
+            int chartBottom = chartTop + 180;
+            Paint boxPaint = new Paint();
+            boxPaint.setStyle(Paint.Style.STROKE);
+            boxPaint.setStrokeWidth(2f);
+            ph.canvas.drawRect(left, chartTop, right, chartBottom, boxPaint);
+            drawRescueMiniChart(ph.canvas, rescueCounts, cutoff,
+                    left + 10, chartTop + 10, right - 10, chartBottom - 10);
+            ph.y = chartBottom + 30;
+        }
+
+        // Zone distribution section
+        if (allowCharts) {
+            ensureSpace(pdf, ph, 220);
+            Paint titlePaint = new Paint();
+            titlePaint.setTextSize(16f);
+            titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            titlePaint.setColor(Color.BLUE);
+            ph.canvas.drawText("Zone Distribution", left + 10, ph.y, titlePaint);
+            ph.y += 20;
+            int zoneTop = ph.y;
+            int zoneBottom = zoneTop + 180;
+            Paint boxPaint = new Paint();
+            boxPaint.setStyle(Paint.Style.STROKE);
+            boxPaint.setStrokeWidth(2f);
+            ph.canvas.drawRect(left, zoneTop, right, zoneBottom, boxPaint);
+
+            drawZoneBars(ph.canvas, zoneGreen[0], zoneYellow[0], zoneRed[0],
+                    Integer.parseInt(monthString), totalDays,
+                    left + 10, zoneTop + 10, right - 10, zoneBottom - 10);
+
+            ph.y = zoneBottom + 40;
+        }
+
+        pdf.finishPage(ph.page);
+
+        String fileName = "provider_report_" + System.currentTimeMillis() + ".pdf";
+        File path = new File(requireContext().getExternalFilesDir(null), fileName);
+
+        try (FileOutputStream fos = new FileOutputStream(path)) {
+            pdf.writeTo(fos);
+            Toast.makeText(requireContext(), "PDF saved: " + path.getAbsolutePath(),
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Error: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+            Log.e("PDFCreation", "Error creating PDF", e);
+        }
+
+        pdf.close();
+        Toast.makeText(requireContext(), "PDF saved: " + path.getAbsolutePath(),
+                Toast.LENGTH_LONG).show();
+        openPdf(path);
+
     }
 
     private static class PageHolder {
@@ -394,11 +737,11 @@ public class ProviderReportFragment extends Fragment {
         int height = bottom - top;
 
         Paint axisPaint = new Paint();
-        axisPaint.setColor(Color.BLACK);
+        axisPaint.setColor(Color.BLUE);
         axisPaint.setStrokeWidth(2f);
 
         Paint textPaint = new Paint();
-        textPaint.setColor(Color.BLACK);
+        textPaint.setColor(Color.BLUE);
         textPaint.setTextSize(10f);
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
 
@@ -472,11 +815,11 @@ public class ProviderReportFragment extends Fragment {
         int height = bottom - top;
 
         Paint axisPaint = new Paint();
-        axisPaint.setColor(Color.BLACK);
+        axisPaint.setColor(Color.BLUE);
         axisPaint.setStrokeWidth(2f);
 
         Paint textPaint = new Paint();
-        textPaint.setColor(Color.BLACK);
+        textPaint.setColor(Color.BLUE);
         textPaint.setTextSize(11f);
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
 
@@ -528,185 +871,6 @@ public class ProviderReportFragment extends Fragment {
         }
     }
 
-
-    private void createPdfReport(
-            int months,
-            String childName,
-            String childDob,
-            String parentEmail,
-            LocalDate cutoff,
-            int totalDays,
-            List<TriageIncident> incidents,
-            int[] rescueCounts,
-            int problemDays,
-            int zoneGreen,
-            int zoneYellow,
-            int zoneRed
-    ) {
-
-        PdfDocument pdf = new PdfDocument();
-        PageHolder ph = new PageHolder();
-        newPage(pdf, ph);
-
-        Paint titlePaint = new Paint();
-        Paint textPaint = new Paint();
-        Paint boxPaint = new Paint();
-
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        titlePaint.setTextAlign(Paint.Align.CENTER);
-
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        textPaint.setColor(Color.BLACK);
-        textPaint.setTextSize(14f);
-
-        boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(2f);
-
-        int left = 40;
-        int right = 555;
-
-        titlePaint.setTextSize(26f);
-        ph.canvas.drawText("Provider Report", 595 / 2f, ph.y, titlePaint);
-        ph.y += 40;
-
-        titlePaint.setTextSize(18f);
-        ph.canvas.drawText("Last " + months + " Months", 595 / 2f, ph.y, titlePaint);
-        ph.y += 40;
-
-        ensureSpace(pdf, ph, 150);
-        int boxTop = ph.y;
-        ph.y += 20;
-
-        ph.y = drawWrappedLine(ph.canvas, "Child Name: " + (childName == null ? "-" : childName),
-                left + 20, ph.y, textPaint, right - left - 40);
-        ph.y = drawWrappedLine(ph.canvas, "Date of Birth: " + childDob,
-                left + 20, ph.y, textPaint, right - left - 40);
-        ph.y = drawWrappedLine(ph.canvas, "Parent Email: " + parentEmail,
-                left + 20, ph.y, textPaint, right - left - 40);
-
-        int boxBottom = ph.y + 20;
-        ph.canvas.drawRect(left, boxTop, right, boxBottom, boxPaint);
-        ph.y = boxBottom + 30;
-
-        if (allowSymptoms) {
-            ensureSpace(pdf, ph, 100);
-            int sbTop = ph.y;
-            ph.y += 20;
-
-            ph.y = drawWrappedLine(
-                    ph.canvas,
-                    "Symptom Burden (Problem Days): " + problemDays,
-                    left + 20, ph.y, textPaint, right - left - 40
-            );
-
-            int sbBottom = ph.y + 20;
-            ph.canvas.drawRect(left, sbTop, right, sbBottom, boxPaint);
-            ph.y = sbBottom + 30;
-        }
-
-        if (allowTriage) {
-            ensureSpace(pdf, ph, 150);
-            textPaint.setTextSize(16f);
-            ph.canvas.drawText("Notable Triage Incidents", left + 10, ph.y, textPaint);
-            ph.y += 25;
-            textPaint.setTextSize(14f);
-
-            if (incidents.isEmpty()) {
-                int tTop = ph.y;
-                ph.y += 25;
-                ph.y = drawWrappedLine(ph.canvas,
-                        "No triage incidents recorded in this period.",
-                        left + 20, ph.y, textPaint, right - left - 40);
-                int tBottom = ph.y + 15;
-                ph.canvas.drawRect(left, tTop, right, tBottom, boxPaint);
-                ph.y = tBottom + 30;
-            } else {
-                int tTop = ph.y;
-                ph.y += 20;
-
-                for (TriageIncident incident : incidents) {
-                    ph.y = drawWrappedLine(ph.canvas, "• " + incident.date,
-                            left + 20, ph.y, textPaint, right - left - 40);
-
-                    ph.y = drawWrappedLine(ph.canvas,
-                            "Symptoms: " + incident.symptoms,
-                            left + 40, ph.y, textPaint, right - left - 60);
-
-                    ph.y += 12;
-                }
-
-                int tBottom = ph.y + 15;
-                ph.canvas.drawRect(left, tTop, right, tBottom, boxPaint);
-                ph.y = tBottom + 30;
-            }
-        }
-
-        if (allowRescue) {
-            ensureSpace(pdf, ph, 220);
-            textPaint.setTextSize(16f);
-            ph.canvas.drawText("Rescue Attempts Over Time", left + 10, ph.y, textPaint);
-            ph.y += 20;
-            textPaint.setTextSize(12f);
-
-            int chartTop = ph.y;
-            int chartBottom = chartTop + 180;
-
-            ph.canvas.drawRect(left, chartTop, right, chartBottom, boxPaint);
-
-            drawRescueMiniChart(ph.canvas, rescueCounts, cutoff,
-                    left + 10, chartTop + 10, right - 10, chartBottom - 10);
-
-            ph.y = chartBottom + 30;
-        } else {
-
-            ensureSpace(pdf, ph, 80);
-            textPaint.setTextSize(14f);
-            ph.canvas.drawText("Rescue data not shared by parent.", left + 10, ph.y, textPaint);
-            ph.y += 40;
-        }
-
-        if (allowCharts) {
-            ensureSpace(pdf, ph, 220);
-            textPaint.setTextSize(16f);
-            ph.canvas.drawText("Zone Distribution", left + 10, ph.y, textPaint);
-            ph.y += 20;
-            textPaint.setTextSize(12f);
-
-            int zoneTop = ph.y;
-            int zoneBottom = zoneTop + 180;
-
-            ph.canvas.drawRect(left, zoneTop, right, zoneBottom, boxPaint);
-
-            drawZoneBars(
-                    ph.canvas,
-                    zoneGreen, zoneYellow, zoneRed,
-                    months,
-                    totalDays,
-                    left + 10, zoneTop + 10,
-                    right - 10, zoneBottom - 10
-            );
-
-            ph.y = zoneBottom + 40;
-        }
-
-
-        pdf.finishPage(ph.page);
-
-        String fileName = "provider_report_" + System.currentTimeMillis() + ".pdf";
-        File path = new File(requireContext().getExternalFilesDir(null), fileName);
-
-        try (FileOutputStream fos = new FileOutputStream(path)) {
-            pdf.writeTo(fos);
-            Toast.makeText(requireContext(), "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-
-        pdf.close();
-        openPdf(path);
-    }
-
-
     private void openPdf(File file) {
         Uri uri = FileProvider.getUriForFile(
                 requireContext(),
@@ -725,13 +889,21 @@ public class ProviderReportFragment extends Fragment {
         }
     }
 
-    public static class TriageIncident {
+    public static class TriageLog {
         String date;
-        String symptoms;
+        int PEF;
+        ArrayList<String> flagList;
+        ArrayList<String> guidance;
+        int rescueAttempts;
+        ArrayList<String> userRes;
 
-        public TriageIncident(String date, String symptoms) {
+        public TriageLog(String date, int PEF, ArrayList<String> flagList, ArrayList<String> guidance, int rescueAttempts, ArrayList<String> userRes) {
             this.date = date;
-            this.symptoms = symptoms;
+            this.PEF = PEF;
+            this.flagList = flagList;
+            this.guidance = guidance;
+            this.rescueAttempts = rescueAttempts;
+            this.userRes = userRes;
         }
     }
 }

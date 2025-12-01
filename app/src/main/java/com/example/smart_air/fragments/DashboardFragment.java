@@ -1,14 +1,8 @@
 package com.example.smart_air.fragments;
 
-import android.content.Intent;
-import android.graphics.Canvas;
+import android.annotation.SuppressLint;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
-import android.graphics.pdf.PdfDocument;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -22,12 +16,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -37,6 +29,7 @@ import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.InventoryData;
 import com.example.smart_air.modelClasses.formatters.StringFormatters;
+import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -51,22 +44,18 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -104,6 +93,8 @@ public class DashboardFragment extends Fragment {
     private final Map<String, Map<String, Boolean>> childSharingCache = new HashMap<>(); //for parent - as parent can only change cache
     //LISTENER FOR TOGGLES
     private ListenerRegistration childListener;
+    //VIEW MODEL FOR PDF (TO NOT REGENERATE EXTRA INFO)
+    DashboardViewModel cacheVM;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -117,6 +108,7 @@ public class DashboardFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_dashboard, container, false);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -128,6 +120,7 @@ public class DashboardFragment extends Fragment {
 
         // using viewmodel to load dashboard
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        cacheVM = new ViewModelProvider(requireActivity()).get(DashboardViewModel.class);
 
         // linking xml ids to fragment
         zoneBar = view.findViewById(R.id.zoneBar);
@@ -237,6 +230,10 @@ public class DashboardFragment extends Fragment {
             ProviderReportFragment frag = new ProviderReportFragment();
             Bundle args = new Bundle();
             args.putString("childId", correspondingUid);
+//            if (childSharingCache.containsKey(correspondingUid)) {
+//                HashMap<String, Boolean> sharingMap = (HashMap<String, Boolean>) childSharingCache.get(correspondingUid);
+//                args.putSerializable("sharing", sharingMap);
+//            }
             frag.setArguments(args);
             requireActivity().getSupportFragmentManager()
                     .beginTransaction().replace(R.id.fragment_container, frag)
@@ -362,14 +359,10 @@ public class DashboardFragment extends Fragment {
                 .addOnSuccessListener(doc -> {
                     if (doc == null || !doc.exists()) return;
                     Map<String, Boolean> sharing = (Map<String, Boolean>) doc.get("sharing");
-                    if (sharing == null) sharing = new HashMap<>();
-                    //default to false
-                    sharing.putIfAbsent("rescue", false);
-                    sharing.putIfAbsent("controller", false);
-                    sharing.putIfAbsent("pef", false);
-                    sharing.putIfAbsent("charts", false);
+                    if (sharing == null) sharing = Child.initalizeSharing();
                     // cache
                     childSharingCache.put(childUid, sharing);
+                    cacheVM.putChildSharing(childUid, sharing);
                     // apply toggles to the UI for parent
                     applySharingTogglesParent(sharing);
                 });
@@ -552,6 +545,7 @@ public class DashboardFragment extends Fragment {
                 .addOnSuccessListener(snap -> {
                     List<DocumentSnapshot> docs = snap.getDocuments();
                     weeklyRescueCache.put(correspondingUid, docs);
+                    cacheVM.putWeeklyRescue(correspondingUid, docs);
                     processWeeklyRescueDocuments(docs, cutoff, days);
                     processWeeklyRescueStat(docs);
                 });
@@ -666,6 +660,7 @@ public class DashboardFragment extends Fragment {
                 .addOnSuccessListener(snapshot -> {
                     List<DocumentSnapshot> docs = snapshot.getDocuments();
                     pefCache.put(correspondingUid, docs); // cache if not in there yet
+                    cacheVM.putPefCache(correspondingUid, docs);
                     processPEFDocuments(docs, startDate, today, days);
                 });
     }
