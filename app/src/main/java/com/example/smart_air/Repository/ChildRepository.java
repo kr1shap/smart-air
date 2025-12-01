@@ -526,7 +526,7 @@ public class ChildRepository {
                     }
                     //UI change for technique streak - if streak invalid just change to 0 ui-based
                     //next time child logs in a new session an actual change will be made
-                    if(techniqueDate != null && (StringFormatters.getToday().equals(techniqueDate) || StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
+                    if(techniqueDate != null && (!StringFormatters.getToday().equals(techniqueDate) || !StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
                     BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
                     taskSource.setResult(data);
                 })

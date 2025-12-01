@@ -39,6 +39,14 @@
             android:paddingBottom="16dp"
             android:fontFamily="@font/dm_sans_bold"/>
 
+        <include
+            layout="@layout/shared_provider_label"
+            android:id="@+id/sharedProviderLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="start"/>
+
         <!-- CONTROLLER SECTION -->
         <TextView
             android:id="@+id/text_controller_section_title"
@@ -92,16 +100,17 @@
         </androidx.cardview.widget.CardView>
 
         <!-- RESCUE SECTION -->
+
         <TextView
             android:id="@+id/text_rescue_section_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rescue"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:textColor="@android:color/black"
+            android:fontFamily="@font/dm_sans_regular"
             android:paddingBottom="8dp"
-            android:fontFamily="@font/dm_sans_regular"/>
+            android:text="Rescue"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_rescue_logs"

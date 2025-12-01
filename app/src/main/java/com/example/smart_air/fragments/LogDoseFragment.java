@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -28,6 +29,8 @@ import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.modelClasses.enums.NotifType;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
+import com.example.smart_air.viewmodel.ChildTogglesViewModel;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -61,19 +64,28 @@ import java.util.ArrayList;
 public class LogDoseFragment extends Fragment {
 
     private FirebaseFirestore db;
-    /** This will always hold the *current child’s* UID (or the child user’s own UID). */
     private String uid;
     int threshold=300;
     double lessthan20=threshold*0.2;
+    //VM For the toggles (parent and provider)
+    private ChildTogglesViewModel togglesVM;
     private SharedChildViewModel sharedModel;
     private String userRole = "";
     // Keep references so we can reload logs when the child changes
     private LinearLayout controllerLogsContainer;
     private LinearLayout rescueLogsContainer;
-    private TextView dateView;
+    private TextView dateView, text_rescue_section_title;
+    private CardView rescueCard;
     //buttons for disabling for providers
     private Button btn_add_controller_log, btn_add_rescue_log;
     public LogDoseFragment() {}
+    //toggle cache
+    private Map<String, Boolean> toggleCache; //for rescue toggles
+    //For shared label tag on top
+    View sharedProviderLabel;
+    TextView sharedLabelText;
+    Button addControllerBtn, addRescueBtn;
+    String afterDose = "";
 
     @Nullable
     @Override
@@ -97,9 +109,48 @@ public class LogDoseFragment extends Fragment {
         //instantiate buttons
         btn_add_controller_log = view.findViewById(R.id.btn_add_controller_log);
         btn_add_rescue_log = view.findViewById(R.id.btn_add_rescue_log);
-
+        //initalize other containers
+        dateView = view.findViewById(R.id.text_today_date);
+        controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
+        rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
+        rescueCard = view.findViewById(R.id.card_rescue_logs);
+        text_rescue_section_title = view.findViewById(R.id.text_rescue_section_title);
+        //shared tag label
+        sharedProviderLabel = view.findViewById(R.id.sharedProviderLabel);
+        sharedLabelText = view.findViewById(R.id.sharedLabelText);
         // hook into the shared child viewmodel
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        togglesVM = new ViewModelProvider(this).get(ChildTogglesViewModel.class);
+
+        //isntantiate toggle map
+        toggleCache = new HashMap<>();
+
+        //back button
+        Button backButton = view.findViewById(R.id.btn_back_log_dose);
+        if (backButton != null) {
+            backButton.setOnClickListener(v ->
+                    requireActivity()
+                            .getSupportFragmentManager()
+                            .popBackStack());
+        }
+
+        //buttons in containers
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        dateView.setText(today);
+
+        addControllerBtn = view.findViewById(R.id.btn_add_controller_log);
+        addRescueBtn = view.findViewById(R.id.btn_add_rescue_log);
+
+        //onclick for buttons
+        if (addControllerBtn != null) {
+            addControllerBtn.setOnClickListener(v ->
+                    showLogDialog("controller", controllerLogsContainer));
+        }
+
+        if (addRescueBtn != null) {
+            addRescueBtn.setOnClickListener(v ->
+                    showLogDialog("rescue", rescueLogsContainer));
+        }
 
         // observe role
         sharedModel.getCurrentRole().observe(
@@ -129,18 +180,12 @@ public class LogDoseFragment extends Fragment {
                     if (children != null && !children.isEmpty()) {
                         Integer idx = sharedModel.getCurrentChild().getValue();
                         int safeIndex = (idx != null && idx >= 0 && idx < children.size()) ? idx : 0;
-
                         Child currentChild = children.get(safeIndex);
                         if (currentChild != null) {
                             uid = currentChild.getChildUid();
-                            if (controllerLogsContainer != null && rescueLogsContainer != null) {
-                                // just reload logs if UI already set up
-                                loadLogsFor("controller", controllerLogsContainer);
-                                loadLogsFor("rescue", rescueLogsContainer);
-                            } else {
-                                // first time we have a uid, set up the UI
-                                setupLogDoseUI(view);
-                            }
+                            if(userRole.equals("provider")) togglesVM.attachChildListener(uid); //attach listener for provider
+                            loadLogsFor("controller", controllerLogsContainer);
+                            loadLogsFor("rescue", rescueLogsContainer);
                         }
                     }
                 }
@@ -156,9 +201,11 @@ public class LogDoseFragment extends Fragment {
                             Child currentChild = children.get(idx);
                             if (currentChild != null) {
                                 uid = currentChild.getChildUid();
+                                togglesVM.attachChildListener(uid); //attach listener for provider and parent
                                 if (controllerLogsContainer != null && rescueLogsContainer != null) {
                                     loadLogsFor("controller", controllerLogsContainer);
-                                    loadLogsFor("rescue", rescueLogsContainer);
+                                    if(userRole.equals("provider") && toggleCache.get(uid) != null && !toggleCache.get(uid)) { } //do nothing
+                                    else loadLogsFor("rescue", rescueLogsContainer);
                                 }
                             }
                         }
@@ -166,52 +213,36 @@ public class LogDoseFragment extends Fragment {
                 }
         );
 
-        // if sharedChildViewModel already has children, use them.
-        List<Child> childrenNow = sharedModel.getAllChildren().getValue();
-        if (childrenNow != null && !childrenNow.isEmpty()) {
-            Integer idx = sharedModel.getCurrentChild().getValue();
-            int safeIndex = (idx != null && idx >= 0 && idx < childrenNow.size()) ? idx : 0;
-            Child currentChild = childrenNow.get(safeIndex);
-            if (currentChild != null) {
-                uid = currentChild.getChildUid();
-                setupLogDoseUI(view);
-                return;
+        //change the toggles for log dose (provider only - read)
+        togglesVM.getSharingToggles().observe(getViewLifecycleOwner(), sharing -> {
+            Boolean allowRescue = false;
+            //change sharing toggles
+            if (sharing != null) {
+                allowRescue = sharing.getOrDefault("rescue", false);
+                toggleCache.put(uid, allowRescue);
             }
-        }
+            //check rescue permissions
+            if(!allowRescue && userRole.equals("provider")) {
+                rescueCard.setVisibility(View.GONE);
+                text_rescue_section_title.setVisibility(View.GONE);
+            } else {
+                if(userRole.equals("parent")) applySharingTogglesParent(allowRescue);
+                rescueCard.setVisibility(View.VISIBLE);
+                text_rescue_section_title.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
-    private void setupLogDoseUI(View view) {
-        dateView = view.findViewById(R.id.text_today_date);
-        controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
-        rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
-
-        Button backButton = view.findViewById(R.id.btn_back_log_dose);
-        if (backButton != null) {
-            backButton.setOnClickListener(v ->
-                    requireActivity()
-                            .getSupportFragmentManager()
-                            .popBackStack());
+    //Setup the 'shared with provider tag' for the parent
+    private void applySharingTogglesParent(Boolean allowRescue) {
+        //now apply the 'visible to provider' tag on top
+        if (allowRescue == null || !allowRescue) {
+            sharedLabelText.setText("Shared with Provider: None");
+            sharedProviderLabel.setVisibility(View.VISIBLE);
+            return;
         }
-
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        dateView.setText(today);
-
-        // Load logs for the currently selected child
-        loadLogsFor("controller", controllerLogsContainer);
-        loadLogsFor("rescue", rescueLogsContainer);
-
-        Button addControllerBtn = view.findViewById(R.id.btn_add_controller_log);
-        Button addRescueBtn = view.findViewById(R.id.btn_add_rescue_log);
-
-        if (addControllerBtn != null) {
-            addControllerBtn.setOnClickListener(v ->
-                    showLogDialog("controller", controllerLogsContainer));
-        }
-
-        if (addRescueBtn != null) {
-            addRescueBtn.setOnClickListener(v ->
-                    showLogDialog("rescue", rescueLogsContainer));
-        }
+        sharedLabelText.setText("Shared with Provider: Rescue logs");
+        sharedProviderLabel.setVisibility(View.VISIBLE);
     }
 
     @Nullable
@@ -242,6 +273,7 @@ public class LogDoseFragment extends Fragment {
 
         //DO NOT open technique helper for parent
         if(userRole.equals("parent")) techniqueHelperBtn.setVisibility(View.GONE);
+        else techniqueHelperBtn.setVisibility(View.VISIBLE);
 
         titleText.setText("controller".equals(logType) ? "Log Controller Dose" : "Log Rescue Dose");
 
@@ -254,7 +286,14 @@ public class LogDoseFragment extends Fragment {
         });
 
         techniqueHelperBtn.setOnClickListener(v ->
-                Toast.makeText(getContext(), "Technique helper UI coming soon 🙂", Toast.LENGTH_SHORT).show());
+        {
+            requireActivity()
+                    .getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new TechniqueHelperFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setView(dialogView)
@@ -266,6 +305,7 @@ public class LogDoseFragment extends Fragment {
         saveBtn.setOnClickListener(v -> {
             String preCheck = getSelectedRadioText(preGroup);
             String postCheck = getSelectedRadioText(postGroup);
+            afterDose = postCheck;
             String puffsStr = puffsInput.getText().toString().trim();
             int shortBreathRating = shortBreathSeek.getProgress();
 
@@ -293,11 +333,12 @@ public class LogDoseFragment extends Fragment {
 
             String medCollection = "controller".equals(logType) ? "controllerLog" : "rescueLog";
 
-
-
             getAndUpdateInventory(logType, puffs, new AuthContract.GeneralCallback() {
                         @Override
                         public void onSuccess() {
+                            //send alert
+                            if(afterDose.equals("Worse")) sendAlert(uid, 2);
+                            afterDose = ""; //reset
                             //only log dose on success
                             Map<String, Object> data = new HashMap<>();
                             data.put("preCheck", preCheck);
@@ -500,12 +541,14 @@ public class LogDoseFragment extends Fragment {
                        for (String pUid : parentUids) {
                            if (pUid == null){ continue; }
                            NotifType type;
-                           if (choice == 1) { type = NotifType.RAPID_RESCUE; }
+                           if(choice == 2) { type = NotifType.WORSE_DOSE; }
+                           else if (choice == 1) { type = NotifType.RAPID_RESCUE; }
                            else { type = NotifType.INVENTORY; }
                            Notification notif = new Notification(cUid, false, Timestamp.now(), type);
+                           NotifType finalType = type;
                            notifRepo.createNotification(pUid, notif)
                                    .addOnSuccessListener(aVoid ->
-                                           Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
+                                           Log.d("NotificationRepo", "Notification (" + finalType + ") created for parent " + pUid))
                                    .addOnFailureListener(e ->
                                            Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
                        }
@@ -611,11 +654,8 @@ public class LogDoseFragment extends Fragment {
             for (int i = 0; i < 7; i++) {
                 Date day = cal.getTime();
                 String dow = dayNameForCalendar(cal); // "Monday", "Tuesday", ...
-
                 Boolean shouldTake = weeklySchedule.get(dow);
-                if (shouldTake) {
-                    plannedDates.add(dateFmt.format(day));
-                }
+                if (shouldTake) { plannedDates.add(dateFmt.format(day)); }
                 cal.add(Calendar.DAY_OF_YEAR, 1);
             }
 
@@ -646,17 +686,10 @@ public class LogDoseFragment extends Fragment {
                                 daysWithDose++;
                             }
                         }
-
-                        double adherencePercent =
-                                (plannedCount > 0)
-                                        ? (daysWithDose * 100.0) / plannedCount
-                                        : 0.0;
-
                         boolean perfectWeek =
-                                (plannedCount > 0 && daysWithDose == plannedCount);
+                                (plannedCount > 0 && daysWithDose >= plannedCount);
 
                         Map<String, Object> updates = new HashMap<>();
-                        updates.put("controllerStats.adherencePercent", adherencePercent);
                         updates.put("badges.controllerBadge", perfectWeek);
 
                         if (!updates.isEmpty()) {
@@ -685,11 +718,6 @@ public class LogDoseFragment extends Fragment {
             default:
                 return "Sunday";
         }
-    }
-
-    interface InventoryCallback {
-        void onSuccess();
-        void onFailure();
     }
 
 }

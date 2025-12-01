@@ -144,11 +144,8 @@ public class BadgeFragment extends Fragment {
      */
     public void destroyFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
-        Fragment fragment = fm.findFragmentById(R.id.fragment_container);
-        if (fragment instanceof BadgeFragment) {
-            fm.beginTransaction()
-                    .remove(fragment)
-                    .commit();
+        if (fm.getBackStackEntryCount() > 0) {
+            fm.popBackStack(); // return to prev fragment
         }
     }
 }
