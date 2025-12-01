@@ -38,13 +38,23 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import com.google.firebase.firestore.DocumentReference;
+import java.util.Calendar;
+import java.util.Set;
+import java.util.ArrayList;
+
+
 
 public class LogDoseFragment extends Fragment {
 
@@ -284,9 +294,14 @@ public class LogDoseFragment extends Fragment {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
+
                         if ("rescue".equals(logType)) {
                             rapidrescuealerts();
+                            updateLowRescueBadge();                 // <--- NEW
+                        } else if ("controller".equals(logType)) {
+                            updateControllerBadgeAndAdherence();    // <--- NEW
                         }
+
                         getAndUpdateInventory(logType, puffs);
                     })
                     .addOnFailureListener(e ->
@@ -571,4 +586,203 @@ public class LogDoseFragment extends Fragment {
                })
                .addOnFailureListener(onFailure);
    }
+
+    // ------------------ LOW RESCUE BADGE (last 30 days) ------------------
+
+    private void updateLowRescueBadge() {
+        if (uid == null || uid.isEmpty()) return;
+        if (db == null) {
+            db = FirebaseFirestore.getInstance();
+        }
+
+        // Reference to this child document
+        DocumentReference childRef =
+                db.collection("children").document(uid);
+
+        // 1) Read thresholds from child doc
+        childRef.get().addOnSuccessListener((DocumentSnapshot childDoc) -> {
+
+            if (!childDoc.exists()) {
+                return;
+            }
+
+            // default threshold = 4 rescue days / 30 days
+            final long[] rescueThresh = new long[]{4L};
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> thresholds =
+                    (Map<String, Object>) childDoc.get("thresholds");
+
+            if (thresholds != null && thresholds.get("rescue_thresh") instanceof Number) {
+                rescueThresh[0] = ((Number) thresholds.get("rescue_thresh")).longValue();
+            }
+
+            // 2) Load all rescue logs and count distinct days in last 30 days
+            childRef.collection("rescueLog")
+                    .get()
+                    .addOnSuccessListener((QuerySnapshot qs) -> {
+
+                        List<String> rescueDays = new ArrayList<>();
+                        SimpleDateFormat fmt =
+                                new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+
+                        long now = System.currentTimeMillis();
+                        long thirtyDaysMillis = 30L * 24L * 60L * 60L * 1000L;
+
+                        for (DocumentSnapshot doc : qs.getDocuments()) {
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("timeTaken");
+                            if (ts != null) {
+                                long t = ts.toDate().getTime();
+                                // only count rescues within last 30 days
+                                if (now - t <= thirtyDaysMillis) {
+                                    rescueDays.add(fmt.format(ts.toDate()));
+                                }
+                            }
+                        }
+
+                        // count unique days
+                        Set<String> uniqueDays = new HashSet<>(rescueDays);
+                        int rescueDayCount = uniqueDays.size();
+
+                        boolean achieved = (rescueDayCount <= rescueThresh[0]);
+
+                        // 3) Update badge in Firebase
+                        childRef.update("badges.lowRescueBadge", achieved);
+                    });
+        });
+    }
+
+
+// --------------- CONTROLLER BADGE + ADHERENCE (last 7 days) ----------
+
+    private void updateControllerBadgeAndAdherence() {
+        if (uid == null || uid.isEmpty()) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference childRef = db.collection("children").document(uid);
+
+        childRef.get().addOnSuccessListener(childDoc -> {
+            if (!childDoc.exists()) return;
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> thresholds =
+                    (Map<String, Object>) childDoc.get("thresholds");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Boolean> weeklySchedule =
+                    thresholds != null
+                            ? (Map<String, Boolean>) thresholds.get("weeklySchedule")
+                            : null;
+
+            if (weeklySchedule == null || weeklySchedule.isEmpty()) {
+                return; // nothing to compute against
+            }
+
+            // 1) Build planned days for last 7 days
+            SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            java.util.List<String> plannedDates = new java.util.ArrayList<>();
+
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+
+            cal.add(Calendar.DAY_OF_YEAR, -6); // start 6 days ago
+            Date startOfWindow = cal.getTime();
+
+            for (int i = 0; i < 7; i++) {
+                Date day = cal.getTime();
+                String dow = dayNameForCalendar(cal); // "Monday", "Tuesday", ...
+
+                Boolean shouldTake = weeklySchedule.get(dow);
+                if (Boolean.TRUE.equals(shouldTake)) {
+                    plannedDates.add(dateFmt.format(day));
+                }
+                cal.add(Calendar.DAY_OF_YEAR, 1);
+            }
+
+            if (plannedDates.isEmpty()) {
+                return;
+            }
+
+            // 2) Query controllerLog within that window
+            childRef.collection("controllerLog")
+                    .whereGreaterThanOrEqualTo("timeTaken", startOfWindow)
+                    .get()
+                    .addOnSuccessListener(qs -> {
+                        java.util.Set<String> controllerDates = new java.util.HashSet<>();
+
+                        for (DocumentSnapshot doc : qs.getDocuments()) {
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("timeTaken");
+                            if (ts != null) {
+                                controllerDates.add(dateFmt.format(ts.toDate()));
+                            }
+                        }
+
+                        int plannedCount = plannedDates.size();
+                        int daysWithDose = 0;
+                        for (String d : plannedDates) {
+                            if (controllerDates.contains(d)) {
+                                daysWithDose++;
+                            }
+                        }
+
+                        double adherencePercent =
+                                (plannedCount > 0)
+                                        ? (daysWithDose * 100.0) / plannedCount
+                                        : 0.0;
+
+                        boolean perfectWeek =
+                                (plannedCount > 0 && daysWithDose == plannedCount);
+
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> badges =
+                                (Map<String, Object>) childDoc.get("badges");
+                        boolean controllerBadgeAlready =
+                                badges != null && Boolean.TRUE.equals(badges.get("controllerBadge"));
+
+                        long totalPerfectSessions = 0;
+                        if (childDoc.getLong("totalPerfectSessions") != null) {
+                            totalPerfectSessions = childDoc.getLong("totalPerfectSessions");
+                        }
+
+                        Map<String, Object> updates = new HashMap<>();
+                        updates.put("controllerStats.adherencePercent", adherencePercent);
+
+                        if (perfectWeek && !controllerBadgeAlready) {
+                            updates.put("badges.controllerBadge", true);
+                            updates.put("totalPerfectSessions", totalPerfectSessions + 1);
+                        }
+
+                        if (!updates.isEmpty()) {
+                            childRef.update(updates);
+                        }
+                    });
+        });
+    }
+
+    /** Convert Calendar day-of-week to "Monday", "Tuesday", ... */
+    private String dayNameForCalendar(Calendar cal) {
+        switch (cal.get(Calendar.DAY_OF_WEEK)) {
+            case Calendar.MONDAY:
+                return "Monday";
+            case Calendar.TUESDAY:
+                return "Tuesday";
+            case Calendar.WEDNESDAY:
+                return "Wednesday";
+            case Calendar.THURSDAY:
+                return "Thursday";
+            case Calendar.FRIDAY:
+                return "Friday";
+            case Calendar.SATURDAY:
+                return "Saturday";
+            case Calendar.SUNDAY:
+            default:
+                return "Sunday";
+        }
+    }
+
+
 }

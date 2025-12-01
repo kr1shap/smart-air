@@ -8,11 +8,14 @@
     android:fillViewport="true"
     tools:context=".fragments.MedicineTabFragment">
 
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
+
+
 
         <Button
             android:id="@+id/btn_back_meds"
@@ -23,7 +26,9 @@
             android:background="@android:color/transparent"
             android:textColor="@color/colour_blue"
             android:textSize="16sp"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:fontFamily="@font/dm_sans_regular" />
+
 
         <!-- Title -->
         <TextView
@@ -34,7 +39,9 @@
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
-            android:paddingBottom="16dp" />
+            android:paddingBottom="16dp"
+            android:fontFamily="@font/dm_sans_regular"/>
+
 
 
         <!-- CONTROLLER SECTION -->
@@ -47,7 +54,8 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
-            android:paddingBottom="8dp" />
+            android:paddingBottom="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_controller"
@@ -76,7 +84,8 @@
                     android:textColor="@android:color/white"
                     android:background="@android:color/transparent"
                     android:inputType="textPersonName"
-                    android:paddingBottom="8dp" />
+                    android:paddingBottom="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <Button
                     android:id="@+id/btn_save_controller_name"
@@ -85,7 +94,8 @@
                     android:text="Save"
                     android:textSize="14sp"
                     android:backgroundTint="@color/colour_blue"
-                    android:textColor="@android:color/white" />
+                    android:textColor="@android:color/white"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
 
                 <!-- Today's usages -->
@@ -96,7 +106,8 @@
                     android:text="Today’s usages: 11"
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="4dp" />
+                    android:paddingBottom="4dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <!-- Usages left -->
                 <TextView
@@ -106,7 +117,8 @@
                     android:text="Usages left: 186/200"
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="12dp" />
+                    android:paddingBottom="12dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <!-- Reminders label -->
                 <TextView
@@ -117,7 +129,8 @@
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="8dp" />
+                    android:paddingBottom="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <!-- Reminder buttons -->
                 <TextView
@@ -127,7 +140,8 @@
                     android:text="Once per day"
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="8dp" />
+                    android:paddingBottom="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -142,7 +156,8 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
-            android:paddingBottom="8dp" />
+            android:paddingBottom="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_rescue"
@@ -171,7 +186,8 @@
                     android:textColor="@android:color/white"
                     android:background="@android:color/transparent"
                     android:inputType="textPersonName"
-                    android:paddingBottom="8dp" />
+                    android:paddingBottom="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <Button
                     android:id="@+id/btn_save_rescue_name"
@@ -181,7 +197,8 @@
                     android:textSize="14sp"
                     android:backgroundTint="@color/colour_blue"
                     android:textColor="@android:color/white"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
 
                 <!-- Usages left -->
@@ -192,7 +209,8 @@
                     android:text="Usages left: 56/200"
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="12dp" />
+                    android:paddingBottom="12dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <!-- Reminders label -->
                 <TextView
@@ -203,7 +221,8 @@
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:paddingBottom="4dp" />
+                    android:paddingBottom="4dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
                 <!-- No reminders text -->
                 <TextView
@@ -212,7 +231,8 @@
                     android:layout_height="wrap_content"
                     android:text="No Reminders"
                     android:textSize="14sp"
-                    android:textColor="@android:color/white" />
+                    android:textColor="@android:color/white"
+                    android:fontFamily="@font/dm_sans_regular"/>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>

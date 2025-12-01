@@ -16,7 +16,8 @@
             android:text="Log Dose"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:paddingBottom="12dp" />
+            android:paddingBottom="12dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <!-- Pre-check -->
         <TextView
@@ -24,7 +25,8 @@
             android:layout_height="wrap_content"
             android:text="How do you feel BEFORE the dose?"
             android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+            android:paddingBottom="4dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <RadioGroup
             android:id="@+id/group_pre_check"
@@ -36,19 +38,22 @@
                 android:id="@+id/radio_pre_better"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Better" />
+                android:text="Better"
+                android:fontFamily="@font/dm_sans_regular"/>
 
             <RadioButton
                 android:id="@+id/radio_pre_same"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Same" />
+                android:text="Same"
+                android:fontFamily="@font/dm_sans_regular"/>
 
             <RadioButton
                 android:id="@+id/radio_pre_worse"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Worse" />
+                android:text="Worse"
+                android:fontFamily="@font/dm_sans_regular"/>
         </RadioGroup>
 
         <!-- Technique helper -->
@@ -58,7 +63,8 @@
             android:layout_height="wrap_content"
             android:text="Open Technique Helper"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <!-- Puffs -->
         <TextView
@@ -66,34 +72,39 @@
             android:layout_height="wrap_content"
             android:text="How many puffs did you take?"
             android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+            android:paddingBottom="4dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <EditText
             android:id="@+id/input_puffs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:hint="Number of puffs" />
+            android:hint="Number of puffs"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <!-- Short breath rating -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Short breath rating (0–10)"
-            android:paddingTop="8dp" />
+            android:paddingTop="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <TextView
             android:id="@+id/text_short_breath_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Current: 0"
-            android:paddingBottom="4dp" />
+            android:paddingBottom="4dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <SeekBar
             android:id="@+id/seek_short_breath"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="10" />
+            android:max="10"
+            />
 
         <!-- Post-check -->
         <TextView
@@ -101,7 +112,8 @@
             android:layout_height="wrap_content"
             android:text="How do you feel AFTER the dose?"
             android:paddingTop="8dp"
-            android:paddingBottom="4dp" />
+            android:paddingBottom="4dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <RadioGroup
             android:id="@+id/group_post_check"
@@ -113,19 +125,22 @@
                 android:id="@+id/radio_post_better"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Better" />
+                android:text="Better"
+                android:fontFamily="@font/dm_sans_regular"/>
 
             <RadioButton
                 android:id="@+id/radio_post_same"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Same" />
+                android:text="Same"
+                android:fontFamily="@font/dm_sans_regular"/>
 
             <RadioButton
                 android:id="@+id/radio_post_worse"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Worse" />
+                android:text="Worse"
+                android:fontFamily="@font/dm_sans_regular"/>
         </RadioGroup>
 
         <!-- Buttons -->
@@ -140,14 +155,16 @@
                 android:id="@+id/btn_cancel_log"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancel" />
+                android:text="Cancel"
+                android:fontFamily="@font/dm_sans_regular"/>
 
             <Button
                 android:id="@+id/btn_save_log"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Save"
-                android:layout_marginStart="12dp" />
+                android:layout_marginStart="12dp"
+                android:fontFamily="@font/dm_sans_regular"/>
         </LinearLayout>
 
     </LinearLayout>
