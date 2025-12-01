@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="#FFFFFF">
+
+    <!-- Symptom Burden Card -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginEnd="8dp">
+
+        <TextView
+            android:id="@+id/symptomBurdenValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="N/A"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="#0277BD" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Symptom Burden"
+            android:textSize="10sp"
+            android:fontFamily="@font/dm_sans_medium"
+            android:textColor="#424242"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Rescue Frequency Card -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp">
+
+        <TextView
+            android:id="@+id/rescueFrequencyValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="N/A"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="#D32F2F" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rescue Frequency"
+            android:textSize="10sp"
+            android:fontFamily="@font/dm_sans_medium"
+            android:textColor="#424242"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Controller Adherence Card -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:id="@+id/controllerAdherenceValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="N/A"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/dm_sans_bold"
+            android:textColor="#388E3C" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Controller Adherence"
+            android:textSize="10sp"
+            android:fontFamily="@font/dm_sans_medium"
+            android:textColor="#424242"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+</LinearLayout>

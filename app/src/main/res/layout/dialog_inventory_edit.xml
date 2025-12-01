@@ -75,6 +75,7 @@
 
         <Button
             android:id="@+id/datepickerpur"
+            style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Select Purchase Date"
@@ -95,6 +96,7 @@
 
         <Button
             android:id="@+id/datepickerexp"
+            style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Select Expiry Date"
@@ -105,6 +107,7 @@
 
         <Button
             android:id="@+id/btn_save_edits"
+            style="@style/SmartAir.Button1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Save"

@@ -4,6 +4,7 @@ import static android.content.Context.ALARM_SERVICE;
 
 import static androidx.core.content.ContextCompat.getSystemService;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -29,6 +30,7 @@ import com.example.smart_air.MainActivity;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.modelClasses.enums.NotifType;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
@@ -157,6 +159,7 @@ public class InventoryFragment extends Fragment {
     /*
      load rescue/controller document from Firebase
      */
+    @SuppressLint("SetTextI18n")
     public void loadinventoryDoc(String childUid, String docId, LinearLayout targetContainer) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("children")
@@ -230,8 +233,8 @@ public class InventoryFragment extends Fragment {
         // prefill name + amount
         etName.setText(currentNameText);
         etAmount.setText(currentAmountText);
-        if (currentPurchaseText.isEmpty()==false) btnPurchase.setText(currentPurchaseText);
-        if (currentExpiryText.isEmpty()==false) btnExpiry.setText(currentExpiryText);
+        if (!currentPurchaseText.isEmpty()) btnPurchase.setText(currentPurchaseText);
+        if (!currentExpiryText.isEmpty()) btnExpiry.setText(currentExpiryText);
         btnPurchase.setOnClickListener(v -> opendatepick(btnPurchase));
         btnExpiry.setOnClickListener(v -> opendatepick(btnExpiry));
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).create();
@@ -255,13 +258,19 @@ public class InventoryFragment extends Fragment {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> updates = new HashMap<>();
         String nameStr = etName.getText().toString().trim();
-        if (nameStr.isEmpty()==false) {
+        if (!nameStr.isEmpty()) {
             updates.put("name", nameStr);
         }
         String amountStr = etAmount.getText().toString().trim();
-        if (amountStr.isEmpty()==false) {
+        if (!amountStr.isEmpty()) {
             try {
                 int newAmount=Integer.parseInt(amountStr);
+                //make sure amount isn't negative
+                if(newAmount < 0) {
+                    Toast.makeText(requireContext(), "Amount cannot be negative.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 // make sure amount isnt more then threshold
                 if (newAmount > threshold) {
                     Toast.makeText(requireContext(), "Amount cannot exceed 300.", Toast.LENGTH_SHORT).show();
@@ -277,7 +286,7 @@ public class InventoryFragment extends Fragment {
         }
         java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
         String purchaseStr = btnPurchase.getText().toString().trim();
-        if (purchaseStr.isEmpty()==false && !purchaseStr.equalsIgnoreCase("Select purchase date")) {
+        if (!purchaseStr.isEmpty() && !purchaseStr.equalsIgnoreCase("Select purchase date")) {
             try {
                 Date p = df.parse(purchaseStr);
                 updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
@@ -287,17 +296,28 @@ public class InventoryFragment extends Fragment {
                 return;
             }
         }
+
         String expiryStr = btnExpiry.getText().toString().trim();
-        if (expiryStr.isEmpty()==false && !expiryStr.equalsIgnoreCase("Select expiry date")) {
+        Date expiryDate = null;
+        if (!expiryStr.isEmpty() && !expiryStr.equalsIgnoreCase("Select expiry date")) {
             try {
-                Date d = df.parse(expiryStr);
-                updates.put("expiryDate", new com.google.firebase.Timestamp(d));
+                expiryDate = df.parse(expiryStr);
+                updates.put("expiryDate", new com.google.firebase.Timestamp(expiryDate));
             }
             catch (Exception ex) {
                 Toast.makeText(requireContext(), "Expiry date format should be like: November 29 2025", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
+
+        // Check if expiry date is before purchase date
+        if (updates.containsKey("purchaseDate") && updates.containsKey("expiryDate")) {
+            if (expiryDate.before(((Timestamp) updates.get("purchaseDate")).toDate())) {
+                Toast.makeText(requireContext(), "Expiry date cannot be before purchase date.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
         final boolean invalertsend=(newAmountval!=null&&newAmountval<=lessthan20); // decide if we should send inventory alert
         db.collection("children")
                 .document(childUid)
@@ -400,32 +420,6 @@ public class InventoryFragment extends Fragment {
         Log.d("Alarm", "Expiry alarm set for: " + calendar.getTime());
     }
     /*
-    to format date into string
-     */
-    public String datestring(int day, int month, int year)
-    {
-        return formatmonth(month) + " " + day + " " + year;
-    }
-    /*
-    converts month number to string
-     */
-    public String formatmonth(int month)
-    {
-        if(month == 1) return "Jan";
-        if(month == 2) return "Feb";
-        if(month == 3) return "Mar";
-        if(month == 4) return "Apr";
-        if(month == 5) return "May";
-        if(month == 6) return "Jun";
-        if(month == 7) return "Jul";
-        if(month == 8) return "Aug";
-        if(month == 9) return "Sep";
-        if(month == 10) return "Oct";
-        if(month == 11) return "Nov";
-        if(month == 12) return "Dec";
-        return "Jan"; // default, not reached
-    }
-    /*
     calendar dialog to choose expiry/purchase date
      */
     public void opendatepick(Button targetBtn) {
@@ -441,7 +435,7 @@ public class InventoryFragment extends Fragment {
                 // handle user selection
                 (view, y, m, d) -> {
                     m++; // due to index of months starting from 0
-                    String formatted = datestring(d, m, y);
+                    String formatted = StringFormatters.datestring(d, m, y);
                     targetBtn.setText(formatted);
                 },
                 year, month, day

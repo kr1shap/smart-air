@@ -181,6 +181,8 @@ public class HistoryItem {
 
         // getting date
         Calendar cal = Calendar.getInstance();
+        //if date null
+        if(accDate==null) accDate = new Date();
         cal.setTime(accDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);
@@ -194,9 +196,6 @@ public class HistoryItem {
     // constructor for Triage Card
     public HistoryItem (Date accDate, List<String> flaglist, String emergencyCall, List<String> userRes, int pef, int rescueAttempts){
         this.passFilter = true;
-        if (accDate == null) {
-            accDate = new Date();
-        }
         this.accDate = accDate;
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         this.time = sdf.format(accDate);

@@ -13,10 +13,7 @@ import java.security.CodeSigner;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.TimerTask;
-import androidx.core.app.NotificationManagerCompat;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -37,10 +34,15 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 
+import com.example.smart_air.fragments.BadgeFragment;
+import com.example.smart_air.fragments.DashboardFragment;
+import com.example.smart_air.fragments.TechniqueHelperFragment;
+import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.Timestamp;
@@ -69,10 +71,10 @@ public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
     ImageButton notification, providerCodeBtn;
-    private ListenerRegistration unreadNotifListener;
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
+    private NotificationViewModel notifVM;
     User user;
     private String userRole;
 
@@ -82,12 +84,17 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
     private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new DashboardFragment(), "dashboard")
+                .commit();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -125,11 +132,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // showing child dropdown pop up
-        switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
-        });
+        switchChildButton.setOnClickListener(v -> { showChildPopup(); });
 
-        //notif button
+        //notif button & notif VM setup
+        notifVM = new ViewModelProvider(this).get(NotificationViewModel.class);
+        notifVM.setChildVM(sharedModel);
         notification = findViewById(R.id.notificationButton);
 
         //add listen on click
@@ -172,22 +179,21 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                // add fragment for dashboard
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else if (id == R.id.triage) {
-                // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof TriageFragment)) {
                     selectedFragment = new TriageFragment();
                 }
-                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                selectedFragment = new MedicineTabFragment();
-                // add fragment for medicine
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof MedicineTabFragment)) {
                     selectedFragment = new MedicineTabFragment();
@@ -209,6 +215,7 @@ public class MainActivity extends AppCompatActivity {
 
             return true;
         });
+
 
     }
 
@@ -428,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
 
     // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
-        if(userRole.equals("child")){
+        if(userRole.equals("child")) {
             // enable dailycheckin and triage
              dailyCheckIn.setEnabled(true);
              dailyCheckIn.setCheckable(true);
@@ -443,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
              providerCodeBtn.setEnabled(false);
              return;
         }
-        else if(userRole.equals("parent")){
+        else if(userRole.equals("parent")) {
             switchChildButton.setVisibility(View.VISIBLE);
             // enable dailycheckin
             if (removeDailyCheckIn) {
@@ -528,19 +535,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUnreadNotificationsBadge(String uid) {
-        if (!"parent".equals(userRole)) {  return;  } //due to async
-         unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
-            if (error != null || value == null) return;
-            int size = value.size();
-            if (prevNotifCount == -1) prevNotifCount = size;
-            updateToolbarBadge(size); //unread count
-            if(!notifOnLogin) notifOnLogin = true; //on login, notification toast only shows when a new one comes and they're online
-            else if (prevNotifCount < size) Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show();
-            prevNotifCount = size; //only show changes when size of document increases
-         });
+        if (!"parent".equals(userRole)) return;
+        notifVM.getUnreadCount().observe(this, count -> {
+            if (count == null) return;
+            updateToolbarBadge(count);
+            // first time, don't show new notif
+            if (!notifOnLogin) { notifOnLogin = true; }
+            // new or future notif notifications
+            else if (prevNotifCount < count) { Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show(); }
+            prevNotifCount = count;
+        });
+        //start listening once only
+        notifVM.startListening(uid);
     }
 
-    public void updateToolbarBadge(int count) {
+    private void updateToolbarBadge(int count) {
         TextView badge = findViewById(R.id.badge_text);
         if (count > 0) {
             badge.setVisibility(View.VISIBLE);
