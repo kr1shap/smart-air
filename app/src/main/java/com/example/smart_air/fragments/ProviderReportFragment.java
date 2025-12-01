@@ -366,15 +366,16 @@ public class ProviderReportFragment extends Fragment {
                 //make sure index within bounds
                 if (dayIndex < 0 || dayIndex >= totalDays) { continue; }
                 // inc the count for this day
-                rescueCounts[dayIndex]++;
                 if(rescueCounts[dayIndex]==0) daysWithRescue+=1;
+                rescueCounts[dayIndex]++;
 
             } catch (Exception e) {
                 Log.e("RescueFetch", "Error processing rescue log: " + doc.getId(), e);
             }
         }
         // calc percentage of days with rescue
-        rescuePercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
+        double rawPercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
+        rescuePercentage = Math.round(rawPercentage * 100.0) / 100.0;
     }
 
 
