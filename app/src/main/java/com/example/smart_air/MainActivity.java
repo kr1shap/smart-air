@@ -184,12 +184,10 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new DashboardFragment();
                 }
             } else if (id == R.id.triage) {
-                // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof TriageFragment)) {
                     selectedFragment = new TriageFragment();
                 }
-                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
