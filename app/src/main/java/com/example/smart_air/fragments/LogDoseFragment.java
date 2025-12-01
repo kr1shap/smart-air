@@ -1,6 +1,7 @@
 package com.example.smart_air.fragments;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -21,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.smart_air.Contracts.AuthContract;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Child;
@@ -71,7 +73,6 @@ public class LogDoseFragment extends Fragment {
     private TextView dateView;
     //buttons for disabling for providers
     private Button btn_add_controller_log, btn_add_rescue_log;
-
     public LogDoseFragment() {}
 
     @Nullable
@@ -113,10 +114,11 @@ public class LogDoseFragment extends Fragment {
                         btn_add_rescue_log.setVisibility(View.GONE);
                         btn_add_controller_log.setVisibility(View.GONE);
                     } else {
-                        //Disable log dose buttons for providers
+                        //enable log dose buttons for providers
                         btn_add_rescue_log.setVisibility(View.VISIBLE);
                         btn_add_controller_log.setVisibility(View.VISIBLE);
                     }
+                    if("child".equals(userRole)) { uid = FirebaseAuth.getInstance().getUid(); } //current child
                 }
         );
 
@@ -230,6 +232,14 @@ public class LogDoseFragment extends Fragment {
         }
     }
 
+    @Nullable
+    private String getSelectedRadioText(RadioGroup group) {
+        int id = group.getCheckedRadioButtonId();
+        if (id == -1) return null;
+        RadioButton rb = group.findViewById(id);
+        return rb != null ? rb.getText().toString() : null;
+    }
+
     private void showLogDialog(String logType, LinearLayout logsContainer) {
         if (getContext() == null) return;
         if (userRole == null || userRole.trim().isEmpty()) return;
@@ -285,6 +295,10 @@ public class LogDoseFragment extends Fragment {
             int puffs;
             try {
                 puffs = Integer.parseInt(puffsStr);
+                if(puffs < 0) {
+                    Toast.makeText(getContext(), "Cannot have negative puffs.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             } catch (NumberFormatException e) {
                 puffsInput.setError("Enter a valid number");
                 return;
@@ -297,43 +311,44 @@ public class LogDoseFragment extends Fragment {
 
             String medCollection = "controller".equals(logType) ? "controllerLog" : "rescueLog";
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("preCheck", preCheck);
-            data.put("postCheck", postCheck);
-            data.put("puffs", puffs);
-            data.put("shortBreathRating", shortBreathRating);
-            data.put("timeTaken", FieldValue.serverTimestamp());
 
-            db.collection("children")
-                    .document(uid)
-                    .collection(medCollection)
-                    .add(data)
-                    .addOnSuccessListener(docRef -> {
-                        Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                        loadLogsFor(logType, logsContainer);
-                        if ("rescue".equals(logType)) {
-                            rapidrescuealerts();
-                            updateLowRescueBadge();                 // update low rescue badge
-                        } else if ("controller".equals(logType)) {
-                            updateControllerBadgeAndAdherence();    // update adherence
+
+            getAndUpdateInventory(logType, puffs, new AuthContract.GeneralCallback() {
+                        @Override
+                        public void onSuccess() {
+                            //only log dose on success
+                            Map<String, Object> data = new HashMap<>();
+                            data.put("preCheck", preCheck);
+                            data.put("postCheck", postCheck);
+                            data.put("puffs", puffs);
+                            data.put("shortBreathRating", shortBreathRating);
+                            data.put("timeTaken", FieldValue.serverTimestamp());
+
+                            db.collection("children")
+                                    .document(uid)
+                                    .collection(medCollection)
+                                    .add(data)
+                                    .addOnSuccessListener(docRef -> {
+                                        Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss();
+                                        loadLogsFor(logType, logsContainer);
+                                        if ("rescue".equals(logType)) {
+                                            rapidrescuealerts();
+                                            updateLowRescueBadge();                 // update low rescue badge
+                                        } else if ("controller".equals(logType)) {
+                                            updateControllerBadgeAndAdherence();    // update adherence
+                                        }
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         }
-
-                        getAndUpdateInventory(logType, puffs);
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        @Override
+                        public void onFailure(String s) { Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show(); }
+                    }
+            );
         });
 
         dialog.show();
-    }
-
-    @Nullable
-    private String getSelectedRadioText(RadioGroup group) {
-        int id = group.getCheckedRadioButtonId();
-        if (id == -1) return null;
-        RadioButton rb = group.findViewById(id);
-        return rb != null ? rb.getText().toString() : null;
     }
 
     private void loadLogsFor(String logType, LinearLayout container) {
@@ -369,6 +384,7 @@ public class LogDoseFragment extends Fragment {
                                 (postCheck == null ? "" : ", Post: " + postCheck);
 
                         TextView logView = new TextView(getContext());
+                        logView.setTextColor(Color.BLACK);
                         logView.setText(summary);
                         logView.setPadding(16, 8, 16, 8);
                         container.addView(logView);
@@ -376,7 +392,7 @@ public class LogDoseFragment extends Fragment {
                 });
     }
 
-    private void getAndUpdateInventory(String medType, int puffs) {
+    private void getAndUpdateInventory(String medType, int puffs, AuthContract.GeneralCallback callback) {
         if (uid == null || uid.isEmpty()) return;
 
         //structure: children/{uid}/inventory/{controller|rescue}
@@ -392,18 +408,14 @@ public class LogDoseFragment extends Fragment {
                         Long currentAmountLong = doc.getLong("amount");
 
                         if (currentAmountLong == null) {
-                            Toast.makeText(getContext(),
-                                    "Inventory data is corrupted or missing.",
-                                    Toast.LENGTH_SHORT).show();
+                            callback.onFailure("Inventory data is corrupted or missing.");
                             return;
                         }
 
                         long currentAmount = currentAmountLong;
 
                         if (currentAmount < puffs) {
-                            Toast.makeText(getContext(),
-                                    "Not enough doses left in inventory.",
-                                    Toast.LENGTH_SHORT).show();
+                            callback.onFailure("Not enough doses left in inventory");
                             return;
                         }
                         long updatedAmount = currentAmount - puffs;
@@ -415,14 +427,13 @@ public class LogDoseFragment extends Fragment {
                         // update the *same doc* we just read
                         doc.getReference()
                                 .update("amount", updatedAmount)
-                                .addOnSuccessListener(unused ->
+                                .addOnSuccessListener(unused -> {
                                         Toast.makeText(getContext(),
                                                 "Inventory updated.",
-                                                Toast.LENGTH_SHORT).show())
+                                                Toast.LENGTH_SHORT).show();
+                                        callback.onSuccess(); })
                                 .addOnFailureListener(e ->
-                                        Toast.makeText(getContext(),
-                                                "Failed to update inventory.",
-                                                Toast.LENGTH_SHORT).show());
+                                 { callback.onFailure("Failed to update inventory.");});
 
                     } else {
                         Toast.makeText(getContext(),
@@ -430,10 +441,9 @@ public class LogDoseFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
-                                "Error accessing inventory.",
-                                Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                        callback.onFailure("Error accessing inventory.");
+                });
     }
 
     // rapid rescue alerts section
@@ -442,16 +452,10 @@ public class LogDoseFragment extends Fragment {
     */
    public void rapidrescuealerts() {
        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-       if (user == null){
-           return;
-       }
+       if (user == null){ return; }
        String childUid;
-       if ("child".equals(userRole)) {
-           childUid = user.getUid();
-       }
-       else {
-           childUid=uid;
-       }
+       if ("child".equals(userRole)) { childUid = user.getUid(); }
+       else { childUid=uid; }
        if (childUid == null || childUid.isEmpty()) {
            Log.e("RescueCheck", "childUid is null");
            return;
@@ -472,11 +476,10 @@ public class LogDoseFragment extends Fragment {
                            if (now - rescueTime <= threeHours) {
                                count++;
                            }
+                           if(count >= 3) break;
                        }
                    }
-                   if (count >= 3) {
-                       sendAlert(childUid,1);
-                   }
+                   if (count == 3) { sendAlert(childUid,1); }
                })
                .addOnFailureListener(e -> {
                    Log.e("RescueCheck", "Failed to read rescueLog: ", e);
@@ -484,7 +487,6 @@ public class LogDoseFragment extends Fragment {
    }
    /*
     used to send rapid rescue or inventory notifications to all parents
-
    */
    public void sendAlert(String cUid, int choice) {
        if (cUid == null) {
@@ -492,12 +494,11 @@ public class LogDoseFragment extends Fragment {
            return;
        }
        FirebaseFirestore db = FirebaseFirestore.getInstance();
-       getchildname(cUid, childName -> {
            db.collection("users")
                    .document(cUid)
                    .get()
                    .addOnSuccessListener(doc -> {
-                       if (doc.exists()==false) {
+                       if (!doc.exists()) {
                            Log.e("Rapid Rescue", "Child user document missing");
                            return;
                        }
@@ -509,17 +510,11 @@ public class LogDoseFragment extends Fragment {
                        }
                        NotificationRepository notifRepo = new NotificationRepository();
                        for (String pUid : parentUids) {
-                           if (pUid == null){
-                               continue;
-                           }
+                           if (pUid == null){ continue; }
                            NotifType type;
-                           if (choice == 1) {
-                               type = NotifType.RAPID_RESCUE;
-                           }
-                           else {
-                               type = NotifType.INVENTORY;
-                           }
-                           Notification notif = new Notification(cUid, false, Timestamp.now(), type, childName);
+                           if (choice == 1) { type = NotifType.RAPID_RESCUE; }
+                           else { type = NotifType.INVENTORY; }
+                           Notification notif = new Notification(cUid, false, Timestamp.now(), type);
                            notifRepo.createNotification(pUid, notif)
                                    .addOnSuccessListener(aVoid ->
                                            Log.d("NotificationRepo", "Notification (" + type + ") created for parent " + pUid))
@@ -531,50 +526,21 @@ public class LogDoseFragment extends Fragment {
                    })
                    .addOnFailureListener(e ->
                            Log.e("Rapid Rescue", "Failed to load child document", e));
-
-
-       }, error -> {
-           Log.e("Rapid Rescue", "Failed to fetch child name", error);
-       });
    }
 
-   /*
-   get child's name
-    */
-   public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
-       FirebaseFirestore db = FirebaseFirestore.getInstance();
-       db.collection("children")
-               .document(childUid)
-               .get()
-               .addOnSuccessListener(doc -> {
-                   if (doc.exists()) {
-                       String childName = doc.getString("name");
-                       onSuccess.onSuccess(childName);
-                   } else {
-                       onFailure.onFailure(new Exception("Child document not found"));
-                   }
-               })
-               .addOnFailureListener(onFailure);
-   }
-
-    // ------------------ LOW RESCUE BADGE (last 30 days) ------------------
+    // low rescue badge (last 30 days)
 
     private void updateLowRescueBadge() {
         if (uid == null || uid.isEmpty()) return;
-        if (db == null) {
-            db = FirebaseFirestore.getInstance();
-        }
+        if (db == null) { db = FirebaseFirestore.getInstance(); }
 
         // Reference to this child document
         DocumentReference childRef =
                 db.collection("children").document(uid);
 
-        // 1) Read thresholds from child doc
+        // Read thresholds from child doc
         childRef.get().addOnSuccessListener((DocumentSnapshot childDoc) -> {
-
-            if (!childDoc.exists()) {
-                return;
-            }
+            if (!childDoc.exists()) { return; }
 
             // default threshold = 4 rescue days / 30 days
             final long[] rescueThresh = new long[]{4L};
@@ -587,18 +553,15 @@ public class LogDoseFragment extends Fragment {
                 rescueThresh[0] = ((Number) thresholds.get("rescue_thresh")).longValue();
             }
 
-            // 2) Load all rescue logs and count distinct days in last 30 days
+            // load all rescue logs and count distinct days in last 30 days
             childRef.collection("rescueLog")
                     .get()
                     .addOnSuccessListener((QuerySnapshot qs) -> {
-
                         List<String> rescueDays = new ArrayList<>();
                         SimpleDateFormat fmt =
                                 new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-
                         long now = System.currentTimeMillis();
                         long thirtyDaysMillis = 30L * 24L * 60L * 60L * 1000L;
-
                         for (DocumentSnapshot doc : qs.getDocuments()) {
                             com.google.firebase.Timestamp ts = doc.getTimestamp("timeTaken");
                             if (ts != null) {
@@ -609,26 +572,23 @@ public class LogDoseFragment extends Fragment {
                                 }
                             }
                         }
-
                         // count unique days
                         Set<String> uniqueDays = new HashSet<>(rescueDays);
                         int rescueDayCount = uniqueDays.size();
-
                         boolean achieved = (rescueDayCount <= rescueThresh[0]);
 
-                        // 3) Update badge in Firebase
+                        //update badge in Firebase
                         childRef.update("badges.lowRescueBadge", achieved);
                     });
         });
     }
 
 
-// --------------- CONTROLLER BADGE + ADHERENCE (last 7 days) ----------
+// controller and adherence badge (last 7 days)
 
     private void updateControllerBadgeAndAdherence() {
         if (uid == null || uid.isEmpty()) return;
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference childRef = db.collection("children").document(uid);
 
         childRef.get().addOnSuccessListener(childDoc -> {
@@ -648,7 +608,7 @@ public class LogDoseFragment extends Fragment {
                 return; // nothing to compute against
             }
 
-            // 1) Build planned days for last 7 days
+            //make planned days for last 7 days of the week
             SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             java.util.List<String> plannedDates = new java.util.ArrayList<>();
 
@@ -677,7 +637,7 @@ public class LogDoseFragment extends Fragment {
                 return;
             }
 
-            // 2) Query controllerLog within that window
+            // Query controllerLog within that window
             childRef.collection("controllerLog")
                     .whereGreaterThanOrEqualTo("timeTaken", startOfWindow)
                     .get()
@@ -713,17 +673,11 @@ public class LogDoseFragment extends Fragment {
                         boolean controllerBadgeAlready =
                                 badges != null && Boolean.TRUE.equals(badges.get("controllerBadge"));
 
-                        long totalPerfectSessions = 0;
-                        if (childDoc.getLong("totalPerfectSessions") != null) {
-                            totalPerfectSessions = childDoc.getLong("totalPerfectSessions");
-                        }
-
                         Map<String, Object> updates = new HashMap<>();
                         updates.put("controllerStats.adherencePercent", adherencePercent);
 
                         if (perfectWeek && !controllerBadgeAlready) {
                             updates.put("badges.controllerBadge", true);
-                            updates.put("totalPerfectSessions", totalPerfectSessions + 1);
                         }
 
                         if (!updates.isEmpty()) {
@@ -754,5 +708,9 @@ public class LogDoseFragment extends Fragment {
         }
     }
 
+    interface InventoryCallback {
+        void onSuccess();
+        void onFailure();
+    }
 
 }

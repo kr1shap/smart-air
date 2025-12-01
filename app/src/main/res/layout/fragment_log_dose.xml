@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@android:color/white"
+    android:backgroundTint="@android:color/white"
     android:padding="16dp">
 
     <LinearLayout
@@ -65,6 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:background="@color/colour_white"
                 android:padding="12dp">
 
                 <!-- Controller logs dynamically added here -->
@@ -108,7 +109,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="12dp"
-            android:background="@color/colour_white"
+            android:backgroundTint="@color/colour_white"
             app:cardElevation="1dp">
 
             <!-- Outer layout inside card -->
@@ -116,6 +117,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:background="@color/colour_white"
                 android:padding="12dp">
 
                 <!-- Rescue logs dynamically added here -->
