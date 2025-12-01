@@ -63,14 +63,14 @@ public class LogDoseFragment extends Fragment {
     private String uid;
     int threshold=300;
     double lessthan20=threshold*0.2;
-
     private SharedChildViewModel sharedModel;
     private String userRole = "";
-
     // Keep references so we can reload logs when the child changes
     private LinearLayout controllerLogsContainer;
     private LinearLayout rescueLogsContainer;
     private TextView dateView;
+    //buttons for disabling for providers
+    private Button btn_add_controller_log, btn_add_rescue_log;
 
     public LogDoseFragment() {}
 
@@ -93,21 +93,34 @@ public class LogDoseFragment extends Fragment {
             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
+        //instantiate buttons
+        btn_add_controller_log = view.findViewById(R.id.btn_add_controller_log);
+        btn_add_rescue_log = view.findViewById(R.id.btn_add_rescue_log);
 
-        // --- hook into the shared child viewmodel ---
+        // hook into the shared child viewmodel
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
 
-        // Observe role (might be useful if you need different behaviour later)
+        // observe role
         sharedModel.getCurrentRole().observe(
                 getViewLifecycleOwner(),
                 role -> {
                     if (role != null) {
                         userRole = role;
                     }
+                    //role check for page access
+                    if("provider".equals(userRole)) {
+                        //Disable log dose buttons for providers
+                        btn_add_rescue_log.setVisibility(View.GONE);
+                        btn_add_controller_log.setVisibility(View.GONE);
+                    } else {
+                        //Disable log dose buttons for providers
+                        btn_add_rescue_log.setVisibility(View.VISIBLE);
+                        btn_add_controller_log.setVisibility(View.VISIBLE);
+                    }
                 }
         );
 
-        // When the list of children is available, try to set the current uid from it
+        // when the list of children is available, try to set the current uid from it
         sharedModel.getAllChildren().observe(
                 getViewLifecycleOwner(),
                 children -> {
@@ -117,7 +130,7 @@ public class LogDoseFragment extends Fragment {
 
                         Child currentChild = children.get(safeIndex);
                         if (currentChild != null) {
-                            uid = currentChild.getChildUid(); // <-- per-child UID
+                            uid = currentChild.getChildUid();
                             if (controllerLogsContainer != null && rescueLogsContainer != null) {
                                 // just reload logs if UI already set up
                                 loadLogsFor("controller", controllerLogsContainer);
@@ -151,7 +164,7 @@ public class LogDoseFragment extends Fragment {
                 }
         );
 
-        // Immediate attempt: if SharedChildViewModel already has children, use them.
+        // if sharedChildViewModel already has children, use them.
         List<Child> childrenNow = sharedModel.getAllChildren().getValue();
         if (childrenNow != null && !childrenNow.isEmpty()) {
             Integer idx = sharedModel.getCurrentChild().getValue();
@@ -164,23 +177,23 @@ public class LogDoseFragment extends Fragment {
             }
         }
 
-        // Fallback: old behaviour (in case ViewModel is not populated for some reason)
-        String currentUid = user.getUid();
-        db.collection("children")
-                .whereEqualTo("parentUid", currentUid)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        // use first child as before
-                        uid = querySnapshot.getDocuments().get(0).getId();
-                    } else {
-                        // treat user as child
-                        uid = currentUid;
-                    }
-                    setupLogDoseUI(view);
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to identify user / child", Toast.LENGTH_SHORT).show());
+//        // old behaviour (in case ViewModel is not populated for some reason) [SHOULDN'T OCCUR THOUGH!]
+//        String currentUid = user.getUid();
+//        db.collection("children")
+//                .whereEqualTo("parentUid", currentUid)
+//                .get()
+//                .addOnSuccessListener(querySnapshot -> {
+//                    if (!querySnapshot.isEmpty()) {
+//                        // use first child as before
+//                        uid = querySnapshot.getDocuments().get(0).getId();
+//                    } else {
+//                        // treat user as child
+//                        uid = currentUid;
+//                    }
+//                    setupLogDoseUI(view);
+//                })
+//                .addOnFailureListener(e ->
+//                        Toast.makeText(getContext(), "Failed to identify user / child", Toast.LENGTH_SHORT).show());
     }
 
     private void setupLogDoseUI(View view) {
@@ -219,6 +232,8 @@ public class LogDoseFragment extends Fragment {
 
     private void showLogDialog(String logType, LinearLayout logsContainer) {
         if (getContext() == null) return;
+        if (userRole == null || userRole.trim().isEmpty()) return;
+        if(userRole.equals("provider")) return;
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View dialogView = inflater.inflate(R.layout.dialog_log_dose, null);
@@ -232,6 +247,9 @@ public class LogDoseFragment extends Fragment {
         Button techniqueHelperBtn = dialogView.findViewById(R.id.btn_technique_helper);
         Button saveBtn = dialogView.findViewById(R.id.btn_save_log);
         Button cancelBtn = dialogView.findViewById(R.id.btn_cancel_log);
+
+        //DO NOT open technique helper for parent
+        if(userRole.equals("parent")) techniqueHelperBtn.setVisibility(View.GONE);
 
         titleText.setText("controller".equals(logType) ? "Log Controller Dose" : "Log Rescue Dose");
 
@@ -294,12 +312,11 @@ public class LogDoseFragment extends Fragment {
                         Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                         loadLogsFor(logType, logsContainer);
-
                         if ("rescue".equals(logType)) {
                             rapidrescuealerts();
-                            updateLowRescueBadge();                 // <--- NEW
+                            updateLowRescueBadge();                 // update low rescue badge
                         } else if ("controller".equals(logType)) {
-                            updateControllerBadgeAndAdherence();    // <--- NEW
+                            updateControllerBadgeAndAdherence();    // update adherence
                         }
 
                         getAndUpdateInventory(logType, puffs);
@@ -362,7 +379,7 @@ public class LogDoseFragment extends Fragment {
     private void getAndUpdateInventory(String medType, int puffs) {
         if (uid == null || uid.isEmpty()) return;
 
-        // Firestore structure: children/{uid}/inventory/{controller|rescue}
+        //structure: children/{uid}/inventory/{controller|rescue}
         String docName = "controller".equals(medType) ? "controller" : "rescue";
 
         db.collection("children")
@@ -419,53 +436,6 @@ public class LogDoseFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show());
     }
 
-
-    /*
-    private void getAndUpdateInventory(String medType, int puffs) {
-        if (uid == null || uid.isEmpty()) return;
-
-        String collection = "controller".equals(medType) ? "controllerInventory" : "rescueInventory";
-
-        db.collection("children")
-                .document(uid)
-                .collection(collection)
-                .document("main")
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists() && doc.contains("amount")) {
-                        Long currentAmountLong = doc.getLong("amount");
-
-                        if (currentAmountLong == null) {
-                            Toast.makeText(getContext(), "Inventory data is corrupted or missing.", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        long currentAmount = currentAmountLong;
-
-                        if (currentAmount < puffs) {
-                            Toast.makeText(getContext(), "Not enough doses left in inventory.", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        long updatedAmount = currentAmount - puffs;
-
-                        db.collection("children")
-                                .document(uid)
-                                .collection(collection)
-                                .document("main")
-                                .update("amount", updatedAmount)
-                                .addOnSuccessListener(unused ->
-                                        Toast.makeText(getContext(), "Inventory updated.", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(getContext(), "Failed to update inventory.", Toast.LENGTH_SHORT).show());
-
-                    } else {
-                        Toast.makeText(getContext(), "Inventory not set up yet.", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Error accessing inventory.", Toast.LENGTH_SHORT).show());
-    }
     // rapid rescue alerts section
    /*
    check if 3+ rescue attempts made in 3 hours

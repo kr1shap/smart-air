@@ -34,11 +34,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Today’s Date"
-            android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/black"
             android:paddingBottom="16dp"
-            android:fontFamily="@font/dm_sans_regular"/>
+            android:fontFamily="@font/dm_sans_bold"/>
 
         <!-- CONTROLLER SECTION -->
         <TextView
@@ -58,7 +57,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:background="@color/colour_white"
+            app:cardElevation="1dp">
 
             <!-- Outer layout inside card -->
             <LinearLayout
@@ -78,6 +78,7 @@
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button
                     android:id="@+id/btn_add_controller_log"
+                    style="@style/SmartAir.Button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="+ Log Controller Dose"
@@ -107,7 +108,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:background="@color/colour_white"
+            app:cardElevation="1dp">
 
             <!-- Outer layout inside card -->
             <LinearLayout
@@ -126,6 +128,7 @@
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button
                     android:id="@+id/btn_add_rescue_log"
+                    style="@style/SmartAir.Button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="+ Log Rescue Dose"
