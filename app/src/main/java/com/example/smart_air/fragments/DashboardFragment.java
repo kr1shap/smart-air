@@ -261,6 +261,7 @@ public class DashboardFragment extends Fragment {
                 btnManage.setVisibility(View.VISIBLE);
                 setUpManageButton(btnManage);
             } else if(role.equals("provider")) {
+                btnProviderReport.setVisibility(View.GONE);
                 btnManage.setVisibility(View.GONE);
                 //in general, inventory is parent-only
                 inventoryGroup.setVisibility(View.GONE);
