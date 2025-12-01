@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.FirebaseInitalizer;
+import com.example.smart_air.ManageChildFragment;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.Child;
@@ -257,6 +258,7 @@ public class DashboardFragment extends Fragment {
                 // show full dashboard
                 btnProviderReport.setVisibility(View.VISIBLE);
                 btnManage.setVisibility(View.VISIBLE);
+                setUpManageButton(btnManage);
             } else if(role.equals("provider")) {
                 btnManage.setVisibility(View.GONE);
                 //in general, inventory is parent-only
@@ -332,6 +334,17 @@ public class DashboardFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
+    }
+
+    private void setUpManageButton(Button btnManage) {
+        btnManage.setOnClickListener(v ->{
+            Toast.makeText(requireContext(), "Opening Manage Child Fragment", Toast.LENGTH_SHORT).show();
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new ManageChildFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
     }
 
     private void freezeOtherPage() {

@@ -59,6 +59,10 @@ public class HistoryItem {
         this.passFilter = true;
         this.pef = pef;
 
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
+
 
         // setting up card based parent or child
 
