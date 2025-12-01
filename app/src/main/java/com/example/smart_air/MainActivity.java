@@ -168,8 +168,10 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                selectedFragment = new DashboardFragment();
-
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else if (id == R.id.triage) {
                 // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
