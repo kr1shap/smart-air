@@ -55,23 +55,6 @@ public class MedicineTabFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Find the "Medicines" button from fragment_medicine.xml
-        View medicinesButton = view.findViewById(R.id.btn_medicines); // use the actual id from your XML
-        Button backBtn = view.findViewById(R.id.btn_back_meds);
-        if (backBtn != null) {
-            backBtn.setOnClickListener(v ->
-                    requireActivity().getSupportFragmentManager().popBackStack()
-            );
-        }
-        // 2. When user taps it, open the My Medications page
-        medicinesButton.setOnClickListener(v -> {
-            requireActivity()
-                    .getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new MedicinesPageFragment())
-                    .addToBackStack(null)   // so back button returns to the menu
-                    .commit();
-        });
         Button inventoryButton = view.findViewById(R.id.btn_inventory);
         if (inventoryButton != null) {
             inventoryButton.setOnClickListener(v -> {
