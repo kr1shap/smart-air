@@ -11,7 +11,7 @@
         android:fontFamily="@font/dm_sans_bold"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:textColor="@color/colour_indigo"
+        android:textColor="@color/colour_blue"
         android:layout_marginBottom="24dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
@@ -20,33 +20,30 @@
         android:id="@+id/spinnerMonths"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/dm_sans_bold"
+        android:fontFamily="@font/dm_sans_regular"
         android:layout_marginBottom="24dp" />
 
-    <Button
-        android:id="@+id/btnGenerate"
-        android:text="Generate PDF"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@drawable/btn_rounded"
-        android:backgroundTint="@null"
-        android:fontFamily="@font/dm_sans_bold"
-        android:textSize="18sp"
-        android:textColor="@color/colour_white"
-        android:textStyle="bold"
-        android:layout_marginTop="8dp"/>
 
-    <Button
-        android:id="@+id/btnCancel"
-        android:text="Cancel"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGenerate"
+        style="@style/SmartAir.Button1"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:background="@drawable/btn_rounded"
-        android:backgroundTint="@null"
-        android:fontFamily="@font/dm_sans_bold"
-        android:textSize="18sp"
-        android:textColor="@color/colour_white"
-        android:textStyle="bold"
-        android:layout_marginTop="8dp"/>
+        android:text="GENERATE PDF"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancel"
+        style="@style/SmartAir.Button2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="CANCEL"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"/>
 
 </LinearLayout>
