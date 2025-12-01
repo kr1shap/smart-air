@@ -47,9 +47,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Today's Zone"
+                android:text="TODAY'S ZONE"
                 android:fontFamily="@font/dm_sans_bold"
-                android:textColor="@color/colour_darkBlue"
+                android:textColor="@color/colour_blue"
                 android:textStyle="bold"
                 android:textSize="18sp" />
 
@@ -104,12 +104,12 @@
                     android:id="@+id/tvRescuesWeekly"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Weekly Rescues"
+                    android:layout_gravity="center_horizontal"
+                    android:text="WEEKLY RESCUE"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="13sp"
-                    android:textColor="@color/colour_darkBlue"
-                    android:textStyle="bold" />
+                    android:textSize="18sp"
+                    android:textColor="@color/colour_blue"
+                    android:textStyle="bold"  />
 
                 <View
                     android:layout_width="match_parent"
@@ -118,18 +118,16 @@
                     android:layout_marginTop="6dp"
                     android:layout_marginBottom="12dp"/>
 
-
                 <TextView
                     android:id="@+id/tvWeeklyRescues"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:text="Loading..."
                     android:fontFamily="@font/dm_sans_medium"
-                    android:textSize="18sp"
-                    android:textColor="@color/colour_darkBlue"
-                    android:gravity="center"
+                    android:textSize="16sp"
                     android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:textColor="@color/colour_darkBlue"/>
 
             </LinearLayout>
 
@@ -149,10 +147,11 @@
                     android:id="@+id/tvLatestRescue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Last Rescue"
+                    android:layout_gravity="center_horizontal"
+                    android:text="LAST RESCUE"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="13sp"
-                    android:textColor="@color/colour_darkBlue"
+                    android:textSize="18sp"
+                    android:textColor="@color/colour_blue"
                     android:textStyle="bold" />
 
                 <View
@@ -191,11 +190,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Inventory"
+                android:text="INVENTORY"
                 android:fontFamily="@font/dm_sans_bold"
                 android:textStyle="bold"
                 android:textSize="18sp"
-                android:textColor="@color/colour_darkBlue"/>
+                android:textColor="@color/colour_blue"/>
 
             <View
                 android:layout_width="match_parent"
@@ -213,40 +212,40 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Rescue:"
-                    android:textSize="18sp"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_darkBlue"/>
+                    android:text="Rescue:"
+                    android:textColor="#204BA8"
+                    android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/tvRescueName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="-"
+                    android:layout_marginBottom="10dp"
                     android:fontFamily="@font/dm_sans_medium"
+                    android:text="-"
                     android:textColor="@color/colour_darkBlue"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="10dp"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tvRescuePurchase"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:fontFamily="@font/dm_sans_medium"
                     android:text="-"
                     android:textColor="@color/colour_darkBlue"
-                    android:fontFamily="@font/dm_sans_medium"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="10dp"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tvRescueExpiry"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:fontFamily="@font/dm_sans_medium"
                     android:text="-"
                     android:textColor="@color/colour_darkBlue"
-                    android:fontFamily="@font/dm_sans_medium"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="10dp"/>
+                    android:textSize="16sp" />
 
             </LinearLayout>
 
@@ -263,7 +262,7 @@
                     android:text="Controller:"
                     android:textSize="18sp"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textColor="@color/colour_darkBlue" />
+                    android:textColor="#204BA8" />
 
                 <TextView
                     android:id="@+id/tvControllerName"
@@ -328,17 +327,17 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Trends"
+                    android:text="TRENDS"
                     android:fontFamily="@font/dm_sans_bold"
                     android:textStyle="bold"
                     android:textSize="18sp"
-                    android:textColor="@color/colour_darkBlue"/>
+                    android:textColor="@color/colour_blue"/>
 
                 <Spinner
                     android:id="@+id/spinnerTrendRange"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:padding="3dp"
+                    android:gravity="center_vertical"
                     android:spinnerMode="dropdown"/>
             </LinearLayout>
 
@@ -374,7 +373,7 @@
                         android:fontFamily="@font/dm_sans_bold"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/colour_darkBlue"
+                        android:textColor="#204BA8"
                         android:layout_marginLeft="4dp"
                         android:layout_marginTop="4dp"/>
 
@@ -410,7 +409,7 @@
                         android:fontFamily="@font/dm_sans_bold"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/colour_darkBlue"
+                        android:textColor="#204BA8"
                         android:layout_marginLeft="4dp"
                         android:layout_marginTop="4dp"/>
 
@@ -458,31 +457,29 @@
 
         </LinearLayout>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnProviderReport"
+            style="@style/SmartAir.Button4"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/btn_rounded"
-            android:backgroundTint="@null"
-            android:text="Generate Report"
-            android:fontFamily="@font/dm_sans_bold"
-            android:textSize="18sp"
-            android:textColor="@color/colour_white"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"/>
+            android:text="GENERATE REPORT"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnManageChildren"
+            style="@style/SmartAir.Button1"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/btn_rounded"
-            android:backgroundTint="@null"
-            android:text="Manage"
-            android:fontFamily="@font/dm_sans_bold"
-            android:textSize="18sp"
-            android:textColor="@color/colour_white"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"/>
+            android:text="MANAGE"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"/>
 
 
     </LinearLayout>

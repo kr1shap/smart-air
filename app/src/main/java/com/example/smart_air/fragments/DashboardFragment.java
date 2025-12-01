@@ -339,7 +339,6 @@ public class DashboardFragment extends Fragment {
 
     private void setUpManageButton(Button btnManage) {
         btnManage.setOnClickListener(v ->{
-            Toast.makeText(requireContext(), "Opening Manage Child Fragment", Toast.LENGTH_SHORT).show();
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new ManageChildFragment())
