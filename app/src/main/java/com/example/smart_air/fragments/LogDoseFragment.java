@@ -178,24 +178,6 @@ public class LogDoseFragment extends Fragment {
                 return;
             }
         }
-
-//        // old behaviour (in case ViewModel is not populated for some reason) [SHOULDN'T OCCUR THOUGH!]
-//        String currentUid = user.getUid();
-//        db.collection("children")
-//                .whereEqualTo("parentUid", currentUid)
-//                .get()
-//                .addOnSuccessListener(querySnapshot -> {
-//                    if (!querySnapshot.isEmpty()) {
-//                        // use first child as before
-//                        uid = querySnapshot.getDocuments().get(0).getId();
-//                    } else {
-//                        // treat user as child
-//                        uid = currentUid;
-//                    }
-//                    setupLogDoseUI(view);
-//                })
-//                .addOnFailureListener(e ->
-//                        Toast.makeText(getContext(), "Failed to identify user / child", Toast.LENGTH_SHORT).show());
     }
 
     private void setupLogDoseUI(View view) {
