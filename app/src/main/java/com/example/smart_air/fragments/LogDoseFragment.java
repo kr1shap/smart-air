@@ -156,9 +156,7 @@ public class LogDoseFragment extends Fragment {
         sharedModel.getCurrentRole().observe(
                 getViewLifecycleOwner(),
                 role -> {
-                    if (role != null) {
-                        userRole = role;
-                    }
+                    if (role != null) { userRole = role; }
                     //role check for page access
                     if("provider".equals(userRole)) {
                         //Disable log dose buttons for providers
@@ -169,7 +167,12 @@ public class LogDoseFragment extends Fragment {
                         btn_add_rescue_log.setVisibility(View.VISIBLE);
                         btn_add_controller_log.setVisibility(View.VISIBLE);
                     }
-                    if("child".equals(userRole)) { uid = FirebaseAuth.getInstance().getUid(); } //current child
+                    if("child".equals(userRole)) {
+                        uid = FirebaseAuth.getInstance().getUid();
+                        //directly load logs as VM not applicable to them
+                        loadLogsFor("controller", controllerLogsContainer);
+                        loadLogsFor("rescue", rescueLogsContainer);
+                    } //current child
                 }
         );
 
@@ -213,7 +216,7 @@ public class LogDoseFragment extends Fragment {
                 }
         );
 
-        //change the toggles for log dose (provider only - read)
+        //change the toggles for log dose (provider/parent only - read)
         togglesVM.getSharingToggles().observe(getViewLifecycleOwner(), sharing -> {
             Boolean allowRescue = false;
             //change sharing toggles
@@ -285,8 +288,15 @@ public class LogDoseFragment extends Fragment {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
+
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
         techniqueHelperBtn.setOnClickListener(v ->
         {
+            dialog.dismiss();
             requireActivity()
                     .getSupportFragmentManager()
                     .beginTransaction()
@@ -294,11 +304,6 @@ public class LogDoseFragment extends Fragment {
                     .addToBackStack(null)
                     .commit();
         });
-
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
-                .setView(dialogView)
-                .setCancelable(true)
-                .create();
 
         cancelBtn.setOnClickListener(v -> dialog.dismiss());
 
