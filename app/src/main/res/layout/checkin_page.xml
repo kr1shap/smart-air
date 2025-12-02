@@ -485,6 +485,7 @@
                 android:ems="6"
                 android:inputType="number"
                 android:text="0"
+                android:textColor="@color/colour_black"
                 app:layout_constraintTop_toBottomOf="@id/textView91"
                 app:layout_constraintStart_toStartOf="parent"/>
 
@@ -547,6 +548,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
                 android:ems="5"
+                android:textColor="@color/colour_black"
                 app:layout_constraintTop_toBottomOf="@id/textViewOptional"/>
 
             <EditText
@@ -558,6 +560,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
                 android:ems="5"
+                android:textColor="@color/colour_black"
                 app:layout_constraintTop_toBottomOf="@id/editTextPreMed"/>
 
 
