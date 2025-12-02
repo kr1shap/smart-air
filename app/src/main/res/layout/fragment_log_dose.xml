@@ -76,6 +76,10 @@
                 android:background="@color/colour_white"
                 android:padding="12dp">
 
+    <com.example.smart_air.modelClasses.MaxHeightScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical">
                 <!-- Controller logs dynamically added here -->
                 <LinearLayout
                     android:id="@+id/controllerLogsContainer"
@@ -83,6 +87,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     />
+                </com.example.smart_air.modelClasses.MaxHeightScrollView>
 
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button
@@ -129,12 +134,18 @@
                 android:background="@color/colour_white"
                 android:padding="12dp">
 
+
+                <com.example.smart_air.modelClasses.MaxHeightScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="vertical">
                 <!-- Rescue logs dynamically added here -->
                 <LinearLayout
                     android:id="@+id/rescueLogsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
+                </com.example.smart_air.modelClasses.MaxHeightScrollView>
 
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button

@@ -372,7 +372,6 @@ public class LogDoseFragment extends Fragment {
                                     .add(data)
                                     .addOnSuccessListener(docRef -> {
                                         docRef.get().addOnSuccessListener(snapshot -> {
-                                            Toast.makeText(getContext(), "Dose logged!", Toast.LENGTH_SHORT).show();
                                             // update badge and stat
                                             if ("rescue".equals(logType)) {
                                                 rapidrescuealerts();
@@ -443,6 +442,7 @@ public class LogDoseFragment extends Fragment {
                 });
     }
 
+
     private void getAndUpdateInventory(String medType, int puffs, AuthContract.GeneralCallback callback) {
         if (uid == null || uid.isEmpty()) return;
 
@@ -472,7 +472,6 @@ public class LogDoseFragment extends Fragment {
                         long updatedAmount = currentAmount - puffs;
                         // sends alert if medication is less than 20% of threshold
                         if (updatedAmount <= lessthan20) {
-                            Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
                             sendAlert(uid, 0); //since only parent has access to inventory
                         }
                         // update the *same doc* we just read
