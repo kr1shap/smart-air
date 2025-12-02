@@ -43,6 +43,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,6 +73,10 @@ public class ProviderReportFragment extends Fragment {
     int[] zoneGreen = {0};
     int[] zoneYellow = {0};
     int[] zoneRed = {0};
+    private double controllerAdherence = 0.0;
+
+    private Map<String, Boolean> weeklySchedule;
+
 
     public ProviderReportFragment(){
         // empty constructor
@@ -172,6 +177,14 @@ public class ProviderReportFragment extends Fragment {
                 .document(childId)
                 .get()
                 .addOnSuccessListener(childDoc -> {
+
+                    weeklySchedule = (Map<String, Boolean>) childDoc.get("weeklySchedule");
+                    if (weeklySchedule != null) {
+                        Log.d("WeeklySchedule", "Weekly schedule: " + weeklySchedule);
+                    } else {
+                        Log.d("WeeklySchedule", "No weekly schedule found");
+                    }
+
                     if (!childDoc.exists()) {
                         Toast.makeText(requireContext(), "Child data not found", Toast.LENGTH_SHORT).show();
                         return;
@@ -206,26 +219,121 @@ public class ProviderReportFragment extends Fragment {
     //based on toggles fetch data async
     private void fetchData(LocalDate cutoff) {
         LocalDate now = LocalDate.now();
+
+        //total days within range
         int totalDays = (int) ChronoUnit.DAYS.between(cutoff, now) + 1;
         if (totalDays <= 0) totalDays = 1;
 
-        //sync due to cache
-        if (allowRescue && rescueLogs != null) { processRescueLogsFromCache(cutoff, now, totalDays); }
-        fetchSymptomBurdenZone(cutoff, now); //zone sync
-        //triage is async
-        if (allowTriage) {
-            int finalTotalDays = totalDays;
-            fetchTriageIncidents(cutoff, now, () -> {
-                // After triage completes
-                Toast.makeText(requireContext(), "Generating PDF...", Toast.LENGTH_SHORT).show();
-                generatePDF(now, cutoff, finalTotalDays);
-            });
-        } else {
-            generatePDF(now, cutoff, totalDays);
+        // scheduled days within range
+        int totalScheduledDays = countScheduledDays(cutoff, now);
+
+        // rescue
+        if (allowRescue && rescueLogs != null) {
+            processRescueLogsFromCache(cutoff, now, totalDays, totalScheduledDays);
         }
+
+        // symptoms
+        fetchSymptomBurdenZone(cutoff, now);
+
+        int finalTotalDaysForCharts = totalDays;
+
+        // controller
+        fetchControllerAdherence(cutoff, now, totalScheduledDays, () -> {
+
+            if (allowTriage) {
+                fetchTriageIncidents(cutoff, now, () -> {
+                    Toast.makeText(requireContext(), "Generating PDF...", Toast.LENGTH_SHORT).show();
+                    generatePDF(now, cutoff, finalTotalDaysForCharts);
+                });
+            } else {
+                generatePDF(now, cutoff, finalTotalDaysForCharts);
+            }
+        });
     }
 
 
+    private void fetchControllerAdherence(LocalDate cutoff, LocalDate now,
+                                          int totalScheduledDays,
+                                          Runnable onComplete) {
+
+        if (!allowController) {
+            controllerAdherence = 0.0;
+            onComplete.run();
+            return;
+        }
+
+        long startEpoch = cutoff.atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+        long endEpoch = now.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toEpochSecond();
+
+        Timestamp startTs = new Timestamp(startEpoch, 0);
+        Timestamp endTs = new Timestamp(endEpoch, 0);
+
+        db.collection("children")
+                .document(childId)
+                .collection("controllerLog")
+                .whereGreaterThanOrEqualTo("timeTaken", startTs)
+                .whereLessThan("timeTaken", endTs)
+                .get()
+                .addOnSuccessListener(snap -> {
+
+                    int completedChecks = snap.size();
+
+                    if (totalScheduledDays <= 0) {
+                        controllerAdherence = 0.0;
+                        Log.d("ControllerAdherence",
+                                "No scheduled days → adherence = 0 (completed = " + completedChecks + ")");
+                        onComplete.run();
+                        return;
+                    }
+
+                    double raw = (completedChecks * 100.0) / totalScheduledDays;
+
+                    raw = Math.min(raw, 100.0);
+
+                    controllerAdherence = Math.round(raw * 100.0) / 100.0;
+
+                    Log.d("ControllerAdherence",
+                            "Completed=" + completedChecks +
+                                    ", ScheduledDays=" + totalScheduledDays +
+                                    ", %=" + controllerAdherence);
+
+                    onComplete.run();
+
+                })
+                .addOnFailureListener(e -> {
+                    controllerAdherence = 0.0;
+                    onComplete.run();
+                });
+    }
+
+
+    // takes the weekly schedule days and sums the number of accepted days in the month range returns the number of scheduled days
+    private int countScheduledDays(LocalDate start, LocalDate end) {
+        if (weeklySchedule == null || weeklySchedule.isEmpty()) return 0;
+
+        Map<String, Boolean> normalized = new HashMap<>();
+        for (String key : weeklySchedule.keySet()) {
+            normalized.put(key.toLowerCase(), weeklySchedule.get(key));
+        }
+
+        int count = 0;
+        LocalDate cursor = start;
+
+        while (!cursor.isAfter(end)) {
+
+            String dayKey = cursor.getDayOfWeek().toString().toLowerCase();
+
+            Boolean scheduled = normalized.get(dayKey);
+
+            if (scheduled != null && scheduled) {
+                count++;
+            }
+
+            cursor = cursor.plusDays(1);
+        }
+
+        return count;
+    }
 
     private void fetchTriageIncidents(LocalDate cutoff, LocalDate now, Runnable onComplete ) {
         //Fetch the incident docs
@@ -341,42 +449,60 @@ public class ProviderReportFragment extends Fragment {
         Log.d("SymptomFetch", "Symptom burden days: " + symptomBurdenCount);
     }
 
-    private void processRescueLogsFromCache(LocalDate cutoff, LocalDate now, int totalDays) {
-        // Initialize the rescue counts array
+    private void processRescueLogsFromCache(LocalDate cutoff, LocalDate now,
+                                            int totalDays, int totalScheduledDays) {
+
         rescueCounts = new int[totalDays];
-        if (rescueLogs == null || rescueLogs.isEmpty()) { return; }
+        if (rescueLogs == null || rescueLogs.isEmpty()) {
+            rescuePercentage = 0.0;
+            return;
+        }
+
+        boolean[] hasRescueOnDay = new boolean[totalDays];
         int daysWithRescue = 0;
-        boolean[] hasRescueOnDay = new boolean[totalDays]; // Track unique days
+
         for (DocumentSnapshot doc : rescueLogs) {
             try {
-                //get data from document
                 Timestamp timestamp = doc.getTimestamp("timeTaken");
                 if (timestamp == null) continue;
 
-                //local date conversion and check within range
-                Date date = timestamp.toDate();
-                LocalDate rescueDate = date.toInstant()
+                LocalDate rescueDate = timestamp.toDate().toInstant()
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate();
 
-                //within range check
-                if (rescueDate.isBefore(cutoff) || rescueDate.isAfter(now)) { continue; }
-                //get index for the day
+                if (rescueDate.isBefore(cutoff) || rescueDate.isAfter(now)) continue;
+
                 int dayIndex = (int) ChronoUnit.DAYS.between(cutoff, rescueDate);
-                //make sure index within bounds
-                if (dayIndex < 0 || dayIndex >= totalDays) { continue; }
-                // inc the count for this day
-                if(rescueCounts[dayIndex]==0) daysWithRescue+=1;
+                if (dayIndex < 0 || dayIndex >= totalDays) continue;
+
+                // For chart only
                 rescueCounts[dayIndex]++;
+
+                // Check if scheduled
+                String dayKey = rescueDate.getDayOfWeek().toString().toLowerCase();
+                boolean isScheduled = weeklySchedule != null &&
+                        Boolean.TRUE.equals(weeklySchedule.get(dayKey));
+
+                if (!isScheduled) continue;
+
+                if (!hasRescueOnDay[dayIndex]) {
+                    hasRescueOnDay[dayIndex] = true;
+                    daysWithRescue++;
+                }
 
             } catch (Exception e) {
                 Log.e("RescueFetch", "Error processing rescue log: " + doc.getId(), e);
             }
         }
-        // calc percentage of days with rescue
-        double rawPercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
-        rescuePercentage = Math.round(rawPercentage * 100.0) / 100.0;
+
+        if (totalScheduledDays <= 0) {
+            rescuePercentage = 0.0;
+        } else {
+            rescuePercentage = (daysWithRescue * 100.0) / totalScheduledDays;
+            rescuePercentage = Math.round(rescuePercentage * 100.0) / 100.0;
+        }
     }
+
 
 
     /* HELPER FUNCTIONS FOR PDF GENERATION */
@@ -490,7 +616,7 @@ public class ProviderReportFragment extends Fragment {
     /* ADD THE STATS ROW TO THE PDF */
     private int addStatsRowToPdf(Canvas pdfCanvas, int x, int y, int maxWidth,
                                  int symptomBurden, double rescuePercentage,
-                                 int controllerAdherence,
+                                 double controllerAdherence,
                                  boolean allowSymptoms, boolean allowRescue,
                                  boolean allowController) {
 
@@ -574,7 +700,7 @@ public class ProviderReportFragment extends Fragment {
         //stats row part
         ensureSpace(pdf, ph, 150);
         ph.y = addStatsRowToPdf(ph.canvas, left, ph.y, right - left,
-                problemDays[0], rescuePercentage, 0,
+                problemDays[0], rescuePercentage, controllerAdherence,
                 allowSymptoms, allowRescue, allowController); //TODO: change adherence to right value
 
         ph.y += 20;
