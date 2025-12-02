@@ -58,8 +58,6 @@ public class InventoryFragment extends Fragment {
 
     private LinearLayout controllerContainer;
     private LinearLayout rescueContainer;
-    private DatePickerDialog datepick;
-    private Button dateButton;
     int threshold=300;
     double lessthan20=threshold*0.2;
     private SharedChildViewModel sharedModel;
@@ -152,9 +150,7 @@ public class InventoryFragment extends Fragment {
         controllerContainer.removeAllViews();
         rescueContainer.removeAllViews();
         // if kid doesnt exist dont load
-        if (childUid == null){
-            return;
-        }
+        if (childUid == null){ return; }
         Log.d("InventoryFragment", "Loading inventory for childUid = " + childUid);
         // load corresponding document
         loadinventoryDoc(childUid, "controller", controllerContainer);

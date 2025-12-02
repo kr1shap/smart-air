@@ -42,6 +42,7 @@ import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.viewmodel.ChildTogglesViewModel;
 import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -75,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
-    private NotificationViewModel notifVM;
     User user;
     private String userRole;
 
@@ -85,6 +85,10 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration parentListener; // listener for when parent gets new child
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
 
+    //view models
+    private NotificationViewModel notifVM;
+    private ChildTogglesViewModel togglesViewModel;
+    private DashboardViewModel dashboardViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,6 +145,9 @@ public class MainActivity extends AppCompatActivity {
         notifVM = new ViewModelProvider(this).get(NotificationViewModel.class);
         notifVM.setChildVM(sharedModel);
         notification = findViewById(R.id.notificationButton);
+        //other view models
+        togglesViewModel = new ViewModelProvider(this).get(ChildTogglesViewModel.class);
+        dashboardViewModel = new ViewModelProvider(this).get(DashboardViewModel.class);
 
         //add listen on click
         notification.setOnClickListener(new View.OnClickListener() {
@@ -159,6 +166,10 @@ public class MainActivity extends AppCompatActivity {
         signout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //clear all listeners
+                togglesViewModel.onCleared();
+                dashboardViewModel.clearAllCaches();
+                notifVM.onCleared();
                 repo.signOut();
                 startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
                 finish();
@@ -619,6 +630,23 @@ public class MainActivity extends AppCompatActivity {
                     convertToNamesAndDob(allChildren);
                 });
     }
+
+    //Destroy the listeners
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (parentListener != null) {
+            parentListener.remove();
+            parentListener = null;
+        }
+
+        if (providerChildrenListener != null) {
+            providerChildrenListener.remove();
+            providerChildrenListener = null;
+        }
+    }
+
 
     //Callback for main call in general, used to delete account
     private AuthContract.GeneralCallback deleteCallback() {

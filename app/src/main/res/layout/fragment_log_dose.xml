@@ -5,14 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@android:color/white"
+    android:backgroundTint="@android:color/white"
     android:padding="16dp">
 
     <LinearLayout
         android:id="@+id/container_log_dose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:fontFamily="@font/dm_sans_regular">
 
         <!-- Back button -->
         <Button
@@ -24,7 +25,8 @@
             android:background="@android:color/transparent"
             android:textColor="@color/colour_blue"
             android:textSize="16sp"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <!-- Date -->
         <TextView
@@ -32,10 +34,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Today’s Date"
-            android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/black"
-            android:paddingBottom="16dp" />
+            android:paddingBottom="16dp"
+            android:fontFamily="@font/dm_sans_bold"/>
+
+        <include
+            layout="@layout/shared_provider_label"
+            android:id="@+id/sharedProviderLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="start"/>
 
         <!-- CONTROLLER SECTION -->
         <TextView
@@ -46,7 +56,8 @@
             android:textStyle="bold"
             android:textSize="18sp"
             android:textColor="@android:color/black"
-            android:paddingBottom="8dp" />
+            android:paddingBottom="8dp"
+            android:fontFamily="@font/dm_sans_regular"/>
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_controller_logs"
@@ -54,45 +65,57 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:background="@color/colour_white"
+            app:cardElevation="1dp">
 
             <!-- Outer layout inside card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:background="@color/colour_white"
                 android:padding="12dp">
 
+    <com.example.smart_air.modelClasses.MaxHeightScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical">
                 <!-- Controller logs dynamically added here -->
                 <LinearLayout
                     android:id="@+id/controllerLogsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:orientation="vertical"
+                    />
+                </com.example.smart_air.modelClasses.MaxHeightScrollView>
 
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button
                     android:id="@+id/btn_add_controller_log"
+                    style="@style/SmartAir.Button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="+ Log Controller Dose"
                     android:textColor="@android:color/white"
                     android:backgroundTint="@color/colour_blue"
                     android:textSize="14sp"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <!-- RESCUE SECTION -->
+
         <TextView
             android:id="@+id/text_rescue_section_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/dm_sans_regular"
+            android:paddingBottom="8dp"
             android:text="Rescue"
-            android:textStyle="bold"
-            android:textSize="18sp"
             android:textColor="@android:color/black"
-            android:paddingBottom="8dp" />
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_rescue_logs"
@@ -100,32 +123,42 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:backgroundTint="@color/colour_white"
+            app:cardElevation="1dp">
 
             <!-- Outer layout inside card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:background="@color/colour_white"
                 android:padding="12dp">
 
+
+                <com.example.smart_air.modelClasses.MaxHeightScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="vertical">
                 <!-- Rescue logs dynamically added here -->
                 <LinearLayout
                     android:id="@+id/rescueLogsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
+                </com.example.smart_air.modelClasses.MaxHeightScrollView>
 
                 <!-- Button is OUTSIDE the logs container so it won't be cleared -->
                 <Button
                     android:id="@+id/btn_add_rescue_log"
+                    style="@style/SmartAir.Button1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="+ Log Rescue Dose"
                     android:textColor="@android:color/white"
                     android:backgroundTint="@color/colour_blue"
                     android:textSize="14sp"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/dm_sans_regular"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

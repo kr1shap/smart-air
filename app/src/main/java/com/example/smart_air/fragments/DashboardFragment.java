@@ -32,6 +32,7 @@ import com.example.smart_air.SettingsDialogFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.InventoryData;
 import com.example.smart_air.modelClasses.formatters.StringFormatters;
+import com.example.smart_air.viewmodel.ChildTogglesViewModel;
 import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.github.mikephil.charting.charts.BarChart;
@@ -96,9 +97,10 @@ public class DashboardFragment extends Fragment {
     private final Map<String, Map<String, Boolean>> childSharingCache = new HashMap<>(); //for parent - as parent can only change cache
     //LISTENER FOR TOGGLES
     private ListenerRegistration childListener;
-    //VIEW MODEL FOR PDF (TO NOT REGENERATE EXTRA INFO)
+    //VIEW MODEL FOR PDF (TO NOT REGENERATE EXTRA INFO) & VM FOR CHILD TOGGLES
     DashboardViewModel cacheVM;
     private View view;
+    ChildTogglesViewModel togglesViewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -126,6 +128,7 @@ public class DashboardFragment extends Fragment {
         // using viewmodel to load dashboard
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         cacheVM = new ViewModelProvider(requireActivity()).get(DashboardViewModel.class);
+        togglesViewModel = new ViewModelProvider(this).get(ChildTogglesViewModel.class);
 
 
         // linking xml ids to fragment
@@ -236,10 +239,6 @@ public class DashboardFragment extends Fragment {
             ProviderReportFragment frag = new ProviderReportFragment();
             Bundle args = new Bundle();
             args.putString("childId", correspondingUid);
-//            if (childSharingCache.containsKey(correspondingUid)) {
-//                HashMap<String, Boolean> sharingMap = (HashMap<String, Boolean>) childSharingCache.get(correspondingUid);
-//                args.putSerializable("sharing", sharingMap);
-//            }
             frag.setArguments(args);
             requireActivity().getSupportFragmentManager()
                     .beginTransaction().replace(R.id.fragment_container, frag)
@@ -297,6 +296,7 @@ public class DashboardFragment extends Fragment {
                 String displayName = fullName.replaceFirst("\\[.*", "").trim();
                 tvTitle.setText(displayName + "’s Dashboard");
                 if("parent".equals(userRole)) loadTogglesParent(correspondingUid); //load the current toggles for the child
+                if("provider".equals(userRole)) togglesViewModel.attachChildListener(correspondingUid);;
                 loadDashboardForChild(correspondingUid);
             }
         });
@@ -306,6 +306,7 @@ public class DashboardFragment extends Fragment {
             List<Child> list = sharedModel.getAllChildren().getValue();
             if (list == null || list.isEmpty() || idx == null) return;
             correspondingUid = list.get(idx).getChildUid();
+            if("provider".equals(userRole)) togglesViewModel.attachChildListener(correspondingUid);
             if("parent".equals(userRole)) {
                 loadTogglesParent(correspondingUid); //load the current toggles for the child
             }
@@ -317,6 +318,37 @@ public class DashboardFragment extends Fragment {
                 loadDashboardForChild(correspondingUid);
             }
         });
+
+        //view model to get toggles
+        togglesViewModel.getSharingToggles().observe(getViewLifecycleOwner(), sharing -> {
+            if(userRole == null || !userRole.equals("provider")) return;
+            //re-init all to false
+            allowRescue = false;
+            allowController = false;
+            allowPEF = false;
+            allowCharts = false;
+            //change sharing toggles
+            if (sharing != null) {
+                allowRescue = sharing.getOrDefault("rescue", false);
+                allowController = sharing.getOrDefault("controller", false);
+                allowPEF = sharing.getOrDefault("pef", false);
+                allowCharts = sharing.getOrDefault("charts", false);
+            }
+            // provider dashboard visibility update
+            cardWeekly.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+            cardLastRescue.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+            trendSection.setVisibility(allowCharts ? View.VISIBLE : View.GONE);
+            //visibility updates on the charts as well
+            rescueChart.setVisibility(allowRescue ? View.VISIBLE : View.GONE);
+            pefChart.setVisibility(allowPEF ? View.VISIBLE : View.GONE);
+            //visibility updates on whether chart available or not
+            rescueChartUnavailablePEF.setVisibility(allowPEF ? View.GONE : View.VISIBLE);
+            rescueChartUnavailableRescue.setVisibility(allowRescue ? View.GONE : View.VISIBLE);
+            // reload data based on toggles
+            if (allowRescue) { loadWeeklyRescues(7); loadLatestRescueDate(); }
+            if (allowPEF) { loadPEFTrend(7); }
+        });
+
 
         //adapter to switch between days
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -423,7 +455,7 @@ public class DashboardFragment extends Fragment {
         this.correspondingUid = childUid;
         loadTodayZone(); //for everyone (zone)
         if(userRole!= null && userRole.equals("provider")) {
-            attachChildToggleListener(childUid); //load toggles for child and then init dashboard
+//            attachChildToggleListener(childUid); //load toggles for child and then init dashboard
             //do not load inventory for provider
         } else if( userRole != null && userRole.equals("child")) {
             loadWeeklyRescues(7);
