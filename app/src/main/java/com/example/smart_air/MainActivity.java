@@ -338,6 +338,18 @@ public class MainActivity extends AppCompatActivity {
         MenuItem history = bottomNavigationView.getMenu().findItem(R.id.history);
         MenuItem medicine = bottomNavigationView.getMenu().findItem(R.id.medicine);
 
+        if(userRole.equals("provider")){
+            dailyCheckIn.setVisible(false);
+            triage.setVisible(false);
+            history.setVisible(true);
+            medicine.setVisible(true);
+        }
+        else{
+            dailyCheckIn.setVisible(true);
+            triage.setVisible(true);
+            history.setVisible(true);
+            medicine.setVisible(true);
+        }
         dailyCheckIn.setEnabled(access);
         dailyCheckIn.setCheckable(access);
         triage.setEnabled(access);
@@ -347,10 +359,6 @@ public class MainActivity extends AppCompatActivity {
         medicine.setEnabled(access);
         medicine.setCheckable(access);
 
-        dailyCheckIn.setVisible(true);
-        triage.setVisible(true);
-        history.setVisible(true);
-        medicine.setVisible(true);
 
         if(access){
             dailyCheckIn.setIcon(R.drawable.checkin);

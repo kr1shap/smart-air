@@ -1016,8 +1016,10 @@ public class DashboardFragment extends Fragment {
        if(userRole.equals("parent")) {
            inventoryGroup.setVisibility(visibility);
        }
+       if(userRole.equals("parent")){
+           btnProviderReport.setVisibility(visibility);
+       }
        trendSection.setVisibility(visibility);
-       btnProviderReport.setVisibility(visibility);
 
        // update toggles
        if(access && correspondingUid != null){
