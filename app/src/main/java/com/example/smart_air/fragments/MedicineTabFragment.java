@@ -50,7 +50,7 @@ public class MedicineTabFragment extends Fragment {
                 getViewLifecycleOwner(),
                 role -> {
                     if(role!= null) {
-                        if ("provider".equals(role)) {
+                        if ("provider".equals(role) || "child".equals(role)) {
                             inventoryButton.setVisibility(View.GONE);
                         } else {
                             inventoryButton.setVisibility(View.VISIBLE);
