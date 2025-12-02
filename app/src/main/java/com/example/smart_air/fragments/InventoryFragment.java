@@ -189,7 +189,7 @@ public class InventoryFragment extends Fragment {
                     Long amount = doc.getLong("amount");
                     com.google.firebase.Timestamp purchaseTs = doc.getTimestamp("purchaseDate");
                     com.google.firebase.Timestamp expiryTs   = doc.getTimestamp("expiryDate");
-                    java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
+                    java.text.DateFormat df = new java.text.SimpleDateFormat("MMM dd yyyy", java.util.Locale.getDefault());
                     // load and format values
                     if (name != null){
                         nameEt.setText(name);
@@ -284,12 +284,12 @@ public class InventoryFragment extends Fragment {
                 return;
             }
         }
-        java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
+        java.text.DateFormat df = new java.text.SimpleDateFormat("MMM dd yyyy", java.util.Locale.getDefault());
         String purchaseStr = btnPurchase.getText().toString().trim();
         if (!purchaseStr.isEmpty() && !purchaseStr.equalsIgnoreCase("Select purchase date")) {
             try {
                 Date p = df.parse(purchaseStr);
-                updates.put("purchaseDate", new com.google.firebase.Timestamp(p));
+                updates.put("purchaseDate", new Timestamp(p));
             }
             catch (Exception e) {
                 Toast.makeText(requireContext(), "Purchase date format should be like: November 29 2025", Toast.LENGTH_SHORT).show();
