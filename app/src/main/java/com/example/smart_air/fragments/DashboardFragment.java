@@ -28,6 +28,7 @@ import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.ManageChildFragment;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.SettingsDialogFragment;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.InventoryData;
 import com.example.smart_air.modelClasses.formatters.StringFormatters;
@@ -354,11 +355,8 @@ public class DashboardFragment extends Fragment {
 
     private void setUpManageButton(Button btnManage) {
         btnManage.setOnClickListener(v ->{
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new ManageChildFragment())
-                    .addToBackStack(null)
-                    .commit();
+            SettingsDialogFragment dialog = new SettingsDialogFragment();
+            dialog.show(requireActivity().getSupportFragmentManager(), "SettingsDialog");
         });
     }
 
