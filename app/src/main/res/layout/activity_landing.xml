@@ -40,13 +40,12 @@
         <Button
             android:id="@+id/getStartedButton"
             style="@style/SmartAir.Button3"
-            android:layout_width="350dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="30dp"
             android:text="Get Started"
-            tools:layout_editor_absoluteX="152dp"
-            tools:layout_editor_absoluteY="170dp" />
+            />
 
 
     </LinearLayout>

@@ -40,54 +40,61 @@
         android:id="@+id/topButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
         app:layout_constraintTop_toTopOf="@id/textView3"
         android:padding="16dp">
 
-        <!-- toggle parent/child -->
+        <!-- TOGGLE -->
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/toggleRole"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:singleSelection="true"
             app:selectionRequired="true"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/buttonSave"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginEnd="8dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonParent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Parent ENTRY"
+                android:layout_width="0dp"  android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Parent ENTRY"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="10sp"
+                android:autoSizeMaxTextSize="14sp"
+                android:autoSizeStepGranularity="1sp"
                 app:cornerRadius="20dp"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonChild"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Child ENTRY"
+                android:layout_width="0dp"  android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Child ENTRY"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="10sp"
+                android:autoSizeMaxTextSize="14sp"
+                android:autoSizeStepGranularity="1sp"
                 app:cornerRadius="20dp"/>
         </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <!-- SAVE button on the right -->
+        <!-- SAVE BUTTON -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonSave"
             style="@style/SmartAir.Button2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14dp"
+            android:padding="1dp"
             android:text="SAVE"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
             app:cornerRadius="10000dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/toggleRole"
-            app:layout_constraintBottom_toBottomOf="@id/toggleRole"/>
+            app:layout_constraintBottom_toBottomOf="@id/toggleRole" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <TextView
         android:id="@+id/textView7"
