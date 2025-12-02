@@ -33,7 +33,7 @@
                     android:layout_height="30dp"
                     android:background="@drawable/outline_circle_notifications_24"
                     android:padding="8dp"
-                    android:layout_marginEnd="20dp"
+                    android:layout_marginEnd="10dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:visibility="gone"/>

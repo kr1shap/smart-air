@@ -107,7 +107,7 @@
                     android:layout_gravity="center_horizontal"
                     android:text="WEEKLY RESCUE"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="18sp"
+                    android:textSize="14sp"
                     android:textColor="@color/colour_blue"
                     android:textStyle="bold"  />
 
@@ -150,7 +150,7 @@
                     android:layout_gravity="center_horizontal"
                     android:text="LAST RESCUE"
                     android:fontFamily="@font/dm_sans_bold"
-                    android:textSize="18sp"
+                    android:textSize="14sp"
                     android:textColor="@color/colour_blue"
                     android:textStyle="bold" />
 
@@ -479,7 +479,7 @@
             style="@style/SmartAir.Button1"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:text="MANAGE"
+            android:text="MANAGE CHILDREN"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:paddingStart="16dp"

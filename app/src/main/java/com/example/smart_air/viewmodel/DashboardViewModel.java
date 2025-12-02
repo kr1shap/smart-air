@@ -1,5 +1,7 @@
 package com.example.smart_air.viewmodel;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.smart_air.modelClasses.InventoryData;
@@ -37,6 +39,16 @@ public class DashboardViewModel extends ViewModel {
 
     // sharing cache
     public Map<String, Map<String, Boolean>> getChildSharingCache() { return childSharingCache;}
+
+    // remove page boolean
+    private final MutableLiveData<Boolean> removePage = new MutableLiveData<>(false);
+    public LiveData<Boolean> getRemovePage() {
+        return removePage;
+    }
+
+    public void setRemovePage(boolean value) {
+        removePage.setValue(value);  // update internally
+    }
 
     public void putChildSharing(String childUid, Map<String, Boolean> sharing) {
         childSharingCache.put(childUid, sharing);

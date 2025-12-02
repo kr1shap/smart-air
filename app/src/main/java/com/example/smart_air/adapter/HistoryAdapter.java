@@ -234,12 +234,24 @@ public class HistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 coughingStatus.setVisibility(View.GONE);
             }
             else{
-                childText.setVisibility(View.VISIBLE);
-                parentText.setVisibility(View.VISIBLE);
-                childActivityLimitsBar.setVisibility(View.VISIBLE);
-                parentActivityLimitsBar.setVisibility(View.VISIBLE);
-                childCoughingBar.setVisibility(View.VISIBLE);
-                parentCoughingBar.setVisibility(View.VISIBLE);
+                if(card.cardType == HistoryItem.typeOfCard.childOnly){
+                    childText.setVisibility(View.VISIBLE);
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                }
+                if(card.cardType == HistoryItem.typeOfCard.parentOnly){
+                    parentText.setVisibility(View.VISIBLE);
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                }
+                if(card.cardType == HistoryItem.typeOfCard.both){
+                    childText.setVisibility(View.VISIBLE);
+                    parentText.setVisibility(View.VISIBLE);
+                    childActivityLimitsBar.setVisibility(View.VISIBLE);
+                    parentActivityLimitsBar.setVisibility(View.VISIBLE);
+                    childCoughingBar.setVisibility(View.VISIBLE);
+                    parentCoughingBar.setVisibility(View.VISIBLE);
+                }
                 nightTerror.setVisibility(View.VISIBLE);
                 activityLimit.setVisibility(View.VISIBLE);
                 coughingWheezing.setVisibility(View.VISIBLE);
