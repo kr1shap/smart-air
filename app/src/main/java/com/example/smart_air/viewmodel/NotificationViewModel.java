@@ -84,7 +84,7 @@ public class NotificationViewModel extends ViewModel {
     }
 
     @Override
-    protected void onCleared() {
+    public void onCleared() {
         if (registration != null) registration.remove();
     }
 }

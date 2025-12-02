@@ -68,4 +68,25 @@ public class StringFormatters {
                 return key; // fallback
         }
     }
+
+    /** Convert calendar day-of-week to "Monday", "Tuesday" ... */
+    public static String dayNameForCalendar(Calendar cal) {
+        switch (cal.get(Calendar.DAY_OF_WEEK)) {
+            case Calendar.MONDAY:
+                return "Monday";
+            case Calendar.TUESDAY:
+                return "Tuesday";
+            case Calendar.WEDNESDAY:
+                return "Wednesday";
+            case Calendar.THURSDAY:
+                return "Thursday";
+            case Calendar.FRIDAY:
+                return "Friday";
+            case Calendar.SATURDAY:
+                return "Saturday";
+            case Calendar.SUNDAY:
+            default:
+                return "Sunday";
+        }
+    }
 }
