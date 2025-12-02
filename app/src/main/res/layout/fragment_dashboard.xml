@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/colour_white"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Dashboard Title -->
+        <TextView
+            android:id="@+id/tvDashboardTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dashboard"
+            android:fontFamily="@font/dm_sans_bold"
+            android:gravity="center_horizontal"
+            android:textSize="32sp"
+            android:textColor="@color/colour_blue"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Shared Provider Label -->
+        <include
+            layout="@layout/shared_provider_label"
+            android:id="@+id/sharedProviderLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="start"/>
+
+
+        <!-- Today's Zone -->
+        <LinearLayout
+            android:id="@+id/zoneSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_card"
+            app:cardElevation="4dp"
+            android:orientation="vertical"
+            android:padding="18dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TODAY'S ZONE"
+                android:fontFamily="@font/dm_sans_bold"
+                android:textColor="@color/colour_blue"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:id="@+id/barContainer"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="#E0E0E0"
+                android:layout_margin="6dp">
+
+                <View
+                    android:id="@+id/zoneBar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:background="#4CAF50"/>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/RescueGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <!-- Weekly Rescues -->
+            <LinearLayout
+                android:id="@+id/cardWeekly"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_card"
+                app:cardElevation="4dp"
+                android:padding="16dp"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
+
+                <TextView
+                    android:id="@+id/tvRescuesWeekly"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="WEEKLY RESCUE"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textSize="14sp"
+                    android:textColor="@color/colour_blue"
+                    android:textStyle="bold"  />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@drawable/divider"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:id="@+id/tvWeeklyRescues"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Loading..."
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/colour_darkBlue"/>
+
+            </LinearLayout>
+
+            <!-- Last Rescue -->
+            <LinearLayout
+                android:id="@+id/cardLastRescue"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_card"
+                app:cardElevation="4dp"
+                android:padding="16dp"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:id="@+id/tvLatestRescue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="LAST RESCUE"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textSize="14sp"
+                    android:textColor="@color/colour_blue"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@drawable/divider"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="12dp"/>
+
+
+                <TextView
+                    android:id="@+id/tvLastRescue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Loading..."
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/colour_darkBlue"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Inventory -->
+        <LinearLayout
+            android:id="@+id/inventoryGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_card"
+            app:cardElevation="4dp"
+            android:padding="20dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="INVENTORY"
+                android:fontFamily="@font/dm_sans_bold"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@color/colour_blue"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:id="@+id/RescueInventory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <!-- Rescue -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:text="Rescue:"
+                    android:textColor="#204BA8"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/tvRescueName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tvRescuePurchase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tvRescueExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ControllerInventory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Controller -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
+                    android:text="Controller:"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textColor="#204BA8"
+                    android:layout_marginBottom="2dp"/>
+
+                <TextView
+                    android:id="@+id/tvControllerName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="2dp"/>
+                <TextView
+                    android:id="@+id/tvControllerPurchase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="2dp"/>
+                <TextView
+                    android:id="@+id/tvControllerExpiry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@color/colour_darkBlue"
+                    android:fontFamily="@font/dm_sans_medium"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="10dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+        <!-- Trends -->
+        <LinearLayout
+            android:id="@+id/trendSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_card"
+            android:textColor="@color/colour_darkBlue"
+            app:cardElevation="4dp"
+            android:padding="16dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp">
+
+                <TextView
+                    android:id="@+id/tvTrendsTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="TRENDS"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="@color/colour_blue"/>
+
+                <Spinner
+                    android:id="@+id/spinnerTrendRange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colour_darkBlue"
+                    android:gravity="center_vertical"
+                    android:backgroundTint="@color/colour_blue"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
+
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp"/>
+
+
+            <!-- Trends -->
+            <ViewFlipper
+                android:id="@+id/trendsCarousel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inAnimation="@anim/slide_in_right"
+                android:outAnimation="@anim/slide_out_left">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp">
+
+                    <TextView
+                        android:id="@+id/tvRescueTrendTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Daily Rescues"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#204BA8"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginTop="4dp"/>
+
+                    <com.github.mikephil.charting.charts.BarChart
+                        android:id="@+id/rescueChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="260dp"/>
+
+                    <TextView
+                        android:id="@+id/rescueChartUnavailableRescue"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Chart Not Available for you to view."
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp">
+
+                    <TextView
+                        android:id="@+id/tvPEFTrendTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Daily PEF"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#204BA8"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginTop="4dp"/>
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/pefChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="260dp"/>
+
+                    <TextView
+                        android:id="@+id/rescueChartUnavailablePEF"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Chart Not Available for you to view."
+                        android:textColor="@color/colour_indigo"
+                        android:fontFamily="@font/dm_sans_bold"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+            </ViewFlipper>
+
+            <LinearLayout
+                android:id="@+id/carouselDots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <View
+                    android:id="@+id/dot1"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/dot_active"
+                    android:layout_margin="4dp"/>
+
+                <View
+                    android:id="@+id/dot2"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/dot_inactive"
+                    android:layout_margin="4dp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnProviderReport"
+            style="@style/SmartAir.Button4"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="GENERATE REPORT"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnManageChildren"
+            style="@style/SmartAir.Button1"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="MANAGE SETTINGS"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:cornerRadius="10000dp"/>
+
+
+    </LinearLayout>
+
+</ScrollView>

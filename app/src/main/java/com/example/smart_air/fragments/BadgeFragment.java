@@ -59,6 +59,7 @@ public class BadgeFragment extends Fragment {
         //check if user is authenticated
         if (repo.getCurrentUser() == null) { destroyFragment(); return; }
         //initalize all views and buttons, etc
+        badgeDataCache = new HashMap<>();
         btnClose = view.findViewById(R.id.btnClose);
         badge1Card = view.findViewById(R.id.badge1Card);
         badge2Card = view.findViewById(R.id.badge2Card);
@@ -69,16 +70,14 @@ public class BadgeFragment extends Fragment {
         controllerStreakNum = view.findViewById(R.id.controllerStreakNum);
         techniqueStreakNum = view.findViewById(R.id.techniqueStreakNum);
 
+        // shared viewmodal
         //extra check just to ensure role is child
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        User user = doc.toObject(User.class);
-                        if (user == null) { return; }
-                        String role = user.getRole();
-                        if (role.equals("child")) { childUid = repo.getCurrentUser().getUid(); getBadgeStreakInfo(); }
-                    }
-                });
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                if (role.equals("child")) { childUid = repo.getCurrentUser().getUid(); getBadgeStreakInfo(); }
+            }
+        });
 
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
@@ -146,11 +145,9 @@ public class BadgeFragment extends Fragment {
      */
     public void destroyFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
-        Fragment fragment = fm.findFragmentById(R.id.fragment_container);
-        if (fragment instanceof BadgeFragment) {
-            fm.beginTransaction()
-                    .remove(fragment)
-                    .commit();
+        badgeDataCache = new HashMap<>();
+        if (fm.getBackStackEntryCount() > 0) {
+            fm.popBackStack(); // return to prev fragment
         }
     }
 }

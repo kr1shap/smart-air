@@ -1,20 +1,23 @@
 package com.example.smart_air;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.util.TimerTask;
-import androidx.core.app.NotificationManagerCompat;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import java.util.Calendar;
+import java.security.CodeSigner;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -23,10 +26,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -35,12 +35,19 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.smart_air.Contracts.AuthContract;
 
 import com.example.smart_air.fragments.BadgeFragment;
+import com.example.smart_air.fragments.DashboardFragment;
 import com.example.smart_air.fragments.TechniqueHelperFragment;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
+import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.viewmodel.ChildTogglesViewModel;
+import com.example.smart_air.viewmodel.DashboardViewModel;
+import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -61,12 +68,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import com.example.smart_air.fragments.MedicineTabFragment;
 public class MainActivity extends AppCompatActivity {
     AuthRepository repo;
     Button signout;
-    ImageButton notification;
-    private ListenerRegistration unreadNotifListener;
+    ImageButton notification, providerCodeBtn;
     private NotificationRepository notifRepo;
     private boolean notifOnLogin; //so the notification toast fires only when new ones come in online
     private int prevNotifCount = -1; //previous count
@@ -75,28 +81,37 @@ public class MainActivity extends AppCompatActivity {
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
+    private DashboardViewModel dashboardsharedModel;
     private ListenerRegistration parentListener; // listener for when parent gets new child
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
-    private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
 
-
+    //view models
+    private NotificationViewModel notifVM;
+    private ChildTogglesViewModel togglesViewModel;
+    private DashboardViewModel dashboardViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        dashboardsharedModel = new ViewModelProvider(this).get(DashboardViewModel.class);
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new DashboardFragment(), "dashboard")
+                .commit();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
         //init repo, db
         repo = new AuthRepository();
         notifRepo = new NotificationRepository();
 
         //if no user signed in
-        repo = new AuthRepository();
         if(repo.getCurrentUser() == null) {
             startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
             finish();
@@ -109,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
         MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
         MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
         ImageButton switchChildButton = findViewById(R.id.switchChildButton);
+        //add code button for provider
+        providerCodeBtn = findViewById(R.id.providerCodeBtn);
 
         //get user role
         sharedModel = new ViewModelProvider(this).get(SharedChildViewModel.class);
@@ -122,12 +139,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // showing child dropdown pop up
-        switchChildButton.setOnClickListener(v -> {
-            showChildPopup();
-        });
+        switchChildButton.setOnClickListener(v -> { showChildPopup(); });
 
-        //notif button
+        //notif button & notif VM setup
+        notifVM = new ViewModelProvider(this).get(NotificationViewModel.class);
+        notifVM.setChildVM(sharedModel);
         notification = findViewById(R.id.notificationButton);
+        //other view models
+        togglesViewModel = new ViewModelProvider(this).get(ChildTogglesViewModel.class);
+        dashboardViewModel = new ViewModelProvider(this).get(DashboardViewModel.class);
 
         //add listen on click
         notification.setOnClickListener(new View.OnClickListener() {
@@ -146,9 +166,21 @@ public class MainActivity extends AppCompatActivity {
         signout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //clear all listeners
+                togglesViewModel.onCleared();
+                dashboardViewModel.clearAllCaches();
+                notifVM.onCleared();
                 repo.signOut();
                 startActivity(new Intent(MainActivity.this, LandingPageActivity.class));
                 finish();
+            }
+        });
+
+        //providerCodeBtn button
+        providerCodeBtn.setOnClickListener(v -> {
+            if(userRole != null && userRole.equals("provider")) {
+                DialogCodeFragment dialog = new DialogCodeFragment();
+                dialog.show(getSupportFragmentManager(), "DialogCodeFragment");
             }
         });
 
@@ -161,21 +193,25 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                // add fragment for dashboard
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else if (id == R.id.triage) {
-                // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof TriageFragment)) {
                     selectedFragment = new TriageFragment();
                 }
-                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                // add fragment for medicine
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof MedicineTabFragment)) {
+                    selectedFragment = new MedicineTabFragment();
+                }
             } else if (id == R.id.checkin) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof CheckInFragment)) {
@@ -284,25 +320,6 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
                         List<String> list = user.getChildrenUid();
-                        // if list is empty now removes daily check in
-                        if (list.isEmpty()) {
-                            removeDailyCheckIn = true;
-                        } else {
-                            removeDailyCheckIn = false;
-                        }
-                        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-                        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
-                        if (removeDailyCheckIn) {
-                            dailyCheckIn.setEnabled(false);
-                            dailyCheckIn.setCheckable(false);
-                            dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                            // TODO: go back to home fragment if on check in fragment
-                        } else {
-                            dailyCheckIn.setEnabled(true);
-                            dailyCheckIn.setCheckable(true);
-                            dailyCheckIn.setIcon(R.drawable.checkin);
-                        }
-                        dailyCheckIn.setVisible(true);
                         convertToNames(list);
                     }
                 });
@@ -310,6 +327,60 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(userRole.equals("provider")){
             getProviderChildren();
+        }
+    }
+
+    // changes bottom navigation button based on parent's child list
+    private void setBottomNavButtoms (boolean access){
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        MenuItem dailyCheckIn = bottomNavigationView.getMenu().findItem(R.id.checkin);
+        MenuItem triage = bottomNavigationView.getMenu().findItem(R.id.triage);
+        MenuItem history = bottomNavigationView.getMenu().findItem(R.id.history);
+        MenuItem medicine = bottomNavigationView.getMenu().findItem(R.id.medicine);
+
+        if(userRole.equals("provider")){
+            dailyCheckIn.setVisible(false);
+            triage.setVisible(false);
+            history.setVisible(true);
+            medicine.setVisible(true);
+        }
+        else{
+            dailyCheckIn.setVisible(true);
+            triage.setVisible(true);
+            history.setVisible(true);
+            medicine.setVisible(true);
+        }
+        dailyCheckIn.setEnabled(access);
+        dailyCheckIn.setCheckable(access);
+        triage.setEnabled(access);
+        triage.setCheckable(access);
+        history.setEnabled(access);
+        history.setCheckable(access);
+        medicine.setEnabled(access);
+        medicine.setCheckable(access);
+
+
+        if(access){
+            dailyCheckIn.setIcon(R.drawable.checkin);
+            triage.setIcon(R.drawable.triage);
+            history.setIcon(R.drawable.history);
+            medicine.setIcon(R.drawable.medicine_24);
+        }
+        else{
+            bottomNavigationView.getMenu().setGroupCheckable(0, false, true);
+            bottomNavigationView.getMenu().setGroupCheckable(0, true, true);
+            bottomNavigationView.setSelectedItemId(R.id.home);
+
+            DashboardFragment dashboard = new DashboardFragment();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, dashboard)
+                    .commit();
+
+            dailyCheckIn.setIcon(R.drawable.checkinlocked);
+            triage.setIcon(R.drawable.triage_lock);
+            history.setIcon(R.drawable.history_lock);
+            medicine.setIcon(R.drawable.medicine_lock);
         }
     }
 
@@ -328,9 +399,59 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                     startChildrenListener();
                     });
+    }
+
+    private void convertToNamesAndDob(List<String> uid) {
+        List<Child> children = new ArrayList<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        AtomicInteger counter = new AtomicInteger(0);
+
+        if(uid.isEmpty()){
+            sharedModel.setChildren(children);
+            dashboardsharedModel.setRemovePage(true);
+            return;
+        }
+        else{
+            dashboardsharedModel.setRemovePage(false);
+        }
+
+        for (String childUid : uid) {
+            db.collection("children").document(childUid).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = childUid;
+                        String dob = "";
+                        if (doc.exists()) {
+                            if (name != null) {
+                                name = doc.getString("name");
+                            }
+                            if (doc.contains("dob")){
+                                Timestamp dobTimestamp = doc.getTimestamp("dob");
+                                Date date = dobTimestamp.toDate();
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                dob = sdf.format(date);
+                            }
+                        }
+                        if(!dob.isEmpty()){
+                            name = name + " [" + dob + "]";
+                        }
+                        Child currentChild = new Child(childUid, name);
+                        children.add(currentChild);
+
+                        if (counter.incrementAndGet() == uid.size()) {
+                            children.sort(Comparator.comparing(c -> c.getName().toLowerCase()));
+                            int currentIndex = sharedModel.getCurrentChild().getValue();
+                            if(currentIndex >= children.size()){ // if last child gets deleted
+                                sharedModel.setCurrentChild(0);
+                            }
+                            sharedModel.setChildren(children);
+                        }
+                    });
+
+        }
     }
 
 
@@ -367,7 +488,7 @@ public class MainActivity extends AppCompatActivity {
 
     // sets up buttons for child dropdown based on role
     private void setUpButtonAndListener(ImageButton switchChildButton, MenuItem dailyCheckIn, MenuItem triage) {
-        if(userRole.equals("child")){
+        if(userRole.equals("child")) {
             // enable dailycheckin and triage
              dailyCheckIn.setEnabled(true);
              dailyCheckIn.setCheckable(true);
@@ -377,28 +498,28 @@ public class MainActivity extends AppCompatActivity {
              triage.setVisible(true);
              //disable notification
              notification.setVisibility(View.GONE);
+             //disable add code btn
+             providerCodeBtn.setVisibility(View.GONE);
+             providerCodeBtn.setEnabled(false);
              return;
         }
-        else if(userRole.equals("parent")){
+        else if(userRole.equals("parent")) {
             switchChildButton.setVisibility(View.VISIBLE);
-            // enable dailycheckin
-            if (removeDailyCheckIn) {
-                dailyCheckIn.setEnabled(false);
-                dailyCheckIn.setCheckable(false);
-                dailyCheckIn.setIcon(R.drawable.checkinlocked);
-                // TODO: go back to home fragment if on check in fragment
-            } else {
-                dailyCheckIn.setEnabled(true);
-                dailyCheckIn.setCheckable(true);
-                dailyCheckIn.setIcon(R.drawable.checkin);
-            }
-            dailyCheckIn.setVisible(true);
 
+            // remove page if no children
+            dashboardsharedModel.getRemovePage().observe(this, removePage -> {
+                if(removePage != null){
+                    setBottomNavButtoms(!removePage);
+                }
+            });
 
             // enable triage
             triage.setEnabled(true);
             triage.setCheckable(true);
             triage.setVisible(true);
+            //disable add code btn
+            providerCodeBtn.setVisibility(View.GONE);
+            providerCodeBtn.setEnabled(false);
             // update child switching list when new child is added / deleted
             listenerToParent(repo.getCurrentUser().getUid(), true);
             //setup notification listener and icon
@@ -417,6 +538,15 @@ public class MainActivity extends AppCompatActivity {
             triage.setVisible(false);
             //disable notification
             notification.setVisibility(View.GONE);
+            //enable add code
+            providerCodeBtn.setVisibility(View.VISIBLE);
+            providerCodeBtn.setEnabled(true);
+            // remove page if no children
+            dashboardsharedModel.getRemovePage().observe(this, removePage -> {
+                if(removePage != null){
+                    setBottomNavButtoms(!removePage);
+                }
+            });
         }
 
     }
@@ -429,7 +559,11 @@ public class MainActivity extends AppCompatActivity {
 
         if(uid.isEmpty()){
             sharedModel.setChildren(children);
+            dashboardsharedModel.setRemovePage(true);
             return;
+        }
+        else{
+            dashboardsharedModel.setRemovePage(false);
         }
 
         for (String childUid : uid) {
@@ -458,18 +592,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUnreadNotificationsBadge(String uid) {
-         unreadNotifListener = notifRepo.listenForNotifications(uid, (value, error) -> {
-            if (error != null || value == null) return;
-            int size = value.size();
-            if (prevNotifCount == -1) prevNotifCount = size;
-            updateToolbarBadge(size); //unread count
-            if(!notifOnLogin) notifOnLogin = true; //on login, notification toast only shows when a new one comes and they're online
-            else if (prevNotifCount < size) Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show();
-            prevNotifCount = size; //only show changes when size of document increases
-         });
+        if (!"parent".equals(userRole)) return;
+        notifVM.getUnreadCount().observe(this, count -> {
+            if (count == null) return;
+            updateToolbarBadge(count);
+            // first time, don't show new notif
+            if (!notifOnLogin) { notifOnLogin = true; }
+            // new or future notif notifications
+            else if (prevNotifCount < count) { Toast.makeText(MainActivity.this, "A new notification!", Toast.LENGTH_SHORT).show(); }
+            prevNotifCount = count;
+        });
+        //start listening once only
+        notifVM.startListening(uid);
     }
 
-    public void updateToolbarBadge(int count) {
+    private void updateToolbarBadge(int count) {
         TextView badge = findViewById(R.id.badge_text);
         if (count > 0) {
             badge.setVisibility(View.VISIBLE);
@@ -498,9 +635,26 @@ public class MainActivity extends AppCompatActivity {
                         allChildren.add(doc.getId());
                     }
 
-                    convertToNames(allChildren);
+                    convertToNamesAndDob(allChildren);
                 });
     }
+
+    //Destroy the listeners
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (parentListener != null) {
+            parentListener.remove();
+            parentListener = null;
+        }
+
+        if (providerChildrenListener != null) {
+            providerChildrenListener.remove();
+            providerChildrenListener = null;
+        }
+    }
+
 
     //Callback for main call in general, used to delete account
     private AuthContract.GeneralCallback deleteCallback() {

@@ -15,6 +15,15 @@
         android:orientation="vertical"
         android:padding="20dp">
 
+        <!-- Shared Provider Label -->
+        <include
+            layout="@layout/shared_provider_label"
+            android:id="@+id/sharedProviderLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="start"/>
+
         <!-- header -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -116,7 +125,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="PEF"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textColor="@color/colour_black"
                     android:fontFamily="@font/dm_sans_regular"
                     android:layout_marginEnd="8dp"/>
@@ -126,7 +135,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="400"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textColor="#757575"
                     android:background="#F5F6F6"
                     android:paddingStart="12dp"
@@ -147,17 +156,17 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rescue Attempts"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textColor="@color/colour_black"
                     android:fontFamily="@font/dm_sans_regular"
                     android:layout_marginEnd="8dp"/>
 
                 <TextView
                     android:id="@+id/rescueAttemptsValue"
-                    android:layout_width="45dp"
+                    android:layout_width="43dp"
                     android:layout_height="wrap_content"
-                    android:text="67"
-                    android:textSize="14sp"
+                    android:text="n/a"
+                    android:textSize="12sp"
                     android:textColor="#757575"
                     android:background="#F5F6F6"
                     android:paddingStart="12dp"

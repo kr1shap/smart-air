@@ -1,7 +1,10 @@
 package com.example.smart_air.fragments;
 
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -56,6 +60,7 @@ public class HistoryFragment extends Fragment {
     public boolean [] options = {true,true,true,true,true}; // {pef, rescue, symptoms, triage, triggers}
     String childUid;
     private SharedChildViewModel sharedModel;
+    public String role; //to store role (so repo can use)
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -103,10 +108,13 @@ public class HistoryFragment extends Fragment {
         // shared viewmodal
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> { // set up child uid if it is a child
-            if (role != null && role.equals("child")) {
-                FirebaseAuth auth = FirebaseAuth.getInstance();
-                this.childUid = auth.getCurrentUser().getUid();
-                repo.updateToggles(childUid,this);
+            if (role != null ) {
+                this.role = role;
+                if (role.equals("child")) {
+                    FirebaseAuth auth = FirebaseAuth.getInstance();
+                    this.childUid = auth.getCurrentUser().getUid();
+                    repo.updateToggles(childUid, this);
+                }
             }
         });
         sharedModel.getAllChildren().observe(getViewLifecycleOwner(), children -> { // set up intial child (for when user is parent or provider)
@@ -134,6 +142,12 @@ public class HistoryFragment extends Fragment {
         // night filter
         AutoCompleteTextView nightDropdown = view.findViewById(R.id.selectNightWaking);
         nightDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             if(selected.equals("YES")){
                 filters[0] = "true";
@@ -151,6 +165,12 @@ public class HistoryFragment extends Fragment {
         // activity filter
         AutoCompleteTextView activityDropdown = view.findViewById(R.id.selectActivityLimits);
         activityDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null chck
+            if (childUid == null || childUid.isEmpty()){
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[1] = selected;
             repo.getCards(childUid,this);
@@ -160,6 +180,12 @@ public class HistoryFragment extends Fragment {
         // coughing filter
         AutoCompleteTextView coughingDropdown = view.findViewById(R.id.selectCoughingLevel);
         coughingDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[2] = selected;
             repo.getCards(childUid,this);
@@ -169,6 +195,12 @@ public class HistoryFragment extends Fragment {
         // triggers filter
         AutoCompleteTextView triggerDropdown = view.findViewById(R.id.selectTriggers);
         triggerDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[3] = selected;
             repo.getCards(childUid,this);
@@ -178,25 +210,31 @@ public class HistoryFragment extends Fragment {
         // date filter
         AutoCompleteTextView dateDropdown = view.findViewById(R.id.selectDate);
         dateDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
 
             // set date to compare too based on it
             Calendar today = Calendar.getInstance();
             switch (selected) {
+                case "Past 5 months":
+                    today.add(Calendar.MONTH, -5);
+                    break;
+                case "Past 4 months":
+                    today.add(Calendar.MONTH, -4);
+                    break;
                 case "Past 3 months":
                     today.add(Calendar.MONTH, -3);
                     break;
+                case "Past 2 months":
+                    today.add(Calendar.MONTH, -2);
+                    break;
                 case "Past month":
                     today.add(Calendar.MONTH, -1);
-                    break;
-                case "Past 2 weeks":
-                    today.add(Calendar.DAY_OF_YEAR, -14);
-                    break;
-                case "Past week":
-                    today.add(Calendar.DAY_OF_YEAR, -7);
-                    break;
-                case "Past 2 days":
-                    today.add(Calendar.DAY_OF_YEAR, -2);
                     break;
                 default:
                     today.add(Calendar.MONTH, -6);
@@ -212,6 +250,12 @@ public class HistoryFragment extends Fragment {
         // triage filter
         AutoCompleteTextView triageDropdown = view.findViewById(R.id.selectTriage);
         triageDropdown.setOnItemClickListener((parent, itemView, position, id) -> {
+            // null check
+            if (childUid == null || childUid.isEmpty()) {
+                Toast.makeText(getContext(), "Loading child data...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selected = parent.getItemAtPosition(position).toString();
             filters[5] = selected;
             repo.getCards(childUid,this);
@@ -317,6 +361,23 @@ public class HistoryFragment extends Fragment {
 
                 writer.flush();
                 Toast.makeText(getContext(), "CSV saved to: " + csvFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+
+                // open CSV in app
+                Uri fileUri = FileProvider.getUriForFile(
+                        requireContext(),
+                        requireContext().getPackageName() + ".provider",
+                        csvFile
+                );
+
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(fileUri, "text/csv");
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                try {
+                    startActivity(Intent.createChooser(intent, "Open CSV"));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(getContext(), "No app found to open CSV", Toast.LENGTH_SHORT).show();
+                }
             }
 
         } catch (Exception e) {
@@ -334,7 +395,7 @@ public class HistoryFragment extends Fragment {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         int pageWidth = 612;
         int pageHeight = 792;
-        int currentY = 75; // leave space for title and name
+        int currentY = 60; // leave space for title and name
 
         PdfDocument pdfDocument = new PdfDocument();
 
@@ -359,7 +420,7 @@ public class HistoryFragment extends Fragment {
         // draw title
         canvas.drawText("HISTORY LOG", pageWidth / 2f, 40, titlePaint);
         // draw info
-        canvas.drawText("Name: " + childName, pageWidth / 2f, 70, infoPaint);
+        canvas.drawText("Name: " + childName, pageWidth / 2f, 57, infoPaint);
 
         // drawing each card
         for (HistoryItem card : listToExport) {
@@ -419,16 +480,16 @@ public class HistoryFragment extends Fragment {
                 } else {
                     switch (card.zone.toLowerCase()) {
                         case "green":
-                            zoneStatus.setBackgroundColor(Color.parseColor("#9FD46A"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#4CAF50"));
                             break;
                         case "yellow":
-                            zoneStatus.setBackgroundColor(Color.parseColor("#FABF24"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#FFEB3B"));
                             break;
                         case "red":
                             zoneStatus.setBackgroundColor(Color.parseColor("#FB633D"));
                             break;
                         default:
-                            zoneStatus.setBackgroundColor(Color.parseColor("#000000"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#F44336"));
                             break;
                     }
                     zoneStatus.setText(card.zone.toUpperCase());
@@ -511,6 +572,22 @@ public class HistoryFragment extends Fragment {
         try {
             pdfDocument.writeTo(new FileOutputStream(pdfFile));
             Toast.makeText(getContext(), "PDF saved: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            // open PDF
+            Uri pdfUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    requireContext().getPackageName() + ".provider",
+                    pdfFile
+            );
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(pdfUri, "application/pdf");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            try {
+                startActivity(Intent.createChooser(intent, "Open PDF"));
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(getContext(), "No app found to open PDF", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error saving PDF", Toast.LENGTH_SHORT).show();
@@ -544,7 +621,7 @@ public class HistoryFragment extends Fragment {
         String [] coughingLevelOptions = {"","No Coughing", "Wheezing", "Coughing", "Extreme Coughing"};
         String [] triggersOptions = {"","Allergies", "Smoke","Flu","Strong smells", "Running", "Exercise", "Cold Air", "Dust/Pets", "Illness"};
         String [] triageOptions = {"","Days with Triage","Days without Triage"};
-        String [] dateOptions = {"", "Past 3 months", "Past month", "Past 2 weeks", "Past week", "Past 2 days"};
+        String [] dateOptions = {"", "Past 5 months", "Past 4 months", "Past 3 months", "Past 2 months", "Past month"};
         setUpOneFilterUI(R.id.selectNightWaking,nightWakingOptions);
         setUpOneFilterUI(R.id.selectActivityLimits,activityLimitsOptions);
         setUpOneFilterUI(R.id.selectCoughingLevel,coughingLevelOptions);
@@ -606,4 +683,5 @@ public class HistoryFragment extends Fragment {
         repo.getCards(childUid,this); // refresh list
 
     }
+
 }

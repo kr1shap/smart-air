@@ -7,8 +7,8 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.smart_air.Repository.AuthRepository;
+import com.google.android.material.button.MaterialButton;
 
-// This Activity will correspond to your landing page XML layout.
 public class LandingPageActivity extends AppCompatActivity {
 
     AuthRepository repo;
@@ -20,7 +20,7 @@ public class LandingPageActivity extends AppCompatActivity {
         // link java file to xml layout
         setContentView(R.layout.activity_landing);
         // ref to get started
-        Button getStartedButton = findViewById(R.id.getStartedButton);
+        MaterialButton getStartedButton = findViewById(R.id.getStartedButton);
 
         getStartedButton.setOnClickListener(new View.OnClickListener() {
             @Override

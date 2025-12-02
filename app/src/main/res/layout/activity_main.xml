@@ -1,111 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <!-- toolbar -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <!-- main content in LinearLayout -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:theme="?attr/actionBarTheme">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-           >
+        <!-- toolbar -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:theme="?attr/actionBarTheme">
 
-            <!-- Notification Icon -->
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Notification Icon -->
+                <ImageButton
+                    android:id="@+id/notificationButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/outline_circle_notifications_24"
+                    android:padding="8dp"
+                    android:layout_marginEnd="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"/>
+
+                <!-- Badge Bubble -->
+                <TextView
+                    android:id="@+id/badge_text"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:background="@drawable/badge_circle"
+                    android:layout_alignTop="@id/notificationButton"
+                    android:layout_alignEnd="@id/notificationButton"
+                    android:layout_marginTop="-4dp"
+                    android:layout_marginEnd="-4dp"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/white"
+                    android:visibility="gone"/>
+            </RelativeLayout>
+
             <ImageButton
-                android:id="@+id/notificationButton"
+                android:id="@+id/switchChildButton"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:background="@drawable/outline_circle_notifications_24"
+                android:background="@drawable/switch_child_button"
                 android:padding="8dp"
-                android:layout_marginEnd="20dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone"/>
 
-            <!-- Badge Bubble -->
             <TextView
-                android:id="@+id/badge_text"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:background="@drawable/badge_circle"
-                android:layout_alignTop="@id/notificationButton"
-                android:layout_alignEnd="@id/notificationButton"
-                android:layout_marginTop="-4dp"
-                android:layout_marginEnd="-4dp"
-                android:gravity="center"
-                android:text="0"
-                android:textSize="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Smart Air  "
                 android:textColor="@android:color/white"
-                android:visibility="gone"/>
-        </RelativeLayout>
+                android:textSize="25sp"
+                android:textStyle="bold"
+                android:layout_gravity="center"
+                android:fontFamily="@font/dm_sans_bold" />
 
-        <ImageButton
-            android:id="@+id/switchChildButton"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/switch_child_button"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:visibility="gone"/>
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="35dp"
+                android:layout_height="40dp"
+                android:src="@drawable/transparentlog"
+                android:layout_gravity="center"
+                android:contentDescription="Logo" />
 
+            <!-- sign out button -->
+            <Button
+                android:id="@+id/signout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sign Out"
+                android:textColor="@android:color/white"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_gravity="end|center_vertical"/>
+        </androidx.appcompat.widget.Toolbar>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- fragment container -->
+        <FrameLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- bottom navigation -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Smart Air  "
-            android:textColor="@android:color/white"
-            android:textSize="25sp"
-            android:textStyle="bold"
-            android:layout_gravity="center"
-            android:fontFamily="@font/dm_sans_bold" />
+            android:background="?attr/colorPrimary"
+            app:itemIconTint="@color/colour_white"
+            app:itemTextColor="@color/colour_white"
+            app:menu="@menu/bottom_nav" />
 
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="35dp"
-            android:layout_height="40dp"
-            android:src="@drawable/transparentlog"
-            android:layout_gravity="center"
-            android:contentDescription="Logo" />
+    </LinearLayout>
 
-        <!-- sign out button -->
-        <Button
-            android:id="@+id/signout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sign Out"
-            android:textColor="@android:color/white"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_gravity="end|center_vertical"/>
-    </androidx.appcompat.widget.Toolbar>
-
-    <!-- fragment container -->
-    <FrameLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- bottom navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
+    <!-- floating button  -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/providerCodeBtn"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        app:itemIconTint="@color/colour_white"
-        app:itemTextColor="@color/colour_white"
-        app:menu="@menu/bottom_nav" />
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="95dp"
+        android:src="@drawable/add_sign"
+        android:contentDescription="Add Provider Code"
+        app:backgroundTint="?attr/colorPrimary"
+        app:tint="@android:color/white"
+        android:visibility="visible"/>
 
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

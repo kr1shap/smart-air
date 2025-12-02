@@ -49,14 +49,25 @@ public class HistoryItem {
     public int rescueAttempts;
     public String emergencyCall;
 
+    // tracking for whats shared w/ provider
+    public boolean sharedWithProvider = false;
+    public List<String> sharedItems = new ArrayList<>(); // specific items shared (e.g., "symptoms", "triggers", "PEF")
+
+
     // constructor for Daily Card
     public HistoryItem (String date, boolean nightChild, boolean nightParent, int activityChild, int activityParent, int coughingChild, int coughingParent, List<String> childTriggers, List<String> parentTriggers, int pef, String zone, Date accDate){
         this.passFilter = true;
         this.pef = pef;
 
+        if (accDate == null) {
+            accDate = new Date();  // or any default you prefer
+        }
+
 
         // setting up card based parent or child
 
+        boolean childMissing = (coughingChild < 0 || activityChild < 0);
+        boolean parentMissing = (coughingParent < 0 || activityParent < 0);
         this.date = date;
         this.nightChild = nightChild;
         this.nightParent = nightParent;
@@ -68,13 +79,13 @@ public class HistoryItem {
         int coughingAvg = 0;
         int activityAvg = 0;
 
-        if(coughingChild == -5 && coughingParent != -5){
+        if(childMissing && !parentMissing){
             cardType = typeOfCard.parentOnly;
             this.activityChild = 0;
             coughingAvg = this.coughingParent / 33;
             activityAvg = this.activityParent / 10;
         }
-        else if(coughingChild != -5 && coughingParent == -5){
+        else if(!childMissing && parentMissing){
             cardType = typeOfCard.childOnly;
             this.activityParent = 0;
             coughingAvg = this.coughingChild / 33;
@@ -172,6 +183,8 @@ public class HistoryItem {
 
         // getting date
         Calendar cal = Calendar.getInstance();
+        //if date null
+        if(accDate==null) accDate = new Date();
         cal.setTime(accDate);
         cal.set(Calendar.HOUR_OF_DAY, 23);
         cal.set(Calendar.MINUTE, 59);

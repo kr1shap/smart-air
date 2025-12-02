@@ -10,46 +10,26 @@ import android.util.Log;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.Repository.NotificationRepository;
 import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.modelClasses.enums.NotifType;
-import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.firebase.Timestamp;
 
-import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -75,8 +55,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
 
 public class TriageFragment extends Fragment {
-    static final String CHANNEL_ID ="smartairnotif";
-    private View view;
     ImageButton checktimerbutton;
     TextView timertextview;
     Double time=0.0;
@@ -105,6 +83,7 @@ public class TriageFragment extends Fragment {
     private int currentStepCount = 0;
     String zonecolour;
     private SharedChildViewModel sharedModel;
+    private String role;
 
     public TriageFragment() { }
 
@@ -138,37 +117,33 @@ public class TriageFragment extends Fragment {
         }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").document(user.getUid())
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()==false) {
-                        return;
-                    }
-                    String role = doc.getString("role");
 
-                    if (loadingView != null) {
-                        loadingView.setVisibility(View.GONE);
-                    }
-                    // child view
-                    if ("child".equals(role)) {
-                        parentContent.setVisibility(View.GONE);
-                        childStepsContent.setVisibility(View.GONE);
-                        triageContent.setVisibility(View.VISIBLE);
-                        triagesession(view);
-                    }
-                    //parent view
-                    else {
-                        triageContent.setVisibility(View.GONE);
-                        childStepsContent.setVisibility(View.GONE);
-                        parentContent.setVisibility(View.VISIBLE);
-                        parentactionsession(view);
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Log.e("RoleCheck", "Error loading user", e));
+        //fetch role from vm
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                this.role = role;
+                if (loadingView != null) {
+                    loadingView.setVisibility(View.GONE);
+                }
+                // child view
+                if ("child".equals(role)) {
+                    parentContent.setVisibility(View.GONE);
+                    childStepsContent.setVisibility(View.GONE);
+                    triageContent.setVisibility(View.VISIBLE);
+                    triagesession(view);
+                }
+                //parent view
+                else {
+                    triageContent.setVisibility(View.GONE);
+                    childStepsContent.setVisibility(View.GONE);
+                    parentContent.setVisibility(View.VISIBLE);
+                    parentactionsession(view);
+                }
+            }
+        });
+
     }
-
-
 
     public void triagesession(View view) {
         //initialize pef
@@ -323,8 +298,7 @@ public class TriageFragment extends Fragment {
         });
 
     }
-    private void toggletimerdisplay()
-    {
+    private void toggletimerdisplay() {
         if (timervisible) {
             timervisible=false;
             timertextview.setVisibility(View.GONE);
@@ -351,11 +325,9 @@ public class TriageFragment extends Fragment {
         if (timertask!=null) { timertask.cancel(); }
 
         time=diff/1000.0;
-        timertask = new TimerTask()
-        {
+        timertask = new TimerTask() {
             @Override
-            public void run()
-            {
+            public void run() {
                 if (!isAdded()) { return; }
 
                 requireActivity().runOnUiThread(new Runnable() {
@@ -604,7 +576,7 @@ public class TriageFragment extends Fragment {
                 });
     }
     /*
-    get child's name
+    get the child's name
      */
     public void getchildname(String childUid, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -649,9 +621,7 @@ public class TriageFragment extends Fragment {
                         }
                         NotificationRepository notifRepo = new NotificationRepository();
                         for (String pUid : parentUids) {
-                            if (pUid == null){
-                                continue;
-                            }
+                            if (pUid == null){ continue; }
                             Notification notif = new Notification(cUid, false, Timestamp.now(), NotifType.TRIAGE, childName);
                             notifRepo.createNotification(pUid, notif)
                                     .addOnSuccessListener(aVoid ->
@@ -1018,15 +988,9 @@ public class TriageFragment extends Fragment {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String zoneCollection;
-        if ("yellow".equals(zoneColour)) {
-            zoneCollection = "yellowZone";
-        }
-        else if ("red".equals(zoneColour)) {
-            zoneCollection = "redZone";
-        }
-        else {
-            zoneCollection = "greenZone";
-        }
+        if ("yellow".equals(zoneColour)) { zoneCollection = "yellowZone"; }
+        else if ("red".equals(zoneColour)) { zoneCollection = "redZone"; }
+        else { zoneCollection = "greenZone"; }
         db.collection("actionPlan")
                 .document(childUid)
                 .collection(zoneCollection)

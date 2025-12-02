@@ -19,12 +19,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.R;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.modelClasses.Child;
 import com.example.smart_air.modelClasses.User;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
+import com.example.smart_air.viewmodel.SharedChildViewModel;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -81,6 +84,7 @@ public class TechniqueHelperFragment extends Fragment {
             R.drawable.technique_6,
     };
 
+    private SharedChildViewModel sharedModel;
     private FirebaseFirestore db = FirebaseInitalizer.getDb();
 
     @Nullable
@@ -97,17 +101,13 @@ public class TechniqueHelperFragment extends Fragment {
         //check if user is authenticated
         if (repo.getCurrentUser() == null) { destroyFragment(); return; }
         //extra check just to ensure role is child
-        repo.getUserDoc(repo.getCurrentUser().getUid())
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        User user = doc.toObject(User.class);
-                        if (user == null) { return; }
-                        String role = user.getRole();
-                        if (!role.equals("child")) { destroyFragment(); return; }
-                    }
-                });
+        sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
+        sharedModel.getCurrentRole().observe(getViewLifecycleOwner(), role -> {
+            if (role != null) {
+                if(!role.equals("child")) { destroyFragment(); return; }
+            }
+        });
 
-        //TODO: CODE ASSUMES CURRENT USER IS A CHILD!
         //get all other info
         tvTips = view.findViewById(R.id.tvTip);
         tvStepTitle = view.findViewById(R.id.tvStepTitle);
@@ -215,7 +215,7 @@ public class TechniqueHelperFragment extends Fragment {
             int totalPerfect = 0;
             int totalCompleted = 0;
             String lastDateStr = null;
-            String today = getToday();
+            String today = StringFormatters.getToday();
             boolean techniqueBadge = false;
             int quality_thresh = 10; //default value
             Map<String, Boolean> badges = new HashMap<>(); //for badges
@@ -246,7 +246,7 @@ public class TechniqueHelperFragment extends Fragment {
             //update the current streak
             if (lastDateStr == null || lastDateStr.isEmpty()) currentStreak = 1; //no last date; new streak
             else if (today.equals(lastDateStr)) { } //no change if today equals the last day
-            else if (getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
+            else if (StringFormatters.getYesterday().equals(lastDateStr)) { currentStreak++; } //add to streak if yesterday equals the last day
             else { currentStreak = 1; } //reset streak for some other case
 
             if (perfectSession) { totalPerfect++; } //if today is a perfect session, we add to total perfects
@@ -279,34 +279,14 @@ public class TechniqueHelperFragment extends Fragment {
         });
     }
 
-    /*
-    * pre: N/A
-    * post: returns string of yesterday's date in YYYY-MM-DD format
-    * */
-    private String getYesterday() {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, -1);
-        return new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.getTime());
-    }
-    /*
-     * pre: N/A
-     * post: returns string of today's date in YYYY-MM-DD format
-     * */
-    private String getToday() {
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        return fmt.format(new Date()); // today's date string
-    }
 
     /*
      * a method called when an error occurs, goes back the main activity
      */
     public void destroyFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
-        Fragment fragment = fm.findFragmentById(R.id.fragment_container);
-        if (fragment instanceof TechniqueHelperFragment) {
-            fm.beginTransaction()
-                    .remove(fragment)
-                    .commit();
+        if (fm.getBackStackEntryCount() > 0) {
+            fm.popBackStack(); // return to prev fragment
         }
     }
 }

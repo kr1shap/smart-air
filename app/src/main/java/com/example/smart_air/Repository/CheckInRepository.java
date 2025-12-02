@@ -3,6 +3,9 @@ package com.example.smart_air.Repository;
 import android.util.Log;
 
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.modelClasses.Notification;
+import com.example.smart_air.modelClasses.enums.NotifType;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -100,7 +103,7 @@ public class CheckInRepository {
         data.put("coughingWheezing"+userRole, coughingValue);
         data.put("triggers"+userRole, selected);
         data.put("date", new com.google.firebase.Timestamp(todayDateOnly));
-        if(userRole.equals("parent")){
+        if(userRole.equals("parent") && pef != -5){
             data.put("pef",pef);
             if(pre != 0 && post != 0){
                 data.put("pre",pre);
@@ -167,6 +170,7 @@ public class CheckInRepository {
     public void getUserInput(CheckInFragment activity, String userRole, String correspondingUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
+
         if (user == null) {
             activity.updateInfoInputWithoutValues();
         }
@@ -174,6 +178,12 @@ public class CheckInRepository {
         if(userRole.equals("child")){
             String uid = user.getUid();
             childUid = uid;
+        }
+
+        // null check
+        if (childUid == null || childUid.isEmpty()) {
+            Log.e("CheckInRepository", "getUserInput called with null or empty childUid");
+            return; // Exit early if childUid is invalid
         }
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -202,7 +212,7 @@ public class CheckInRepository {
             Long pef = 0L;
             int pre = 0;
             int post = 0;
-            if(userRole.equals("parent")){
+            if(userRole.equals("parent") && document.contains("pef")){
                 pef = document.getLong("pef");
                 if(document.contains("pre") && document.contains("post")) {
                     pre = Math.toIntExact(document.getLong("pre"));
@@ -261,6 +271,48 @@ public class CheckInRepository {
 
             activity.updateInfoInputOther(nightWaking, activityLimits, coughingWheezing, triggers, pef);
         });
+    }
+
+    // checks to see if it's already in red before this save
+    public void checkIfRed(String childUid, String uid, CheckInFragment activity) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDocId = sdf.format(new Date());
+
+        DocumentReference dailyEntry = db.collection("dailyCheckins")
+                .document(childUid)
+                .collection("entries")
+                .document(todayDocId);
+
+        dailyEntry.get().addOnSuccessListener(document ->{
+            if (!(document.exists())) {
+                sendRedZoneNotification(uid, activity);
+                return;
+            }
+
+            if (!document.contains("zoneColour")) {
+                sendRedZoneNotification(uid, activity);
+                return;
+            }
+
+            String zone = document.getString("zoneColour");
+            if (zone != null && zone.equals("red")) {
+                return;
+            }
+            sendRedZoneNotification(uid, activity);
+        });
+    }
+
+    // sends a notification for being red zone
+    public void sendRedZoneNotification(String uid, CheckInFragment activity){
+        NotificationRepository notifRepo = new NotificationRepository();
+        Notification notif = new Notification(activity.correspondingUid, false, Timestamp.now(), NotifType.RED_ZONE);
+        notifRepo.createNotification(uid, notif)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("NotificationRepo", "Notification created successfully!");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("NotificationRepo", "Failed to create notification", e);
+                });
     }
 
     public interface PefCallback {
