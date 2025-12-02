@@ -514,6 +514,7 @@ public class ChildRepository {
                         }
                         //DO NOT add controller stats map due to timestamp - will be made if DNE
 
+
                     }
                     //UI change for technique streak - if streak invalid just change to 0 ui-based
                     //next time child logs in a new session an actual change will be made

@@ -284,7 +284,7 @@ public class InventoryFragment extends Fragment {
                 return;
             }
         }
-        java.text.DateFormat df = new java.text.SimpleDateFormat("MMM d yyyy", java.util.Locale.getDefault());
+        java.text.DateFormat df = new java.text.SimpleDateFormat("mm dd yyyy", java.util.Locale.getDefault());
         String purchaseStr = btnPurchase.getText().toString().trim();
         if (!purchaseStr.isEmpty() && !purchaseStr.equalsIgnoreCase("Select purchase date")) {
             try {
