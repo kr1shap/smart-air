@@ -892,12 +892,16 @@ public class ProviderReportFragment extends Fragment {
         int max = 1;
         for (int v : values) if (v > max) max = v;
 
+        // Calculate appropriate tick count based on max value
+        int tickCount = Math.min(4, max);
+        if (max <= 4) {
+            tickCount = max; // Show each integer value
+        }
+
         // y-axis ticks and labels
-        int tickCount = 4;
         for (int i = 0; i <= tickCount; i++) {
-            float frac = i / (float) tickCount;
-            float y = axisBottom - frac * (axisBottom - axisTop);
-            int labelVal = Math.round(frac * max);
+            float y = axisBottom - ((float) i / tickCount) * (axisBottom - axisTop);
+            int labelVal = (int) Math.round(((float) i / tickCount) * max);
 
             canvas.drawLine(axisLeft - 5, y, axisLeft, y, axisPaint);
             canvas.drawText(String.valueOf(labelVal), axisLeft - 25, y + 4, textPaint);
@@ -991,16 +995,20 @@ public class ProviderReportFragment extends Fragment {
         // the actual max value in the data
         int dataMax = Math.max(Math.max(green, yellow), red);
 
-        // a nice rounded max for the Y-axiy
+        // a nice rounded max for the Y-axis
         int max = calculateNiceMax(dataMax);
         if (max < 1) max = 1;
 
+        // Calculate appropriate tick count based on max value
+        int tickCount = Math.min(5, max);
+        if (max <= 5) {
+            tickCount = max; // Show each integer value
+        }
+
         // y-axis with better tick distribution
-        int tickCount = 5;
         for (int i = 0; i <= tickCount; i++) {
-            float frac = i / (float) tickCount;
-            float y = axisBottom - frac * (axisBottom - axisTop);
-            int labelVal = Math.round(frac * max);
+            float y = axisBottom - ((float) i / tickCount) * (axisBottom - axisTop);
+            int labelVal = (int) Math.round(((float) i / tickCount) * max);
 
             canvas.drawLine(axisLeft - 5, y, axisLeft, y, axisPaint);
             canvas.drawText(String.valueOf(labelVal), axisLeft - 35, y + 4, textPaint);
