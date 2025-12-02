@@ -1,9 +1,14 @@
 package com.example.smart_air.modelClasses.formatters;
 
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class StringFormatters {
     /*
@@ -89,4 +94,56 @@ public class StringFormatters {
                 return "Sunday";
         }
     }
+
+    public static Set<DayOfWeek> extractScheduledDays(Map<String, Boolean> weeklySchedule) {
+        Set<DayOfWeek> result = new HashSet<>();
+        for (Map.Entry<String, Boolean> entry : weeklySchedule.entrySet()) {
+
+            if (!Boolean.TRUE.equals(entry.getValue())) continue;
+
+            String key = entry.getKey().trim().toLowerCase(Locale.US);
+
+            DayOfWeek dow = null;
+
+            switch (key) {
+                case "mon":
+                case "monday":
+                    dow = DayOfWeek.MONDAY;
+                    break;
+                case "tue":
+                case "tues":
+                case "tuesday":
+                    dow = DayOfWeek.TUESDAY;
+                    break;
+                case "wed":
+                case "weds":
+                case "wednesday":
+                    dow = DayOfWeek.WEDNESDAY;
+                    break;
+                case "thu":
+                case "thur":
+                case "thurs":
+                case "thursday":
+                    dow = DayOfWeek.THURSDAY;
+                    break;
+                case "fri":
+                case "friday":
+                    dow = DayOfWeek.FRIDAY;
+                    break;
+                case "sat":
+                case "saturday":
+                    dow = DayOfWeek.SATURDAY;
+                    break;
+                case "sun":
+                case "sunday":
+                    dow = DayOfWeek.SUNDAY;
+                    break;
+            }
+
+            if (dow != null) { result.add(dow); }
+        }
+
+        return result;
+    }
+
 }

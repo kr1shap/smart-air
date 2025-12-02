@@ -1,5 +1,7 @@
 package com.example.smart_air.fragments;
 
+import static com.example.smart_air.modelClasses.formatters.StringFormatters.extractScheduledDays;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -28,6 +30,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.R;
+import com.example.smart_air.modelClasses.formatters.StringFormatters;
 import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -37,16 +40,21 @@ import com.google.firebase.firestore.Query;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProviderReportFragment extends Fragment {
@@ -229,7 +237,7 @@ public class ProviderReportFragment extends Fragment {
 
         // rescue
         if (allowRescue && rescueLogs != null) {
-            processRescueLogsFromCache(cutoff, now, totalDays, totalScheduledDays);
+            processRescueLogsFromCache(cutoff, now, totalDays); //rescue freq is based on total #days
         }
 
         // symptoms
@@ -239,7 +247,6 @@ public class ProviderReportFragment extends Fragment {
 
         // controller
         fetchControllerAdherence(cutoff, now, totalScheduledDays, () -> {
-
             if (allowTriage) {
                 fetchTriageIncidents(cutoff, now, () -> {
                     Toast.makeText(requireContext(), "Generating PDF...", Toast.LENGTH_SHORT).show();
@@ -275,8 +282,20 @@ public class ProviderReportFragment extends Fragment {
                 .whereLessThan("timeTaken", endTs)
                 .get()
                 .addOnSuccessListener(snap -> {
+                    Set<DayOfWeek> scheduledDays = StringFormatters.extractScheduledDays(weeklySchedule);
+                    Set<LocalDate> countedDates = new HashSet<>();
+                    int completedChecks = 0;
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        Timestamp ts = doc.getTimestamp("timeTaken");
+                        if (ts == null) continue;
+                        LocalDate date = ts.toDate().toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate();
+                        if (!scheduledDays.contains(date.getDayOfWeek())) { continue; }
+                        if (countedDates.add(date)) { completedChecks++; }
+                    }
 
-                    int completedChecks = snap.size();
+                    //need to check for each snapshot whether the day is an adhered day
 
                     if (totalScheduledDays <= 0) {
                         controllerAdherence = 0.0;
@@ -318,20 +337,14 @@ public class ProviderReportFragment extends Fragment {
 
         int count = 0;
         LocalDate cursor = start;
-
         while (!cursor.isAfter(end)) {
-
             String dayKey = cursor.getDayOfWeek().toString().toLowerCase();
-
             Boolean scheduled = normalized.get(dayKey);
-
             if (scheduled != null && scheduled) {
                 count++;
             }
-
             cursor = cursor.plusDays(1);
         }
-
         return count;
     }
 
@@ -450,7 +463,7 @@ public class ProviderReportFragment extends Fragment {
     }
 
     private void processRescueLogsFromCache(LocalDate cutoff, LocalDate now,
-                                            int totalDays, int totalScheduledDays) {
+                                            int totalDays) {
 
         rescueCounts = new int[totalDays];
         if (rescueLogs == null || rescueLogs.isEmpty()) {
@@ -478,13 +491,6 @@ public class ProviderReportFragment extends Fragment {
                 // For chart only
                 rescueCounts[dayIndex]++;
 
-                // Check if scheduled
-                String dayKey = rescueDate.getDayOfWeek().toString().toLowerCase();
-                boolean isScheduled = weeklySchedule != null &&
-                        Boolean.TRUE.equals(weeklySchedule.get(dayKey));
-
-                if (!isScheduled) continue;
-
                 if (!hasRescueOnDay[dayIndex]) {
                     hasRescueOnDay[dayIndex] = true;
                     daysWithRescue++;
@@ -495,10 +501,10 @@ public class ProviderReportFragment extends Fragment {
             }
         }
 
-        if (totalScheduledDays <= 0) {
+        if (totalDays <= 0) {
             rescuePercentage = 0.0;
         } else {
-            rescuePercentage = (daysWithRescue * 100.0) / totalScheduledDays;
+            rescuePercentage = (daysWithRescue * 100.0) / totalDays;
             rescuePercentage = Math.round(rescuePercentage * 100.0) / 100.0;
         }
     }
