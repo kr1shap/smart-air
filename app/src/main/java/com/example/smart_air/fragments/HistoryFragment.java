@@ -395,7 +395,7 @@ public class HistoryFragment extends Fragment {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         int pageWidth = 612;
         int pageHeight = 792;
-        int currentY = 75; // leave space for title and name
+        int currentY = 60; // leave space for title and name
 
         PdfDocument pdfDocument = new PdfDocument();
 
@@ -420,7 +420,7 @@ public class HistoryFragment extends Fragment {
         // draw title
         canvas.drawText("HISTORY LOG", pageWidth / 2f, 40, titlePaint);
         // draw info
-        canvas.drawText("Name: " + childName, pageWidth / 2f, 70, infoPaint);
+        canvas.drawText("Name: " + childName, pageWidth / 2f, 57, infoPaint);
 
         // drawing each card
         for (HistoryItem card : listToExport) {
@@ -480,16 +480,16 @@ public class HistoryFragment extends Fragment {
                 } else {
                     switch (card.zone.toLowerCase()) {
                         case "green":
-                            zoneStatus.setBackgroundColor(Color.parseColor("#9FD46A"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#4CAF50"));
                             break;
                         case "yellow":
-                            zoneStatus.setBackgroundColor(Color.parseColor("#FABF24"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#FFEB3B"));
                             break;
                         case "red":
                             zoneStatus.setBackgroundColor(Color.parseColor("#FB633D"));
                             break;
                         default:
-                            zoneStatus.setBackgroundColor(Color.parseColor("#000000"));
+                            zoneStatus.setBackgroundColor(Color.parseColor("#F44336"));
                             break;
                     }
                     zoneStatus.setText(card.zone.toUpperCase());
