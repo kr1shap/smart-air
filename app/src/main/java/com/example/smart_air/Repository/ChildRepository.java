@@ -406,7 +406,7 @@ public class ChildRepository {
                         FirebaseFirestoreException.Code.ABORTED);
             }
             transaction.update(providerRef, "parentUid", FieldValue.arrayRemove(parentUid));
-            //remove provider from all providerUid lists in children
+            //remove provider from all providerUid lists in children list
             for (DocumentSnapshot childDoc : childrenSnapshot.getDocuments()) {
                 DocumentReference childRef = db.collection("children").document(childDoc.getId());
                 transaction.update(childRef, "allowedProviderUids", FieldValue.arrayRemove(usedByUid));
