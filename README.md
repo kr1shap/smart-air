@@ -33,7 +33,8 @@ SmartAir is a kid-friendly Android application designed to help children ages **
   - Red-zone day
   - Rapid rescue repeats (≥3 uses in 3 hours)
   - “Worse after dose”
-  - Inventory expired/low canister (≤20%)
+  - Inventory expired
+  - low canister (≤20%) from settable max amount of medication
   - Triage escalation
 - Monitor each child's patterns through daily checkins and history
 - Manage toggle permissions for provider information accessiblity 
@@ -82,9 +83,10 @@ Providers can only view the following categories with parent's permission:
 ### Faiza Khan (Team Member)
 - Dashboard tiles for parent
 - Shareable PDF for provider report
+- Adherence
 
 ### Jennifer Huang (Team Member)
-- One-tap triage session for child
+- One-tap triage session and alerts for child
 - Set start at home action plan to each zone for parent
 - Inventory page functionality and alerts
 - Rapid rescue repeats
@@ -92,14 +94,14 @@ Providers can only view the following categories with parent's permission:
 ### Tharjiha Suthekara (Team Member)
 - Daily check-in & triggers
 - History browser
+- Generateable CSV/PDF for History
 - Child dropdown list
 - PEF, Personal Best and zone calculations
 - Incident log
 - Red-zone day alerts
+- Toolbar
 
 ### Zupaash Naveed (Team Member)
 - Medicine logs
 - Pre/Post Check
 - Inventory UI
-- Adherence  
-
