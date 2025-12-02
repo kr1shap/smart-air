@@ -322,7 +322,7 @@ public class DashboardFragment extends Fragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
                 R.layout.spinner_item_black, //so text is black instead of white
-                new String[]{"Past 7 Days", "Past 30 Days"}
+                new String[]{"Past 7 Days", "Past 30 Days"} // TODO: fix arrow
         );
         trendSpinner.setAdapter(adapter);
         trendSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -815,6 +815,8 @@ public class DashboardFragment extends Fragment {
             tvControllerExpiry.setVisibility(View.GONE);
         }
     }
+
+    // TODO: when you press the dot it slides to next page, since swipe gets confusing
 
     private void drawRescueChartDynamic(int[] counts, int days) {
         if (rescueChart == null) return;

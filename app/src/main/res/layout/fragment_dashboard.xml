@@ -312,6 +312,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_card"
+            android:textColor="@color/colour_darkBlue"
             app:cardElevation="4dp"
             android:padding="16dp"
             android:orientation="vertical"
@@ -339,7 +340,9 @@
                     android:id="@+id/spinnerTrendRange"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/colour_darkBlue"
                     android:gravity="center_vertical"
+                    android:backgroundTint="@color/colour_blue"
                     android:spinnerMode="dropdown"/>
             </LinearLayout>
 
