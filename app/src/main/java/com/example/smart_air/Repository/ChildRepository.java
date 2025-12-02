@@ -512,16 +512,7 @@ public class ChildRepository {
                             techniqueDate = techniqueStats.get("lastSessionDate") != null ?
                                     (String) techniqueStats.get("lastSessionDate") : null;
                         }
-
-                        // controllerStats map
-                        //TODO: uncomment and make it work based on teammates work
-//                        Map<String, Object> controllerStats = (Map<String, Object>) snap.get("controllerStats");
-//                        if (controllerStats != null) {
-//                            controllerStreak = controllerStats.get("currentStreak") != null ?
-//                                    ((Number) controllerStats.get("currentStreak")).intValue() : 0;
-                      //  controllerDate = controllerStats.get("lastSessionDate") != null ?
-                            //    (String) techniqueStats.get("lastSessionDate") : null;
-//                        }
+                        //DO NOT add controller stats map due to timestamp - will be made if DNE
 
                     }
                     //UI change for technique streak - if streak invalid just change to 0 ui-based

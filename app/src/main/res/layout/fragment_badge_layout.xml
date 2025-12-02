@@ -74,8 +74,8 @@
                         android:id="@+id/controllerStreakLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="day streak"
-                        android:textSize="18sp"
+                        android:text="consecutive streak"
+                        android:textSize="15sp"
                         android:fontFamily="@font/dm_sans_bold"
                         android:textColor="@android:color/white" />
 
@@ -240,7 +240,7 @@
                         android:layout_marginTop="4dp"
                         android:textColor="@color/colour_indigo"
                         android:fontFamily="@font/dm_sans_regular"
-                        android:text="Adhere to your controller usage for a week!"
+                        android:text="Adhere to controller usage for a week!"
                         android:textSize="14sp" />
 
                 </LinearLayout>

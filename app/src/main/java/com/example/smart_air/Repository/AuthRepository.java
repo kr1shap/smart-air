@@ -266,6 +266,7 @@ public class AuthRepository {
                             .document("controller")
                             .set(emptyInventory);
 
+
                     callback.onSuccess();
                 })
                 .addOnFailureListener(e -> {

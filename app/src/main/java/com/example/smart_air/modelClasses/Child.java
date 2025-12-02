@@ -86,9 +86,6 @@ public class Child {
         techniqueStats.put("totalCompletedSessions", 0);
         techniqueStats.put("totalPerfectSessions", 0);
 
-        //TODO: fill it in with the right stuff after
-        this.controllerStats = new HashMap<>();
-
         //array list
         this.allowedProviderUids = new ArrayList<>();
 

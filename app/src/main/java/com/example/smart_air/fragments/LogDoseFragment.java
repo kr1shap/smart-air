@@ -704,36 +704,42 @@ public class LogDoseFragment extends Fragment {
                 return;
             }
 
+
             //FIRST COMPUTE CONTROLLER STREAK!
             Calendar todayCal = Calendar.getInstance();
-            Timestamp lastPlannedTs = childDoc.getTimestamp("controllerStats.lastPlannedDay");
+            // lastPlannedDay as a string b/c of json conversion
+            String lastPlannedStr = childDoc.getString("controllerStats.lastPlannedDay");
             Long streakLong = childDoc.getLong("controllerStats.plannedDayStreak");
             int currentStreak = streakLong != null ? streakLong.intValue() : 0; //current streak of controller
-            Date lastPlannedDay = lastPlannedTs != null ? lastPlannedTs.toDate() : null;
-            String todayDow = StringFormatters.dayNameForCalendar(todayCal); //already set to today
-            boolean todayIsPlanned = weeklySchedule.getOrDefault(todayDow, false); //check if today is planned date
-            // today is a planned day - check if streak needs to be changed
-            if (todayIsPlanned) {
-                // If lastPlannedDay is null or DNE (first log), start streak at 1
-                if (lastPlannedDay == null) {
-                    currentStreak = 1;
-                } else {
-                    int plannedDaysBetween = countPlannedDaysBetween(lastPlannedDay, new Date(), weeklySchedule);
-                    if (plannedDaysBetween == 0) {
-                        //dont increment if logged today
-                    } else if (plannedDaysBetween == 1) {
-                        //a consecutive day, so log it
-                        currentStreak++;
-                    } else {
-                        //broke the streak
-                        currentStreak = 1;
-                    }
+            // Convert lastPlannedDay string to Date
+            Date lastPlannedDay = null;
+            if (lastPlannedStr != null) {
+                try { lastPlannedDay = dateFmt.parse(lastPlannedStr);
+                } catch (Exception e) {
+                    lastPlannedDay = null;
                 }
             }
 
-            childRef.update("controllerStats.lastPlannedDay", new Timestamp(todayCal.getTime()));
-            childRef.update("controllerStats.plannedDayStreak", currentStreak);
+            String todayDow = StringFormatters.dayNameForCalendar(todayCal);
+            boolean todayIsPlanned = weeklySchedule.getOrDefault(todayDow, false);
 
+            if (todayIsPlanned) {
+                if (lastPlannedDay == null) {
+                    currentStreak = 1;
+                } else {
+                    int plannedDaysBetween = countPlannedDaysBetween(lastPlannedDay, todayCal.getTime(), weeklySchedule);
+                    if (plannedDaysBetween == 0) {
+                        // already logged today, do nothing
+                    } else if (plannedDaysBetween == 1) {
+                        currentStreak++;
+                    } else { currentStreak = 1; }
+                }
+                // save lastPlannedDay as YYYY-MM-DD
+                String todayStr = dateFmt.format(todayCal.getTime());
+                childRef.update("controllerStats.lastPlannedDay", todayStr);
+            }
+            // streak
+            childRef.update("controllerStats.plannedDayStreak", currentStreak);
 
             // Query controllerLog within that window
             childRef.collection("controllerLog")
