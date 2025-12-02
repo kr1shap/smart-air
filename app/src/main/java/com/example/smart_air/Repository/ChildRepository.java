@@ -1,6 +1,7 @@
 package com.example.smart_air.Repository;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.smart_air.FirebaseInitalizer;
 import com.example.smart_air.modelClasses.BadgeData;
@@ -513,12 +514,15 @@ public class ChildRepository {
                                     (String) techniqueStats.get("lastSessionDate") : null;
                         }
                         //DO NOT add controller stats map due to timestamp - will be made if DNE
-
-
+                        Map<String, Object> controllerStats = (Map<String, Object>) snap.get("controllerStats");
+                        if (controllerStats != null) {
+                            controllerStreak = controllerStats.get("plannedDayStreak") != null ?
+                                    ((Number) controllerStats.get("plannedDayStreak")).intValue() : 0;
+                        }
                     }
                     //UI change for technique streak - if streak invalid just change to 0 ui-based
                     //next time child logs in a new session an actual change will be made
-                    if(techniqueDate != null && (!StringFormatters.getToday().equals(techniqueDate) || !StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
+                    if(techniqueDate != null && (!StringFormatters.getToday().equals(techniqueDate) && !StringFormatters.getYesterday().equals(techniqueDate))) techniqueStreak = 0;
                     BadgeData data = new BadgeData(controllerBadge, techniqueBadge, rescueBadge, techniqueStreak, controllerStreak);
                     taskSource.setResult(data);
                 })
