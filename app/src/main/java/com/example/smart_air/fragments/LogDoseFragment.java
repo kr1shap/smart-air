@@ -65,8 +65,8 @@ public class LogDoseFragment extends Fragment {
 
     private FirebaseFirestore db;
     private String uid;
-    int threshold=300;
-    double lessthan20=threshold*0.2;
+    int threshold = 300;
+    double lessthan20 = threshold * 0.2;
     //VM For the toggles (parent and provider)
     private ChildTogglesViewModel togglesVM;
     private SharedChildViewModel sharedModel;
@@ -78,7 +78,10 @@ public class LogDoseFragment extends Fragment {
     private CardView rescueCard;
     //buttons for disabling for providers
     private Button btn_add_controller_log, btn_add_rescue_log;
-    public LogDoseFragment() {}
+
+    public LogDoseFragment() {
+    }
+
     //toggle cache
     private Map<String, Boolean> toggleCache; //for rescue toggles
     //For shared label tag on top
@@ -156,9 +159,11 @@ public class LogDoseFragment extends Fragment {
         sharedModel.getCurrentRole().observe(
                 getViewLifecycleOwner(),
                 role -> {
-                    if (role != null) { userRole = role; }
+                    if (role != null) {
+                        userRole = role;
+                    }
                     //role check for page access
-                    if("provider".equals(userRole)) {
+                    if ("provider".equals(userRole)) {
                         //Disable log dose buttons for providers
                         btn_add_rescue_log.setVisibility(View.GONE);
                         btn_add_controller_log.setVisibility(View.GONE);
@@ -167,7 +172,7 @@ public class LogDoseFragment extends Fragment {
                         btn_add_rescue_log.setVisibility(View.VISIBLE);
                         btn_add_controller_log.setVisibility(View.VISIBLE);
                     }
-                    if("child".equals(userRole)) {
+                    if ("child".equals(userRole)) {
                         uid = FirebaseAuth.getInstance().getUid();
                         //directly load logs as VM not applicable to them
                         loadLogsFor("controller", controllerLogsContainer);
@@ -186,7 +191,8 @@ public class LogDoseFragment extends Fragment {
                         Child currentChild = children.get(safeIndex);
                         if (currentChild != null) {
                             uid = currentChild.getChildUid();
-                            if(userRole.equals("provider")) togglesVM.attachChildListener(uid); //attach listener for provider
+                            if (userRole.equals("provider"))
+                                togglesVM.attachChildListener(uid); //attach listener for provider
                             loadLogsFor("controller", controllerLogsContainer);
                             loadLogsFor("rescue", rescueLogsContainer);
                         }
@@ -207,7 +213,8 @@ public class LogDoseFragment extends Fragment {
                                 togglesVM.attachChildListener(uid); //attach listener for provider and parent
                                 if (controllerLogsContainer != null && rescueLogsContainer != null) {
                                     loadLogsFor("controller", controllerLogsContainer);
-                                    if(userRole.equals("provider") && toggleCache.get(uid) != null && !toggleCache.get(uid)) { } //do nothing
+                                    if (userRole.equals("provider") && toggleCache.get(uid) != null && !toggleCache.get(uid)) {
+                                    } //do nothing
                                     else loadLogsFor("rescue", rescueLogsContainer);
                                 }
                             }
@@ -225,11 +232,11 @@ public class LogDoseFragment extends Fragment {
                 toggleCache.put(uid, allowRescue);
             }
             //check rescue permissions
-            if(!allowRescue && userRole.equals("provider")) {
+            if (!allowRescue && userRole.equals("provider")) {
                 rescueCard.setVisibility(View.GONE);
                 text_rescue_section_title.setVisibility(View.GONE);
             } else {
-                if(userRole.equals("parent")) applySharingTogglesParent(allowRescue);
+                if (userRole.equals("parent")) applySharingTogglesParent(allowRescue);
                 rescueCard.setVisibility(View.VISIBLE);
                 text_rescue_section_title.setVisibility(View.VISIBLE);
             }
@@ -259,7 +266,7 @@ public class LogDoseFragment extends Fragment {
     private void showLogDialog(String logType, LinearLayout logsContainer) {
         if (getContext() == null) return;
         if (userRole == null || userRole.trim().isEmpty()) return;
-        if(userRole.equals("provider")) return;
+        if (userRole.equals("provider")) return;
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View dialogView = inflater.inflate(R.layout.dialog_log_dose, null);
@@ -275,17 +282,24 @@ public class LogDoseFragment extends Fragment {
         Button cancelBtn = dialogView.findViewById(R.id.btn_cancel_log);
 
         //DO NOT open technique helper for parent
-        if(userRole.equals("parent")) techniqueHelperBtn.setVisibility(View.GONE);
+        if (userRole.equals("parent")) techniqueHelperBtn.setVisibility(View.GONE);
         else techniqueHelperBtn.setVisibility(View.VISIBLE);
 
         titleText.setText("controller".equals(logType) ? "Log Controller Dose" : "Log Rescue Dose");
 
         shortBreathSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 shortBreathValue.setText("Current: " + progress);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
 
 
@@ -322,7 +336,7 @@ public class LogDoseFragment extends Fragment {
             int puffs;
             try {
                 puffs = Integer.parseInt(puffsStr);
-                if(puffs < 0) {
+                if (puffs < 0) {
                     Toast.makeText(getContext(), "Cannot have negative puffs.", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -342,7 +356,7 @@ public class LogDoseFragment extends Fragment {
                         @Override
                         public void onSuccess() {
                             //send alert
-                            if(afterDose.equals("Worse")) sendAlert(uid, 2);
+                            if (afterDose.equals("Worse")) sendAlert(uid, 2);
                             afterDose = ""; //reset
                             //only log dose on success
                             Map<String, Object> data = new HashMap<>();
@@ -364,7 +378,7 @@ public class LogDoseFragment extends Fragment {
                                                 rapidrescuealerts();
                                                 updateLowRescueBadge(); // low rescue badge
                                             } else if ("controller".equals(logType)) {
-                                                updateControllerBadgeAndAdherence(); // controller badge & streak
+                                                updateControllerBadgeAndStreak(); // controller badge & streak
                                             }
                                             // refresh the UI
                                             dialog.dismiss();
@@ -376,8 +390,11 @@ public class LogDoseFragment extends Fragment {
                                     .addOnFailureListener(e ->
                                             Toast.makeText(getContext(), "Failed to log dose: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         }
+
                         @Override
-                        public void onFailure(String s) { Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show(); }
+                        public void onFailure(String s) {
+                            Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
+                        }
                     }
             );
         });
@@ -456,18 +473,21 @@ public class LogDoseFragment extends Fragment {
                         // sends alert if medication is less than 20% of threshold
                         if (updatedAmount <= lessthan20) {
                             Toast.makeText(requireContext(), "Sent low inventory alert!", Toast.LENGTH_SHORT).show();
-                            sendAlert(uid,0); //since only parent has access to inventory
+                            sendAlert(uid, 0); //since only parent has access to inventory
                         }
                         // update the *same doc* we just read
                         doc.getReference()
                                 .update("amount", updatedAmount)
                                 .addOnSuccessListener(unused -> {
-                                        Toast.makeText(getContext(),
-                                                "Inventory updated.",
-                                                Toast.LENGTH_SHORT).show();
-                                        callback.onSuccess(); })
+                                    Toast.makeText(getContext(),
+                                            "Inventory updated.",
+                                            Toast.LENGTH_SHORT).show();
+                                    callback.onSuccess();
+                                })
                                 .addOnFailureListener(e ->
-                                 { callback.onFailure("Failed to update inventory.");});
+                                {
+                                    callback.onFailure("Failed to update inventory.");
+                                });
 
                     } else {
                         Toast.makeText(getContext(),
@@ -476,7 +496,7 @@ public class LogDoseFragment extends Fragment {
                     }
                 })
                 .addOnFailureListener(e -> {
-                        callback.onFailure("Error accessing inventory.");
+                    callback.onFailure("Error accessing inventory.");
                 });
     }
 
@@ -484,91 +504,107 @@ public class LogDoseFragment extends Fragment {
    /*
    check if 3+ rescue attempts made in 3 hours
     */
-   public void rapidrescuealerts() {
-       FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-       if (user == null){ return; }
-       String childUid;
-       if ("child".equals(userRole)) { childUid = user.getUid(); }
-       else { childUid=uid; }
-       if (childUid == null || childUid.isEmpty()) {
-           Log.e("RescueCheck", "childUid is null");
-           return;
-       }
-       long now=System.currentTimeMillis();
-       long threeHours=3*60*60*1000;
-       FirebaseFirestore db = FirebaseFirestore.getInstance();
-       db.collection("children")
-               .document(childUid)
-               .collection("rescueLog")
-               .get()
-               .addOnSuccessListener(query -> {
-                   int count = 0;
-                   for (DocumentSnapshot doc : query.getDocuments()) {
-                       Timestamp ts = doc.getTimestamp("timeTaken");
-                       if (ts != null) {
-                           long rescueTime = ts.toDate().getTime();
-                           if (now - rescueTime <= threeHours) {
-                               count++;
-                           }
-                           if(count >= 3) break;
-                       }
-                   }
-                   if (count == 3) { sendAlert(childUid,1); }
-               })
-               .addOnFailureListener(e -> {
-                   Log.e("RescueCheck", "Failed to read rescueLog: ", e);
-               });
-   }
-   /*
-    used to send rapid rescue or inventory notifications to all parents
-   */
-   public void sendAlert(String cUid, int choice) {
-       if (cUid == null) {
-           Log.e("Rapid Rescue", "sendAlert called with null childUid");
-           return;
-       }
-       FirebaseFirestore db = FirebaseFirestore.getInstance();
-           db.collection("users")
-                   .document(cUid)
-                   .get()
-                   .addOnSuccessListener(doc -> {
-                       if (!doc.exists()) {
-                           Log.e("Rapid Rescue", "Child user document missing");
-                           return;
-                       }
-                       @SuppressWarnings("unchecked")
-                       List<String> parentUids = (List<String>) doc.get("parentUid");
-                       if (parentUids == null || parentUids.isEmpty()) {
-                           Log.e("Rapid Rescue", "No parentUid array found");
-                           return;
-                       }
-                       NotificationRepository notifRepo = new NotificationRepository();
-                       for (String pUid : parentUids) {
-                           if (pUid == null){ continue; }
-                           NotifType type;
-                           if(choice == 2) { type = NotifType.WORSE_DOSE; }
-                           else if (choice == 1) { type = NotifType.RAPID_RESCUE; }
-                           else { type = NotifType.INVENTORY; }
-                           Notification notif = new Notification(cUid, false, Timestamp.now(), type);
-                           NotifType finalType = type;
-                           notifRepo.createNotification(pUid, notif)
-                                   .addOnSuccessListener(aVoid ->
-                                           Log.d("NotificationRepo", "Notification (" + finalType + ") created for parent " + pUid))
-                                   .addOnFailureListener(e ->
-                                           Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
-                       }
+    public void rapidrescuealerts() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            return;
+        }
+        String childUid;
+        if ("child".equals(userRole)) {
+            childUid = user.getUid();
+        } else {
+            childUid = uid;
+        }
+        if (childUid == null || childUid.isEmpty()) {
+            Log.e("RescueCheck", "childUid is null");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long threeHours = 3 * 60 * 60 * 1000;
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("children")
+                .document(childUid)
+                .collection("rescueLog")
+                .get()
+                .addOnSuccessListener(query -> {
+                    int count = 0;
+                    for (DocumentSnapshot doc : query.getDocuments()) {
+                        Timestamp ts = doc.getTimestamp("timeTaken");
+                        if (ts != null) {
+                            long rescueTime = ts.toDate().getTime();
+                            if (now - rescueTime <= threeHours) {
+                                count++;
+                            }
+                            if (count >= 3) break;
+                        }
+                    }
+                    if (count == 3) {
+                        sendAlert(childUid, 1);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("RescueCheck", "Failed to read rescueLog: ", e);
+                });
+    }
+
+    /*
+     used to send rapid rescue or inventory notifications to all parents
+    */
+    public void sendAlert(String cUid, int choice) {
+        if (cUid == null) {
+            Log.e("Rapid Rescue", "sendAlert called with null childUid");
+            return;
+        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users")
+                .document(cUid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Log.e("Rapid Rescue", "Child user document missing");
+                        return;
+                    }
+                    @SuppressWarnings("unchecked")
+                    List<String> parentUids = (List<String>) doc.get("parentUid");
+                    if (parentUids == null || parentUids.isEmpty()) {
+                        Log.e("Rapid Rescue", "No parentUid array found");
+                        return;
+                    }
+                    NotificationRepository notifRepo = new NotificationRepository();
+                    for (String pUid : parentUids) {
+                        if (pUid == null) {
+                            continue;
+                        }
+                        NotifType type;
+                        if (choice == 2) {
+                            type = NotifType.WORSE_DOSE;
+                        } else if (choice == 1) {
+                            type = NotifType.RAPID_RESCUE;
+                        } else {
+                            type = NotifType.INVENTORY;
+                        }
+                        Notification notif = new Notification(cUid, false, Timestamp.now(), type);
+                        NotifType finalType = type;
+                        notifRepo.createNotification(pUid, notif)
+                                .addOnSuccessListener(aVoid ->
+                                        Log.d("NotificationRepo", "Notification (" + finalType + ") created for parent " + pUid))
+                                .addOnFailureListener(e ->
+                                        Log.e("NotificationRepo", "Failed to create notification for " + pUid, e));
+                    }
 
 
-                   })
-                   .addOnFailureListener(e ->
-                           Log.e("Rapid Rescue", "Failed to load child document", e));
-   }
+                })
+                .addOnFailureListener(e ->
+                        Log.e("Rapid Rescue", "Failed to load child document", e));
+    }
 
     // low rescue badge (last 30 days)
 
     private void updateLowRescueBadge() {
         if (uid == null || uid.isEmpty()) return;
-        if (db == null) { db = FirebaseFirestore.getInstance(); }
+        if (db == null) {
+            db = FirebaseFirestore.getInstance();
+        }
 
         // Reference to this child document
         DocumentReference childRef =
@@ -576,7 +612,9 @@ public class LogDoseFragment extends Fragment {
 
         // Read thresholds from child doc
         childRef.get().addOnSuccessListener((DocumentSnapshot childDoc) -> {
-            if (!childDoc.exists()) { return; }
+            if (!childDoc.exists()) {
+                return;
+            }
 
             // default threshold = 4 rescue days / 30 days
             final long[] rescueThresh = new long[]{4L};
@@ -622,26 +660,21 @@ public class LogDoseFragment extends Fragment {
 
 // controller and adherence badge (last 7 days)
 
-    private void updateControllerBadgeAndAdherence() {
+    private void updateControllerBadgeAndStreak() {
         if (uid == null || uid.isEmpty()) return;
 
         DocumentReference childRef = db.collection("children").document(uid);
 
         childRef.get().addOnSuccessListener(childDoc -> {
             if (!childDoc.exists()) return;
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> thresholds =
-                    (Map<String, Object>) childDoc.get("thresholds");
-
+            //Fetch the thresholds and weekly schedule
             @SuppressWarnings("unchecked")
             Map<String, Boolean> weeklySchedule = (Map<String, Boolean>) childDoc.get("weeklySchedule");
-
+            //If any of them are null or empty, just default badge as false and return
             if (weeklySchedule == null || weeklySchedule.isEmpty()) {
                 childRef.update("badges.lowRescueBadge", false); //no weekly schedule, so default false
                 return; // nothing to compute against
             }
-
             //make planned days for last 7 days of the week
             SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             java.util.List<String> plannedDates = new java.util.ArrayList<>();
@@ -655,20 +688,52 @@ public class LogDoseFragment extends Fragment {
 
             cal.add(Calendar.DAY_OF_YEAR, -6); // start 6 days ago
             Date startOfWindow = cal.getTime();
-
+            //iterate through 7 day window and check if the week is all good
             for (int i = 0; i < 7; i++) {
                 Date day = cal.getTime();
-                String dow = dayNameForCalendar(cal); // "Monday", "Tuesday", ...
-                Boolean shouldTake = weeklySchedule.get(dow);
-                if (shouldTake) { plannedDates.add(dateFmt.format(day)); }
+                String dow = StringFormatters.dayNameForCalendar(cal); //grab the 'Monday' ... type fields of the week
+                if (weeklySchedule.containsKey(dow) && weeklySchedule.get(dow)) {
+                    plannedDates.add(dateFmt.format(day));
+                } //find planned dates (YYYY-MM-DD)
                 cal.add(Calendar.DAY_OF_YEAR, 1);
             }
-
+            //If there are no dates, then return (no planned dates - no streak to follow)
             if (plannedDates.isEmpty()) {
-                //directly update and return (no planned dates - no streak to follow)
+                childRef.update("controllerStats.currentStreak", 0); //no date - no streak
                 childRef.update("controllerStats.controllerBadge", false);
                 return;
             }
+
+            //FIRST COMPUTE CONTROLLER STREAK!
+            Calendar todayCal = Calendar.getInstance();
+            Timestamp lastPlannedTs = childDoc.getTimestamp("controllerStats.lastPlannedDay");
+            Long streakLong = childDoc.getLong("controllerStats.plannedDayStreak");
+            int currentStreak = streakLong != null ? streakLong.intValue() : 0; //current streak of controller
+            Date lastPlannedDay = lastPlannedTs != null ? lastPlannedTs.toDate() : null;
+            String todayDow = StringFormatters.dayNameForCalendar(todayCal); //already set to today
+            boolean todayIsPlanned = weeklySchedule.getOrDefault(todayDow, false); //check if today is planned date
+            // today is a planned day - check if streak needs to be changed
+            if (todayIsPlanned) {
+                // If lastPlannedDay is null or DNE (first log), start streak at 1
+                if (lastPlannedDay == null) {
+                    currentStreak = 1;
+                } else {
+                    int plannedDaysBetween = countPlannedDaysBetween(lastPlannedDay, new Date(), weeklySchedule);
+                    if (plannedDaysBetween == 0) {
+                        //dont increment if logged today
+                    } else if (plannedDaysBetween == 1) {
+                        //a consecutive day, so log it
+                        currentStreak++;
+                    } else {
+                        //broke the streak
+                        currentStreak = 1;
+                    }
+                }
+            }
+
+            childRef.update("controllerStats.lastPlannedDay", new Timestamp(todayCal.getTime()));
+            childRef.update("controllerStats.plannedDayStreak", currentStreak);
+
 
             // Query controllerLog within that window
             childRef.collection("controllerLog")
@@ -676,27 +741,26 @@ public class LogDoseFragment extends Fragment {
                     .get()
                     .addOnSuccessListener(qs -> {
                         Set<String> controllerDates = new java.util.HashSet<>();
-
+                        //convert into timestamp
                         for (DocumentSnapshot doc : qs.getDocuments()) {
-                            com.google.firebase.Timestamp ts = doc.getTimestamp("timeTaken");
+                            Timestamp ts = doc.getTimestamp("timeTaken");
                             if (ts != null) {
                                 controllerDates.add(dateFmt.format(ts.toDate()));
                             }
                         }
-
+                        //get size of our planned counts of days
                         int plannedCount = plannedDates.size();
                         int daysWithDose = 0;
+                        //iterate through all planned dates and check if there is an instance in controller dates
                         for (String d : plannedDates) {
                             if (controllerDates.contains(d)) {
                                 daysWithDose++;
                             }
                         }
-                        boolean perfectWeek =
-                                (plannedCount > 0 && daysWithDose >= plannedCount);
+                        boolean perfectWeek = (plannedCount > 0 && daysWithDose >= plannedCount);
 
                         Map<String, Object> updates = new HashMap<>();
                         updates.put("badges.controllerBadge", perfectWeek);
-
                         if (!updates.isEmpty()) {
                             childRef.update(updates);
                         }
@@ -704,25 +768,24 @@ public class LogDoseFragment extends Fragment {
         });
     }
 
-    /** Convert Calendar day-of-week to "Monday", "Tuesday", ... */
-    private String dayNameForCalendar(Calendar cal) {
-        switch (cal.get(Calendar.DAY_OF_WEEK)) {
-            case Calendar.MONDAY:
-                return "Monday";
-            case Calendar.TUESDAY:
-                return "Tuesday";
-            case Calendar.WEDNESDAY:
-                return "Wednesday";
-            case Calendar.THURSDAY:
-                return "Thursday";
-            case Calendar.FRIDAY:
-                return "Friday";
-            case Calendar.SATURDAY:
-                return "Saturday";
-            case Calendar.SUNDAY:
-            default:
-                return "Sunday";
-        }
-    }
 
+    //Function counts the #of planned days in between
+    private int countPlannedDaysBetween(Date lastDate, Date today, Map<String, Boolean> weeklySchedule) {
+        if (lastDate == null) return 1; //none so the first planned day
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(lastDate);
+        int count = 0;
+        cal.add(Calendar.DAY_OF_YEAR, 1); // start from next day after lastDate (and then check the gap)
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(today);
+        //iterate until today
+        while (!cal.after(endCal)) {
+            String dow = StringFormatters.dayNameForCalendar(cal); //get the Day
+            if (weeklySchedule.getOrDefault(dow, false)) {
+                count++;        //count scheduled days
+            }
+            cal.add(Calendar.DAY_OF_YEAR, 1);   //iterate through days
+        }
+        return count;
+    }
 }
