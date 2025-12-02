@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
@@ -365,15 +366,16 @@ public class ProviderReportFragment extends Fragment {
                 //make sure index within bounds
                 if (dayIndex < 0 || dayIndex >= totalDays) { continue; }
                 // inc the count for this day
-                rescueCounts[dayIndex]++;
                 if(rescueCounts[dayIndex]==0) daysWithRescue+=1;
+                rescueCounts[dayIndex]++;
 
             } catch (Exception e) {
                 Log.e("RescueFetch", "Error processing rescue log: " + doc.getId(), e);
             }
         }
         // calc percentage of days with rescue
-        rescuePercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
+        double rawPercentage = totalDays > 0 ? (daysWithRescue / (double) totalDays) * 100 : 0;
+        rescuePercentage = Math.round(rawPercentage * 100.0) / 100.0;
     }
 
 
@@ -750,12 +752,15 @@ public class ProviderReportFragment extends Fragment {
         int axisTop = top + 10;
         int axisRight = right - 10;
 
+        // Draw axes
         canvas.drawLine(axisLeft, axisTop, axisLeft, axisBottom, axisPaint);
         canvas.drawLine(axisLeft, axisBottom, axisRight, axisBottom, axisPaint);
 
+        // max val for scaling
         int max = 1;
         for (int v : values) if (v > max) max = v;
 
+        // y-axis ticks and labels
         int tickCount = 4;
         for (int i = 0; i <= tickCount; i++) {
             float frac = i / (float) tickCount;
@@ -766,27 +771,44 @@ public class ProviderReportFragment extends Fragment {
             canvas.drawText(String.valueOf(labelVal), axisLeft - 25, y + 4, textPaint);
         }
 
-        int barAreaWidth = axisRight - axisLeft;
-        int barCount = values.length;
-        if (barCount == 0) return;
+        int chartWidth = axisRight - axisLeft;
+        int chartHeight = axisBottom - axisTop;
+        int dataCount = values.length;
+        if (dataCount == 0) return;
 
-        float barWidth = barAreaWidth / (float) barCount;
+        // paint line
+        Paint linePaint = new Paint();
+        linePaint.setColor(Color.parseColor("#3F51B5"));
+        linePaint.setStyle(Paint.Style.STROKE);
+        linePaint.setStrokeWidth(3f);
+        linePaint.setAntiAlias(true);
 
-        Paint barPaint = new Paint();
-        barPaint.setColor(Color.parseColor("#3F51B5"));
-        barPaint.setStyle(Paint.Style.FILL);
+        // Paint for data points
+        Paint pointPaint = new Paint();
+        pointPaint.setColor(Color.parseColor("#3F51B5"));
+        pointPaint.setStyle(Paint.Style.FILL);
+        pointPaint.setAntiAlias(true);
 
-        for (int i = 0; i < barCount; i++) {
-            float xCenter = axisLeft + (i + 0.5f) * barWidth;
-            float barHeight = (values[i] / (float) max) * (axisBottom - axisTop);
-            float x1 = xCenter - barWidth * 0.3f;
-            float x2 = xCenter + barWidth * 0.3f;
-            float y1 = axisBottom - barHeight;
+        // line segments connecting data points
+        Path linePath = new Path();
 
-            canvas.drawRect(x1, y1, x2, axisBottom, barPaint);
+        for (int i = 0; i < dataCount; i++) {
+            float x = axisLeft + (i / (float) (dataCount - 1)) * chartWidth;
+            float y = axisBottom - (values[i] / (float) max) * chartHeight;
+            if (i == 0) { linePath.moveTo(x, y);
+            } else { linePath.lineTo(x, y); }
+        }
+        canvas.drawPath(linePath, linePaint);
+
+        // data points
+        for (int i = 0; i < dataCount; i++) {
+            float x = axisLeft + (i / (float) (dataCount - 1)) * chartWidth;
+            float y = axisBottom - (values[i] / (float) max) * chartHeight;
+            canvas.drawCircle(x, y, 4f, pointPaint);
         }
 
-        LocalDate endDate = startDate.plusDays(barCount - 1);
+        // month labels on X-axis
+        LocalDate endDate = startDate.plusDays(dataCount - 1);
         LocalDate cursor = startDate.withDayOfMonth(1);
         if (cursor.isBefore(startDate)) {
             cursor = cursor.plusMonths(1);
@@ -794,13 +816,13 @@ public class ProviderReportFragment extends Fragment {
 
         while (!cursor.isAfter(endDate)) {
             long daysFromStart = ChronoUnit.DAYS.between(startDate, cursor);
-            int index = (int) Math.min(Math.max(daysFromStart, 0), barCount - 1);
+            int index = (int) Math.min(Math.max(daysFromStart, 0), dataCount - 1);
 
-            float xCenter = axisLeft + (index + 0.5f) * barWidth;
+            float x = axisLeft + (index / (float) (dataCount - 1)) * chartWidth;
             String label = cursor.getMonth().toString().substring(0, 3);
             label = label.charAt(0) + label.substring(1).toLowerCase();
 
-            canvas.drawText(label, xCenter - textPaint.measureText(label) / 2, axisBottom + 15, textPaint);
+            canvas.drawText(label, x - textPaint.measureText(label) / 2, axisBottom + 15, textPaint);
 
             cursor = cursor.plusMonths(1);
         }
@@ -809,8 +831,7 @@ public class ProviderReportFragment extends Fragment {
     private void drawZoneBars(Canvas canvas,
                               int green, int yellow, int red,
                               int months, int totalDays,
-                              int left, int top, int right, int bottom)
-    {
+                              int left, int top, int right, int bottom) {
         int width = right - left;
         int height = bottom - top;
 
@@ -823,7 +844,7 @@ public class ProviderReportFragment extends Fragment {
         textPaint.setTextSize(11f);
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
 
-        int axisLeft = left + 30;
+        int axisLeft = left + 40;
         int axisBottom = bottom - 25;
         int axisTop = top + 10;
         int axisRight = right - 10;
@@ -835,17 +856,22 @@ public class ProviderReportFragment extends Fragment {
         String[] labels = {"Green", "Yellow", "Red"};
         String[] colors = {"#31ad36", "#ffcc12", "#b50000"};
 
-        int max = totalDays;
+        // the actual max value in the data
+        int dataMax = Math.max(Math.max(green, yellow), red);
+
+        // a nice rounded max for the Y-axiy
+        int max = calculateNiceMax(dataMax);
         if (max < 1) max = 1;
 
-        int tickCount = 6;
+        // y-axis with better tick distribution
+        int tickCount = 5;
         for (int i = 0; i <= tickCount; i++) {
             float frac = i / (float) tickCount;
             float y = axisBottom - frac * (axisBottom - axisTop);
             int labelVal = Math.round(frac * max);
 
             canvas.drawLine(axisLeft - 5, y, axisLeft, y, axisPaint);
-            canvas.drawText(String.valueOf(labelVal), axisLeft - 38, y + 4, textPaint);
+            canvas.drawText(String.valueOf(labelVal), axisLeft - 35, y + 4, textPaint);
         }
 
         int barAreaWidth = axisRight - axisLeft;
@@ -869,6 +895,24 @@ public class ProviderReportFragment extends Fragment {
             float labelWidth = textPaint.measureText(labels[i]);
             canvas.drawText(labels[i], xCenter - labelWidth / 2, axisBottom + 15, textPaint);
         }
+    }
+
+    // rounded maximum
+    private int calculateNiceMax(int dataMax) {
+        if (dataMax <= 0) return 10;
+        int magnitude = (int) Math.pow(10, Math.floor(Math.log10(dataMax)));
+        double normalizedMax = dataMax / (double) magnitude;
+        int niceMax;
+        if (normalizedMax <= 1) {
+            niceMax = magnitude;
+        } else if (normalizedMax <= 2) {
+            niceMax = 2 * magnitude;
+        } else if (normalizedMax <= 5) {
+            niceMax = 5 * magnitude;
+        } else {
+            niceMax = 10 * magnitude;
+        }
+        return niceMax;
     }
 
     private void openPdf(File file) {

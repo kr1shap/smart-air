@@ -275,6 +275,7 @@ public class DashboardFragment extends Fragment {
                         noChildScreen(!removePage);
                     }
                 });
+                btnProviderReport.setVisibility(View.GONE);
                 btnManage.setVisibility(View.GONE);
                 //in general, inventory is parent-only
                 inventoryGroup.setVisibility(View.GONE);
