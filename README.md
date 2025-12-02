@@ -2,48 +2,51 @@
 
 SmartAir is a kid-friendly Android application designed to help children ages **6–16** understand and manage their asthma, while giving parents the tools to track medicine use, symptoms, PEF zones, and safety alerts. Parents can selectively share their child’s data with healthcare providers through a **consise, exportable PDF/CSV report**.
 
-SmartAir combines education, monitoring and emergency guidance into one simple platform.
-
-
 ---
 
-## ✨ Features
+## Our app provides the following features to these three roles: child, parent and provider
 
-### 👦 Child Experience
+### Child Experience
+- Sign in through username and password
+- Monitor patterns through daily check-ins 
 - Log **rescue** and **controller** medications 
-- Capture **dose count**, timestamp, and pre/post “Better/Same/Worse” feelings
-- Enter **peak-flow (PEF)** values with automatic zone calculation
+- Capture pre/post “Better/Same/Worse” feelings from dose
 - Animated **Inhaler Technique Helper** (seal, slow breath, hold 10s, spacer tips)
-- Unlock **badges and streaks** for good technique and adherence
-- View **asthma zones** (Green/Yellow/Red)
+- Motivation through **badges and streaks** for good technique and adherence
+- Access one-tap triage guidance to manage breathing troubles
+- Enter **peak-flow (PEF)** values with automatic zone calculation
 
 ---
 
-### 👨‍👩‍👧 Parent Experience
-- Create/link/manage multiple children
-- Dashboard includes:
+### Parent Experience
+- Create, link and manage multiple children
+- View a dashboard of information including:
   - Today’s asthma zone
   - Last rescue time
   - Weekly rescue count
   - 7-day & 30-day trend snippets
-- Real-time alerts for:
+- Track medication inventory (purchase date, expiry, remaining amount)
+- Configure planned controller schedule for adherence tracking
+- Set up Personal Best (PB) for PEF calculations
+- Plan out zone-specific action plans 
+- Get notified with real-time alerts for children:
   - Red-zone day
   - Rapid rescue repeats (≥3 uses in 3 hours)
   - “Worse after dose”
   - Inventory expired/low canister (≤20%)
   - Triage escalation
-- Track medication inventory (purchase date, expiry, remaining amount)
-- Set or update Personal Best (PB) for PEF calculations
-- Configure planned controller schedule for adherence tracking
+- Monitor each child's patterns through daily checkins and history
+- Manage toggle permissions for provider information accessiblity 
 
 ---
 
-### 🏥 Provider Access (Read-Only)
-Parents can share data with a healthcare provider via:
+### Provider Access (Read-Only)
+- View children's data based on parent given permission
+Parents can share data with a healthcare provider through:
 - A **one-time 7-day invite code/link**
 - A **PDF or CSV export**
 
-Providers can only view the categories the parent enables:
+Providers can only view the following categories with parent's permission:
 - Rescue logs
 - Controller adherence summary
 - Symptoms
@@ -51,54 +54,52 @@ Providers can only view the categories the parent enables:
 - Peak-flow values
 - Triage incidents
 - Summary graphs and charts
-
-Sharing is **easy**, **instant**, and **simple**.
-
----
-
-### 🚨 Triage & Safety Tools
-SmartAir includes a one-tap triage button: **“Having trouble breathing?”**
-
-Triage workflow:
-- Quick red-flag questions (speech difficulty, retractions, blue/gray lips)
-- Records recent rescue uses & optional PEF
-- Decision card:
-  - **Call Emergency Now**
-  - **Start Home Steps** based on action plan
-- 10-minute automatic recheck + escalation
-- Parent receives immediate alerts regarding this session
-- Triage session stored in incident history and provider reports
-
-Safety alerts:
-- Rapid rescue repeats
-- Red-zone days
-- Worse after medication
-- Inventory low/expired
-- Triage escalation
-
----
-
-### 📅 Symptoms, Triggers & History
-- Daily symptom check-in (night waking, wheeze, cough, activity limits)
-- Multi-select triggers: exercise, cold air, dust/pets, smoke, illness, odors
-- All entries labeled **Child-entered** or **Parent-entered**
-- History browser (3–6 months) with filters
-- Export filtered histories as **PDF/CSV**
-
----
-
-## 🧠 How It Works
-
-### 🔐 Accounts & Roles
-- Parent & Provider: email + password login
-- Child: username + password login
-- Each role has access to role-specific features
-
----
-
-### 🔏 Privacy Model
-- Parents decide sharing per child and per data type
-- Providers are always **read-only**
-- Access can be revoked
   
 ---
+
+## Team Members & Contributions 
+
+### Krisha Patel (Scrum Master)
+- Sign-in & Firebase Authetication
+- Account recovery
+- Role selection routing
+- Onboarding 
+- Security features
+- Worse dose alert
+- Notification centre setup
+- Streaks and Badges
+- Technique Helper
+
+### Anjali Patidar (Team Member)
+- Manage children features
+- Parent and child linking 
+- Granular sharing
+- In-app labels on items
+- Behaviour toggles
+- Provider accessibility
+- Invitation flow
+
+### Faiza Khan (Team Member)
+- Dashboard tiles for parent
+- Shareable PDF for provider report
+
+### Jennifer Huang (Team Member)
+- One-tap triage session for child
+- Set start at home action plan to each zone for parent
+- Inventory page functionality and alerts
+- Rapid rescue repeats
+
+### Tharjiha Suthekara (Team Member)
+- Daily check-in & triggers
+- History browser
+- Child dropdown list
+- PEF, Personal Best and zone calculations
+- Incident log
+- Red-zone day alerts
+
+### Zupaash Naveed (Team Member)
+- Medicine logs
+- Pre/Post Check
+- Inventory UI
+- Adherence  
+
