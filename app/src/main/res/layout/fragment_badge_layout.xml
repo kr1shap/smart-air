@@ -75,7 +75,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="consecutive streak"
-                        android:textSize="15sp"
+                        android:textSize="14sp"
+                        android:textAlignment="center"
                         android:fontFamily="@font/dm_sans_bold"
                         android:textColor="@android:color/white" />
 
