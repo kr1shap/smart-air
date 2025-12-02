@@ -34,6 +34,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.smart_air.Contracts.AuthContract;
 
+import com.example.smart_air.fragments.BadgeFragment;
+import com.example.smart_air.fragments.DashboardFragment;
+import com.example.smart_air.fragments.TechniqueHelperFragment;
+import com.example.smart_air.modelClasses.Notification;
 import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
@@ -80,12 +84,17 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
     private boolean removeDailyCheckIn = true; // boolean for parent when they have no children and thus daily check in should be removed
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new DashboardFragment(), "dashboard")
+                .commit();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -170,22 +179,21 @@ public class MainActivity extends AppCompatActivity {
             Fragment selectedFragment = null;
 
             if (id == R.id.home) {
-                // add fragment for dashboard
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                if (!(current instanceof DashboardFragment)) {
+                    selectedFragment = new DashboardFragment();
+                }
             } else if (id == R.id.triage) {
-                // switch page
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof TriageFragment)) {
                     selectedFragment = new TriageFragment();
                 }
-                //fragment for triage
             } else if (id == R.id.history) {
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof HistoryFragment)) {
                     selectedFragment = new HistoryFragment();
                 }
             } else if (id == R.id.medicine) {
-                selectedFragment = new MedicineTabFragment();
-                // add fragment for medicine
                 Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if (!(current instanceof MedicineTabFragment)) {
                     selectedFragment = new MedicineTabFragment();
