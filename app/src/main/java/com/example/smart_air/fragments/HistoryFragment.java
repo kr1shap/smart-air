@@ -1,7 +1,10 @@
 package com.example.smart_air.fragments;
 
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -357,6 +361,23 @@ public class HistoryFragment extends Fragment {
 
                 writer.flush();
                 Toast.makeText(getContext(), "CSV saved to: " + csvFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+
+                // open CSV in app
+                Uri fileUri = FileProvider.getUriForFile(
+                        requireContext(),
+                        requireContext().getPackageName() + ".provider",
+                        csvFile
+                );
+
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(fileUri, "text/csv");
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                try {
+                    startActivity(Intent.createChooser(intent, "Open CSV"));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(getContext(), "No app found to open CSV", Toast.LENGTH_SHORT).show();
+                }
             }
 
         } catch (Exception e) {
@@ -551,6 +572,22 @@ public class HistoryFragment extends Fragment {
         try {
             pdfDocument.writeTo(new FileOutputStream(pdfFile));
             Toast.makeText(getContext(), "PDF saved: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            // open PDF
+            Uri pdfUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    requireContext().getPackageName() + ".provider",
+                    pdfFile
+            );
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(pdfUri, "application/pdf");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            try {
+                startActivity(Intent.createChooser(intent, "Open PDF"));
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(getContext(), "No app found to open PDF", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error saving PDF", Toast.LENGTH_SHORT).show();
