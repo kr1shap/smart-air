@@ -20,12 +20,16 @@
         android:background="@android:color/transparent"
         android:fontFamily="@font/dm_sans_regular"/>
 
-    <Button
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveStep"
         style="@style/SmartAir.Button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/save"
-        android:fontFamily="@font/dm_sans_regular"/>
+        android:textSize="14dp"
+        android:text="SAVE"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"/>
 </LinearLayout>
