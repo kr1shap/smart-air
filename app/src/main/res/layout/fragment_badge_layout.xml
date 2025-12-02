@@ -75,6 +75,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="day streak"
+                        android:textAlignment="center"
                         android:textSize="18sp"
                         android:fontFamily="@font/dm_sans_bold"
                         android:textColor="@android:color/white" />
