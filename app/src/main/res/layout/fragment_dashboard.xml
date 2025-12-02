@@ -476,7 +476,7 @@
             style="@style/SmartAir.Button1"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:text="MANAGE"
+            android:text="MANAGE CHILDREN"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:paddingStart="16dp"

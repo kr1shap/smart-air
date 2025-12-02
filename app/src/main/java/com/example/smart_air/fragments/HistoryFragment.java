@@ -646,4 +646,5 @@ public class HistoryFragment extends Fragment {
         repo.getCards(childUid,this); // refresh list
 
     }
+
 }

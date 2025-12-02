@@ -42,6 +42,7 @@ import com.example.smart_air.Repository.AuthRepository;
 import com.example.smart_air.fragments.DialogCodeFragment;
 import com.example.smart_air.fragments.TriageFragment;
 import com.example.smart_air.fragments.CheckInFragment;
+import com.example.smart_air.viewmodel.DashboardViewModel;
 import com.example.smart_air.viewmodel.NotificationViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseUser;
@@ -80,15 +81,17 @@ public class MainActivity extends AppCompatActivity {
 
     // children tracking variables
     private SharedChildViewModel sharedModel;
+    private DashboardViewModel dashboardsharedModel;
     private ListenerRegistration parentListener; // listener for when parent gets new child
     private ListenerRegistration providerChildrenListener; // listener for when child gets new provider
-    private boolean removePage = true; // boolean for parent when they have no children and thus pages should be locked
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        dashboardsharedModel = new ViewModelProvider(this).get(DashboardViewModel.class);
 
         getSupportFragmentManager()
                 .beginTransaction()
@@ -306,23 +309,6 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
                         List<String> list = user.getChildrenUid();
-                        // if list is empty now removes daily check in
-                        if (list.isEmpty()) {
-                            removePage = true;
-                        } else {
-                            removePage = false;
-                        }
-                        if (removePage) {
-                            setBottomNavButtoms(false);
-                            // go back to home fragment if no children
-                            Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                            // TODO
-//                            if (!(current instanceof DashboardFragment)) {
-//                                selectedFragment = new DashboardFragment();
-//                            }
-                        } else {
-                            setBottomNavButtoms(true);
-                        }
                         convertToNames(list);
                     }
                 });
@@ -362,6 +348,16 @@ public class MainActivity extends AppCompatActivity {
             medicine.setIcon(R.drawable.medicine_24);
         }
         else{
+            bottomNavigationView.getMenu().setGroupCheckable(0, false, true);
+            bottomNavigationView.getMenu().setGroupCheckable(0, true, true);
+            bottomNavigationView.setSelectedItemId(R.id.home);
+
+            DashboardFragment dashboard = new DashboardFragment();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, dashboard)
+                    .commit();
+
             dailyCheckIn.setIcon(R.drawable.checkinlocked);
             triage.setIcon(R.drawable.triage_lock);
             history.setIcon(R.drawable.history_lock);
@@ -396,7 +392,11 @@ public class MainActivity extends AppCompatActivity {
 
         if(uid.isEmpty()){
             sharedModel.setChildren(children);
+            dashboardsharedModel.setRemovePage(true);
             return;
+        }
+        else{
+            dashboardsharedModel.setRemovePage(false);
         }
 
         for (String childUid : uid) {
@@ -486,19 +486,13 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(userRole.equals("parent")) {
             switchChildButton.setVisibility(View.VISIBLE);
-            // enable dailycheckin
-            if (removePage) {
-                setBottomNavButtoms(false);
-                // go back to home fragment if no children
-                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                // TODO
-//                if (!(current instanceof DashboardFragment)) {
-//                    selectedFragment = new DashboardFragment();
-//                }
-            } else {
-                setBottomNavButtoms(true);
-            }
 
+            // remove page if no children
+            dashboardsharedModel.getRemovePage().observe(this, removePage -> {
+                if(removePage != null){
+                    setBottomNavButtoms(!removePage);
+                }
+            });
 
             // enable triage
             triage.setEnabled(true);
@@ -528,6 +522,12 @@ public class MainActivity extends AppCompatActivity {
             //enable add code
             providerCodeBtn.setVisibility(View.VISIBLE);
             providerCodeBtn.setEnabled(true);
+            // remove page if no children
+            dashboardsharedModel.getRemovePage().observe(this, removePage -> {
+                if(removePage != null){
+                    setBottomNavButtoms(!removePage);
+                }
+            });
         }
 
     }
@@ -540,7 +540,11 @@ public class MainActivity extends AppCompatActivity {
 
         if(uid.isEmpty()){
             sharedModel.setChildren(children);
+            dashboardsharedModel.setRemovePage(true);
             return;
+        }
+        else{
+            dashboardsharedModel.setRemovePage(false);
         }
 
         for (String childUid : uid) {

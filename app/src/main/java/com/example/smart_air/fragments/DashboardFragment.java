@@ -97,6 +97,7 @@ public class DashboardFragment extends Fragment {
     private ListenerRegistration childListener;
     //VIEW MODEL FOR PDF (TO NOT REGENERATE EXTRA INFO)
     DashboardViewModel cacheVM;
+    private View view;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -119,10 +120,12 @@ public class DashboardFragment extends Fragment {
 
         TextView tvTitle = view.findViewById(R.id.tvDashboardTitle);
         View root = view;
+        this.view = view;
 
         // using viewmodel to load dashboard
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         cacheVM = new ViewModelProvider(requireActivity()).get(DashboardViewModel.class);
+
 
         // linking xml ids to fragment
         zoneBar = view.findViewById(R.id.zoneBar);
@@ -256,11 +259,22 @@ public class DashboardFragment extends Fragment {
                 loadDashboardForChild(correspondingUid);
             }
             if(role.equals("parent")) {
-                // show full dashboard
+                // changing visibility based on remove page
                 btnProviderReport.setVisibility(View.VISIBLE);
+                cacheVM.getRemovePage().observe(requireActivity(), removePage -> {
+                    if(removePage != null){
+                        noChildScreen(!removePage);
+                    }
+                });
                 btnManage.setVisibility(View.VISIBLE);
                 setUpManageButton(btnManage);
             } else if(role.equals("provider")) {
+                // changing visibility based on remove page
+                cacheVM.getRemovePage().observe(requireActivity(), removePage -> {
+                    if(removePage != null){
+                        noChildScreen(!removePage);
+                    }
+                });
                 btnManage.setVisibility(View.GONE);
                 //in general, inventory is parent-only
                 inventoryGroup.setVisibility(View.GONE);
@@ -947,5 +961,35 @@ public class DashboardFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (childListener != null) childListener.remove();
+    }
+
+    // update screen based on access
+    public void noChildScreen(boolean access){
+        // getting elements
+       TextView tvDashboardTitle = view.findViewById(R.id.tvDashboardTitle);
+       LinearLayout zoneSection = view.findViewById(R.id.zoneSection);
+       LinearLayout rescueGroup = view.findViewById(R.id.RescueGroup);
+       LinearLayout inventoryGroup = view.findViewById(R.id.inventoryGroup);
+       LinearLayout trendSection = view.findViewById(R.id.trendSection);
+       Button btnProviderReport = view.findViewById(R.id.btnProviderReport);
+
+       // visibility int
+       int visibility = access ? View.VISIBLE : View.GONE;
+
+       // setting it
+       tvDashboardTitle.setVisibility(visibility);
+       zoneSection.setVisibility(visibility);
+       rescueGroup.setVisibility(visibility);
+       if(userRole.equals("parent")) {
+           inventoryGroup.setVisibility(visibility);
+       }
+       trendSection.setVisibility(visibility);
+       btnProviderReport.setVisibility(visibility);
+
+       // update toggles
+       if(access && correspondingUid != null){
+           loadTogglesParent(correspondingUid);
+       }
+
     }
 }
