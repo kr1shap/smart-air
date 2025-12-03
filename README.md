@@ -4,7 +4,7 @@ SmartAir is a kid-friendly Android application designed to help children ages **
 
 This is a project for **CSCB07, FALL 2025**.
 
-[Watch our demo here!!](https://www.youtube.com/watch?v=NicjOoLmAgQ)
+[Watch our demo here.](https://www.youtube.com/watch?v=NicjOoLmAgQ)
 
 ---
 
@@ -76,26 +76,177 @@ Providers can only view the following categories with parent's permission:
   
 ---
 
+
+
+# **Project Structure**
+
+```
+/adapter
+/Contracts
+/fragments
+/modelClasses
+/Presenters
+/Repository
+/viewmodel
+Activities + DialogFragments (e.g., MainActivity, SignInActivity)
+Utilities (ExpiryCheck, FirebaseInitializer, TriageState)
+```
+
+---
+
+# **System Architecture**
+
+Uses an **MVP + Repository** pattern, along with MVVM for certain aspects.
+
+```
+UI Layer (Activities, Fragments)
+            ↓
+ViewModel Layer (State logic, transformations, validation)
+            ↓
+Repository Layer (Firestore)     
+```
+
+For login, the MVP model was used as per requirements.
+
+```
+UI Layer (View) 
+            ↓
+Presenter (Communication between View and Model)
+            ↓
+Repository/Model Layer (Firestore reads/writes)
+```
+
+### **Modules Overview**
+
+| Module                 | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| **Authentication**     | Handles sign-in/sign-up and user role routing.             |
+| **Child Management**   | Creating, editing, and linking child profiles.             |
+| **Logging**            | Rescue & controller medication logging, incident logs.     |
+| **Daily Check-ins**    | One-per-day status updates per child.                      |
+| **Inventory Tracking** | Dose count, expiry dates, low/expired alerts.              |
+| **Invites**            | Linking parents ↔ children ↔ providers using invite codes. |
+| **Notifications**      | Local and Firestore-based notifications for parents.       |
+
+---
+
+# **General Firestore Schema**
+
+```
+users/
+    {authUid}
+        role: "parent" | "child" | "provider"
+
+children/
+    {childUid}
+        name, age, etc.
+        inventory/
+        rescueLog/
+        controllerLog/
+
+actionPlan/
+    {childUid}
+
+incidentLog/
+    {childUid}/{sessionEntryID}
+
+dailyCheckins/
+    {childUid}/{yyyy-MM-dd}
+
+invites/
+    {inviteCode}
+
+notifications/
+    {parentUid}/{notificationId}
+```
+
+---
+
+# **Key Modules Explained**
+
+### **1. Authentication**
+
+* Stores role and user details under `users/{authUid}`.
+* Role determines post-login navigation.
+
+### **2. Child Management**
+
+* Each child has their own Firestore node under `children/{childUid}`.
+* Children contain three subcollections:
+    * `inventory/`
+    * `controllerLog/`
+    * `rescueLog/`
+* Providers and parents link via invite codes.
+
+### **3. Logging Module**
+
+* Rescue logs update the rescue badge count.
+* Controller logs support long-term adherence tracking.
+* Incident logs store session summaries.
+
+### **4. Daily Check-ins**
+
+Stored under:
+`dailyCheckins/{childUid}/{yyyy-MM-dd}`
+One entry per day.
+
+### **5. Inventory Management**
+
+* Tracks dose count and expiry date.
+* The first time a device opens "Inventory," a **local** expiry notification is registered.
+
+---
+
+# **Component Interaction Flow**
+
+### **App Launch**
+
+1. **LandingPageActivity** → choose Sign In or Sign Up
+3. Role determines what pages are accessible. 
+
+### **Selecting a Child**
+
+* Shared ViewModel stores `activeChildUid`.
+
+---
+
+# **Design Assumptions**
+
+* Reports are always generated based on **the child selected on the dashboard**.
+* Rescue badge count updates automatically on rescueLog writes.
+* Invite codes uniquely connect parents ↔ children or parents ↔ providers.
+* Daily check-ins are uniquely identified by the date string.
+
+---
+
+# **Getting Started**
+
+### **Requirements**
+
+* Android Studio
+* Firebase project with Authentication + Firestore enabled
+* Java 17 / Android SDK 26+
+
+### **Setup**
+
+1. Clone the repository
+2. Add the `google-services.json` in `/app` (app-level)
+3. Build & run on device or emulator
+
+---
+
 ## Team Members & Contributions 
 
 ### Krisha Patel (Scrum Master)
-- Sign-in & Firebase Authentication
-- Account recovery
+- Sign-in & Firebase Authentication, account recovery
 - Role selection routing & Onboarding
-- Security features
-- Worse dose alert
-- Notification centre setup
-- Streaks and Badges
-- Technique Helper
+- Worse dose alert, notification centre setup
+- Streaks and Badges, technique Helper
 
 ### Anjali Patidar (Team Member)
-- Manage children features
-- Parent and child linking 
-- Granular sharing
-- In-app labels on items
-- Behaviour toggles
-- Provider accessibility
-- Invitation flow
+- Manage children features, parent and child linking 
+- Granular sharing, in-app labels on items, behaviour toggles
+- Provider accessibility, invitation flow
 
 ### Faiza Khan (Team Member)
 - Dashboard tiles for parent
@@ -110,17 +261,14 @@ Providers can only view the following categories with parent's permission:
 
 ### Tharjiha Suthekara (Team Member)
 - Daily check-in & triggers
-- History browser
-- Generate CSV/PDF for History
+- History browser, generate CSV/PDF for History
 - Child dropdown list
 - PEF, Personal Best and zone calculations
-- Incident log
-- Red-zone day alerts
+- Incident log, red-zone day alerts
 - Toolbar
 
 ### Zupaash Naveed (Team Member)
-- Medicine logs (rescue & controller)
-- Medication home page
+- Medicine logs (rescue & controller), medication home page
 - Rescue badge calculations
 - Pre/Post Check
 - Inventory UI
