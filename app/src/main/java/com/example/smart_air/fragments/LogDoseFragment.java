@@ -71,20 +71,20 @@ public class LogDoseFragment extends Fragment {
     private ChildTogglesViewModel togglesVM;
     private SharedChildViewModel sharedModel;
     private String userRole = "";
-    // Keep references so we can reload logs when the child changes
+    // keep references to reload logs when the child changes
     private LinearLayout controllerLogsContainer;
     private LinearLayout rescueLogsContainer;
     private TextView dateView, text_rescue_section_title;
     private CardView rescueCard;
-    //buttons for disabling for providers
+    //buttons for disabling providers
     private Button btn_add_controller_log, btn_add_rescue_log;
 
     public LogDoseFragment() {
     }
 
-    //toggle cache
-    private Map<String, Boolean> toggleCache; //for rescue toggles
-    //For shared label tag on top
+    // toggle cache
+    private Map<String, Boolean> toggleCache; // for rescue toggles
+    // for shared label tag on top
     View sharedProviderLabel;
     TextView sharedLabelText;
     Button addControllerBtn, addRescueBtn;
@@ -109,23 +109,23 @@ public class LogDoseFragment extends Fragment {
             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-        //instantiate buttons
+        // instantiate buttons
         btn_add_controller_log = view.findViewById(R.id.btn_add_controller_log);
         btn_add_rescue_log = view.findViewById(R.id.btn_add_rescue_log);
-        //initalize other containers
+        // initialize other containers
         dateView = view.findViewById(R.id.text_today_date);
         controllerLogsContainer = view.findViewById(R.id.controllerLogsContainer);
         rescueLogsContainer = view.findViewById(R.id.rescueLogsContainer);
         rescueCard = view.findViewById(R.id.card_rescue_logs);
         text_rescue_section_title = view.findViewById(R.id.text_rescue_section_title);
-        //shared tag label
+        // shared tag label
         sharedProviderLabel = view.findViewById(R.id.sharedProviderLabel);
         sharedLabelText = view.findViewById(R.id.sharedLabelText);
         // hook into the shared child viewmodel
         sharedModel = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
         togglesVM = new ViewModelProvider(this).get(ChildTogglesViewModel.class);
 
-        //isntantiate toggle map
+        // instantiate toggle map
         toggleCache = new HashMap<>();
 
         //back button
@@ -137,14 +137,14 @@ public class LogDoseFragment extends Fragment {
                             .popBackStack());
         }
 
-        //buttons in containers
+        // buttons in containers
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         dateView.setText(today);
 
         addControllerBtn = view.findViewById(R.id.btn_add_controller_log);
         addRescueBtn = view.findViewById(R.id.btn_add_rescue_log);
 
-        //onclick for buttons
+        // onclick for buttons
         if (addControllerBtn != null) {
             addControllerBtn.setOnClickListener(v ->
                     showLogDialog("controller", controllerLogsContainer));
@@ -162,22 +162,22 @@ public class LogDoseFragment extends Fragment {
                     if (role != null) {
                         userRole = role;
                     }
-                    //role check for page access
+                    // role check for access
                     if ("provider".equals(userRole)) {
-                        //Disable log dose buttons for providers
+                        // disable log dose buttons
                         btn_add_rescue_log.setVisibility(View.GONE);
                         btn_add_controller_log.setVisibility(View.GONE);
                     } else {
-                        //enable log dose buttons for providers
+                        // enable log dose buttons
                         btn_add_rescue_log.setVisibility(View.VISIBLE);
                         btn_add_controller_log.setVisibility(View.VISIBLE);
                     }
                     if ("child".equals(userRole)) {
                         uid = FirebaseAuth.getInstance().getUid();
-                        //directly load logs as VM not applicable to them
+                        // directly load logs (VM doesn't apply)
                         loadLogsFor("controller", controllerLogsContainer);
                         loadLogsFor("rescue", rescueLogsContainer);
-                    } //current child
+                    } // current child
                 }
         );
 
@@ -200,7 +200,7 @@ public class LogDoseFragment extends Fragment {
                 }
         );
 
-        // When the *index* changes (user switches child), update uid & reload logs
+        // When the index changes, update uid & reload logs
         sharedModel.getCurrentChild().observe(
                 getViewLifecycleOwner(),
                 idx -> {
@@ -223,7 +223,7 @@ public class LogDoseFragment extends Fragment {
                 }
         );
 
-        //change the toggles for log dose (provider/parent only - read)
+        // change the toggles for log dose to read for provider/parent
         togglesVM.getSharingToggles().observe(getViewLifecycleOwner(), sharing -> {
             Boolean allowRescue = false;
             //change sharing toggles
@@ -243,7 +243,7 @@ public class LogDoseFragment extends Fragment {
         });
     }
 
-    //Setup the 'shared with provider tag' for the parent
+    // setup the shared with provider tag for the parent
     private void applySharingTogglesParent(Boolean allowRescue) {
         //now apply the 'visible to provider' tag on top
         if (allowRescue == null || !allowRescue) {
@@ -281,7 +281,7 @@ public class LogDoseFragment extends Fragment {
         Button saveBtn = dialogView.findViewById(R.id.btn_save_log);
         Button cancelBtn = dialogView.findViewById(R.id.btn_cancel_log);
 
-        //DO NOT open technique helper for parent
+        // disable technique helper btn for parent
         if (userRole.equals("parent")) techniqueHelperBtn.setVisibility(View.GONE);
         else techniqueHelperBtn.setVisibility(View.VISIBLE);
 
@@ -472,9 +472,9 @@ public class LogDoseFragment extends Fragment {
                         long updatedAmount = currentAmount - puffs;
                         // sends alert if medication is less than 20% of threshold
                         if (updatedAmount <= lessthan20) {
-                            sendAlert(uid, 0); //since only parent has access to inventory
+                            sendAlert(uid, 0); // since only parent has access to inventory
                         }
-                        // update the *same doc* we just read
+                        // update the same doc
                         doc.getReference()
                                 .update("amount", updatedAmount)
                                 .addOnSuccessListener(unused -> {
@@ -657,7 +657,7 @@ public class LogDoseFragment extends Fragment {
     }
 
 
-// controller and adherence badge (last 7 days)
+    // controller and adherence badge (last 7 days)
 
     private void updateControllerBadgeAndStreak() {
         if (uid == null || uid.isEmpty()) return;
@@ -687,30 +687,30 @@ public class LogDoseFragment extends Fragment {
 
             cal.add(Calendar.DAY_OF_YEAR, -6); // start 6 days ago
             Date startOfWindow = cal.getTime();
-            //iterate through 7 day window and check if the week is all good
+            // iterate through 7 day window and check if the week is all good
             for (int i = 0; i < 7; i++) {
                 Date day = cal.getTime();
-                String dow = StringFormatters.dayNameForCalendar(cal); //grab the 'Monday' ... type fields of the week
+                String dow = StringFormatters.dayNameForCalendar(cal); // grab the name day fields of the week
                 if (weeklySchedule.containsKey(dow) && weeklySchedule.get(dow)) {
                     plannedDates.add(dateFmt.format(day));
-                } //find planned dates (YYYY-MM-DD)
+                } // find planned dates (YYYY-MM-DD)
                 cal.add(Calendar.DAY_OF_YEAR, 1);
             }
-            //If there are no dates, then return (no planned dates - no streak to follow)
+            // if there are no dates, then return
             if (plannedDates.isEmpty()) {
-                childRef.update("controllerStats.currentStreak", 0); //no date - no streak
+                childRef.update("controllerStats.currentStreak", 0); // no date -> no streak
                 childRef.update("controllerStats.controllerBadge", false);
                 return;
             }
 
 
-            //FIRST COMPUTE CONTROLLER STREAK!
+            // FIRST COMPUTE CONTROLLER STREAK!
             Calendar todayCal = Calendar.getInstance();
             // lastPlannedDay as a string b/c of json conversion
             String lastPlannedStr = childDoc.getString("controllerStats.lastPlannedDay");
             Long streakLong = childDoc.getLong("controllerStats.plannedDayStreak");
             int currentStreak = streakLong != null ? streakLong.intValue() : 0; //current streak of controller
-            // Convert lastPlannedDay string to Date
+            // convert lastPlannedDay string to Date
             Date lastPlannedDay = null;
             if (lastPlannedStr != null) {
                 try { lastPlannedDay = dateFmt.parse(lastPlannedStr);
@@ -740,7 +740,7 @@ public class LogDoseFragment extends Fragment {
             // streak
             childRef.update("controllerStats.plannedDayStreak", currentStreak);
 
-            // Query controllerLog within that window
+            // 1uery controllerLog within that window
             childRef.collection("controllerLog")
                     .whereGreaterThanOrEqualTo("timeTaken", startOfWindow)
                     .get()
@@ -753,10 +753,10 @@ public class LogDoseFragment extends Fragment {
                                 controllerDates.add(dateFmt.format(ts.toDate()));
                             }
                         }
-                        //get size of our planned counts of days
+                        // get size of our planned counts of days
                         int plannedCount = plannedDates.size();
                         int daysWithDose = 0;
-                        //iterate through all planned dates and check if there is an instance in controller dates
+                        // iterate through all planned dates and check if there is an instance in controller dates
                         for (String d : plannedDates) {
                             if (controllerDates.contains(d)) {
                                 daysWithDose++;
@@ -774,22 +774,22 @@ public class LogDoseFragment extends Fragment {
     }
 
 
-    //Function counts the #of planned days in between
+    // function counts the #of planned days in between
     private int countPlannedDaysBetween(Date lastDate, Date today, Map<String, Boolean> weeklySchedule) {
-        if (lastDate == null) return 1; //none so the first planned day
+        if (lastDate == null) return 1; // none so the first planned day
         Calendar cal = Calendar.getInstance();
         cal.setTime(lastDate);
         int count = 0;
         cal.add(Calendar.DAY_OF_YEAR, 1); // start from next day after lastDate (and then check the gap)
         Calendar endCal = Calendar.getInstance();
         endCal.setTime(today);
-        //iterate until today
+        // iterate until today
         while (!cal.after(endCal)) {
-            String dow = StringFormatters.dayNameForCalendar(cal); //get the Day
+            String dow = StringFormatters.dayNameForCalendar(cal); // get the Day
             if (weeklySchedule.getOrDefault(dow, false)) {
                 count++;        //count scheduled days
             }
-            cal.add(Calendar.DAY_OF_YEAR, 1);   //iterate through days
+            cal.add(Calendar.DAY_OF_YEAR, 1);   // iterate through days
         }
         return count;
     }

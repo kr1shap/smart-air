@@ -63,7 +63,7 @@ public class ProviderReportFragment extends Fragment {
     private String childId;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private boolean allowRescue, allowController, allowPEF, allowSymptoms, allowTriage, allowCharts;
-    //Cache VM for data from dashboard onto here
+    // cache VM for data from dashboard onto here
     DashboardViewModel cacheVM;
     // list of rescue log documents
     List<DocumentSnapshot> rescueLogs;
@@ -71,9 +71,9 @@ public class ProviderReportFragment extends Fragment {
     List<DocumentSnapshot> pefLogs;
     // sharing toggle map
     Map<String, Boolean> childSharing;
-    //parent information such as name, etc
+    // parent information such as name, etc
     private String parentName, childName, childDob, monthString;
-    //Provider report data
+    // provider report data
     int[] rescueCounts;
     double rescuePercentage; // percentage of days with rescue
     List<TriageLog> incidents = new ArrayList<>();
@@ -884,7 +884,7 @@ public class ProviderReportFragment extends Fragment {
         int axisTop = top + 10;
         int axisRight = right - 10;
 
-        // Draw axes
+        // draw axes
         canvas.drawLine(axisLeft, axisTop, axisLeft, axisBottom, axisPaint);
         canvas.drawLine(axisLeft, axisBottom, axisRight, axisBottom, axisPaint);
 

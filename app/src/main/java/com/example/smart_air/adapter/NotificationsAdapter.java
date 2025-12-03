@@ -57,7 +57,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
     }
 
-    //Changes symbol
+    //changes symbol
     private void setNotifSymbol(NotificationViewHolder holder, Notification n) {
         switch(n.getNotifType()) {
             // INVENTORY, TRIAGE, WORSE_DOSE, RAPID_RESCUE, RED_ZONE

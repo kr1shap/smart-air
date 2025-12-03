@@ -57,7 +57,8 @@ public class BadgeFragment extends Fragment {
         childRepo = new ChildRepository();
         //check if user is authenticated
         if (repo.getCurrentUser() == null) { destroyFragment(); return; }
-        //initalize all views and buttons, etc
+        //initialize all views and buttons, etc
+        badgeDataCache = new HashMap<>();
         btnClose = view.findViewById(R.id.btnClose);
         badge1Card = view.findViewById(R.id.badge1Card);
         badge2Card = view.findViewById(R.id.badge2Card);
@@ -102,7 +103,7 @@ public class BadgeFragment extends Fragment {
     }
 
     /*
-    * Method gets the badge streak info to update
+    * method gets the badge streak info to update
     */
     private void getBadgeStreakInfo() {
         if(badgeDataCache.get(childUid) != null) {
@@ -124,7 +125,7 @@ public class BadgeFragment extends Fragment {
     }
 
     /*
-    * Method updates badge UI
+    * method updates badge UI
     */
     private void updateBadgeUI(boolean controllerBadge, boolean techniqueBadge, boolean rescueBadge,
                                int techniqueStreak, int controllerStreak) {
@@ -143,6 +144,7 @@ public class BadgeFragment extends Fragment {
      */
     public void destroyFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
+        badgeDataCache = new HashMap<>();
         if (fm.getBackStackEntryCount() > 0) {
             fm.popBackStack(); // return to prev fragment
         }

@@ -596,7 +596,7 @@ public class TriageFragment extends Fragment {
     }
 
     /*
-    Used to send notifications to parent
+    used to send notifications to parent
      */
     public void sendtriageAlert() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -640,7 +640,7 @@ public class TriageFragment extends Fragment {
         });
     }
     /*
-    Sets up page for parents to make action plan
+    sets up page for parents to make action plan
      */
     public void parentactionsession(View view) {
 
