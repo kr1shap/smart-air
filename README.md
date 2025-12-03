@@ -8,13 +8,13 @@ This is a project for **CSCB07, FALL 2025**.
 
 ---
 
-## Screenshots 
+## Images 
 
 ![img.png](img.png)
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
 
-## Features 💨
+## Features
 
 Features are personalized based on the user role; provider, parent and child!
 
@@ -31,7 +31,7 @@ Features are personalized based on the user role; provider, parent and child!
 ---
 
 ### Parent 
-- Create, link and manage multiple children
+- Create, link and manage multiple children by invite code
 - View a dashboard of information including:
   - Today’s asthma zone
   - Last rescue time
@@ -68,7 +68,7 @@ Providers can only view the following categories with parent's permission:
 - Triage incidents
 - Summary graphs and charts
 
-### Provider Report 🔖
+### Provider Report 
 - Provider report contains a bar chart for zone values, and a line chart for PEF values 
 - Symptom Burden Day: A day with high activity values based on daily-checkin 
 - Rescue Frequency: The number of days where rescue inhaler was used / the total number of days in the period
@@ -116,17 +116,19 @@ Presenter (Communication between View and Model)
 Repository/Model Layer (Firestore reads/writes)
 ```
 
-### **Modules Overview**
+### **Key Files** 
 
-| Module                 | Description                                                |
-| ---------------------- | ---------------------------------------------------------- |
-| **Authentication**     | Handles sign-in/sign-up and user role routing.             |
-| **Child Management**   | Creating, editing, and linking child profiles.             |
-| **Logging**            | Rescue & controller medication logging, incident logs.     |
-| **Daily Check-ins**    | One-per-day status updates per child.                      |
-| **Inventory Tracking** | Dose count, expiry dates, low/expired alerts.              |
-| **Invites**            | Linking parents ↔ children ↔ providers using invite codes. |
-| **Notifications**      | Local and Firestore-based notifications for parents.       |
+`AuthRepository` : Holds all Firebase calls and backend logic for authentication
+ - Similarly for the other repositories as well (i.e. Child Repository, etc.)
+
+`AuthContract` : Contract Interface between model, view and presenter 
+
+`SignInPresenter/SignUpPresenter` : Presenters for authentication 
+ 
+`SharedChildViewModel`: View Model to toggle between children across pages. 
+
+`MainActivity.java` : Main activity holds all key functionality universal to all roles. Handles all view models and global listeners. 
+
 
 ---
 
