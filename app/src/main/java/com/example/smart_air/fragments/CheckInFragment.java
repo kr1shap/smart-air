@@ -194,6 +194,7 @@ public class CheckInFragment extends Fragment {
         });
     }
 
+    // changing ui based on current toggle
     private void refreshToggleButtons(CheckInRepository repo) {
         if(correspondingUid == null || correspondingUid.isEmpty() || userRole.isEmpty()) {
             return; // not ready yet
@@ -220,6 +221,7 @@ public class CheckInFragment extends Fragment {
         }
     }
 
+    // changing ui for a new child
     private void refreshUINewChild(CheckInRepository repo) {
 
         // null check

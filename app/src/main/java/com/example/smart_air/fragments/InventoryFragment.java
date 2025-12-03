@@ -110,7 +110,7 @@ public class InventoryFragment extends Fragment {
     }
 
     /*
-    Message to tell any non-parent user they cannot access this page
+    message to tell any non-parent user they cannot access this page
      */
     public void denyAccess() {
         if (isAdded()) {
@@ -149,7 +149,7 @@ public class InventoryFragment extends Fragment {
         // clears existing view of inventory
         controllerContainer.removeAllViews();
         rescueContainer.removeAllViews();
-        // if kid doesnt exist dont load
+        // if kid doesn't exist don't load
         if (childUid == null){ return; }
         Log.d("InventoryFragment", "Loading inventory for childUid = " + childUid);
         // load corresponding document

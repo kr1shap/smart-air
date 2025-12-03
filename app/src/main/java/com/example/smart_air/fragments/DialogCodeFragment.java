@@ -34,7 +34,7 @@ public class DialogCodeFragment extends DialogFragment {
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_enterprovidercode, null);
 
-        //init repo
+        // init repo
         authRepo = new AuthRepository();
         if(authRepo.getCurrentUser() == null) { dismiss(); }
         childRepo = new ChildRepository();
