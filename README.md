@@ -1,12 +1,24 @@
-# SMART AIR 
+# SMART AIR ☁️
 
 SmartAir is a kid-friendly Android application designed to help children ages **6–16** understand and manage their asthma, while giving parents the tools to track medicine use, symptoms, PEF zones, and safety alerts. Parents can selectively share their child’s data with healthcare providers through a **consise, exportable PDF/CSV report**.
 
+This is a project for **CSCB07, FALL 2025**.
+
+[Watch our demo here.](https://www.youtube.com/watch?v=NicjOoLmAgQ)
+
 ---
 
-## Our app provides the following features to these three roles: child, parent and provider
+## Images 
 
-### Child Experience
+![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
+
+## Features
+
+Features are personalized based on the user role; provider, parent and child!
+
+### Child
 - Sign in through username and password
 - Monitor patterns through daily check-ins 
 - Log **rescue** and **controller** medications 
@@ -18,8 +30,8 @@ SmartAir is a kid-friendly Android application designed to help children ages **
 
 ---
 
-### Parent Experience
-- Create, link and manage multiple children
+### Parent 
+- Create, link and manage multiple children by invite code
 - View a dashboard of information including:
   - Today’s asthma zone
   - Last rescue time
@@ -34,14 +46,14 @@ SmartAir is a kid-friendly Android application designed to help children ages **
   - Rapid rescue repeats (≥3 uses in 3 hours)
   - “Worse after dose”
   - Inventory expired
-  - low canister (≤20%) from settable max amount of medication
+  - low canister (≤20%) from max 300
   - Triage escalation
 - Monitor each child's patterns through daily checkins and history
 - Manage toggle permissions for provider information accessiblity 
 
 ---
 
-### Provider Access (Read-Only)
+### Provider (Read-Only)
 - View children's data based on parent given permission
 Parents can share data with a healthcare provider through:
 - A **one-time 7-day invite code/link**
@@ -55,30 +67,188 @@ Providers can only view the following categories with parent's permission:
 - Peak-flow values
 - Triage incidents
 - Summary graphs and charts
+
+### Provider Report 
+- Provider report contains a bar chart for zone values, and a line chart for PEF values 
+- Symptom Burden Day: A day with high activity values based on daily-checkin 
+- Rescue Frequency: The number of days where rescue inhaler was used / the total number of days in the period
+- Notable Triage Incident: Where 3+ red flags were chosen and alarming/high rescue usage values (i.e. >= 5)
   
+---
+
+
+
+# **Project Structure**
+
+```
+/adapter
+/Contracts
+/fragments
+/modelClasses
+/Presenters
+/Repository
+/viewmodel
+Activities + DialogFragments (e.g., MainActivity, SignInActivity)
+Utilities (ExpiryCheck, FirebaseInitializer, TriageState)
+```
+
+---
+
+# **System Architecture**
+
+Uses an **MVP + Repository** pattern, along with MVVM for certain aspects.
+
+```
+UI Layer (Activities, Fragments)
+            ↓
+ViewModel Layer (State logic, transformations, validation)
+            ↓
+Repository Layer (Firestore)     
+```
+
+For login, the MVP model was used as per requirements.
+
+```
+UI Layer (View) 
+            ↓
+Presenter (Communication between View and Model)
+            ↓
+Repository/Model Layer (Firestore reads/writes)
+```
+
+### **Key Files** 
+
+`AuthRepository` : Holds all Firebase calls and backend logic for authentication
+ - Similarly for the other repositories as well (i.e. Child Repository, etc.)
+
+`AuthContract` : Contract Interface between model, view and presenter 
+
+`SignInPresenter/SignUpPresenter` : Presenters for authentication 
+ 
+`SharedChildViewModel`: View Model to toggle between children across pages. 
+
+`MainActivity.java` : Main activity holds all key functionality universal to all roles. Handles all view models and global listeners. 
+
+
+---
+
+# **General Firestore Schema**
+
+```
+users/
+    {authUid}
+        role: "parent" | "child" | "provider"
+
+children/
+    {childUid}
+        name, age, etc.
+        inventory/
+        rescueLog/
+        controllerLog/
+
+actionPlan/
+    {childUid}
+
+incidentLog/
+    {childUid}/{sessionEntryID}
+
+dailyCheckins/
+    {childUid}/{yyyy-MM-dd}
+
+invites/
+    {inviteCode}
+
+notifications/
+    {parentUid}/{notificationId}
+```
+
+---
+
+# **Key Modules Explained**
+
+### **1. Authentication**
+
+* Stores role and user details under `users/{authUid}`.
+* Role determines post-login navigation.
+
+### **2. Child Management**
+
+* Each child has their own Firestore node under `children/{childUid}`.
+* Children contain three subcollections:
+    * `inventory/`
+    * `controllerLog/`
+    * `rescueLog/`
+* Providers and parents link via invite codes.
+
+### **3. Logging Module**
+
+* Rescue logs update the rescue badge count.
+* Controller logs support long-term adherence tracking.
+* Incident logs store session summaries.
+
+### **4. Daily Check-ins**
+
+Stored under:
+`dailyCheckins/{childUid}/{yyyy-MM-dd}`
+One entry per day.
+
+### **5. Inventory Management**
+
+* Tracks dose count and expiry date.
+* The first time a device opens "Inventory," a **local** expiry notification is registered.
+
+---
+
+# **Component Interaction Flow**
+
+### **App Launch**
+
+1. **LandingPageActivity** → choose Sign In or Sign Up
+3. Role determines what pages are accessible. 
+
+### **Selecting a Child**
+
+* Shared ViewModel stores `activeChildUid`.
+
+---
+
+# **Design Assumptions**
+
+* Reports are always generated based on **the child selected on the dashboard**.
+* Rescue badge count updates automatically on rescueLog writes.
+* Invite codes uniquely connect parents ↔ children or parents ↔ providers.
+* Daily check-ins are uniquely identified by the date string.
+
+---
+
+# **Getting Started**
+
+### **Requirements**
+
+* Android Studio
+* Firebase project with Authentication + Firestore enabled
+* Java 17 / Android SDK 26+
+
+### **Setup**
+
+1. Clone the repository
+2. Add the `google-services.json` in `/app` (app-level)
+3. Build & run on device or emulator
+
 ---
 
 ## Team Members & Contributions 
 
 ### Krisha Patel (Scrum Master)
-- Sign-in & Firebase Authetication
-- Account recovery
-- Role selection routing
-- Onboarding 
-- Security features
-- Worse dose alert
-- Notification centre setup
-- Streaks and Badges
-- Technique Helper
+- Sign-in & Firebase Authentication, account recovery
+- Role selection routing & Onboarding
+- Worse dose alert, notification centre setup
+- Streaks and Badges, technique Helper
 
 ### Anjali Patidar (Team Member)
-- Manage children features
-- Parent and child linking 
-- Granular sharing
-- In-app labels on items
-- Behaviour toggles
-- Provider accessibility
-- Invitation flow
+- Manage children features, parent and child linking 
+- Granular sharing, in-app labels on items, behaviour toggles
+- Provider accessibility, invitation flow
 
 ### Faiza Khan (Team Member)
 - Dashboard tiles for parent
@@ -93,15 +263,14 @@ Providers can only view the following categories with parent's permission:
 
 ### Tharjiha Suthekara (Team Member)
 - Daily check-in & triggers
-- History browser
-- Generateable CSV/PDF for History
+- History browser, generate CSV/PDF for History
 - Child dropdown list
 - PEF, Personal Best and zone calculations
-- Incident log
-- Red-zone day alerts
+- Incident log, red-zone day alerts
 - Toolbar
 
 ### Zupaash Naveed (Team Member)
-- Medicine logs
+- Medicine logs (rescue & controller), medication home page
+- Rescue badge calculations
 - Pre/Post Check
 - Inventory UI

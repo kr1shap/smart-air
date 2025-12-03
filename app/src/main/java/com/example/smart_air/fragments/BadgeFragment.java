@@ -31,7 +31,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public class BadgeFragment extends Fragment {
-    private FirebaseFirestore db = FirebaseInitalizer.getDb();
     private AuthRepository repo;
     private ChildRepository childRepo;
     private SharedChildViewModel sharedModel;
@@ -58,7 +57,7 @@ public class BadgeFragment extends Fragment {
         childRepo = new ChildRepository();
         //check if user is authenticated
         if (repo.getCurrentUser() == null) { destroyFragment(); return; }
-        //initalize all views and buttons, etc
+        //initialize all views and buttons, etc
         badgeDataCache = new HashMap<>();
         btnClose = view.findViewById(R.id.btnClose);
         badge1Card = view.findViewById(R.id.badge1Card);
@@ -104,7 +103,7 @@ public class BadgeFragment extends Fragment {
     }
 
     /*
-    * Method gets the badge streak info to update
+    * method gets the badge streak info to update
     */
     private void getBadgeStreakInfo() {
         if(badgeDataCache.get(childUid) != null) {
@@ -126,7 +125,7 @@ public class BadgeFragment extends Fragment {
     }
 
     /*
-    * Method updates badge UI
+    * method updates badge UI
     */
     private void updateBadgeUI(boolean controllerBadge, boolean techniqueBadge, boolean rescueBadge,
                                int techniqueStreak, int controllerStreak) {

@@ -55,21 +55,21 @@ public class NotificationFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         this.view = view;
 
-        //init repo
+        // init repo
         repo = new AuthRepository();
-        //check if user is authenticated
+        // check if user is authenticated
         if (repo.getCurrentUser() == null) { redirectToLogin(); return; }
 
         notifRepo = new NotificationRepository();
-        //get the progress bar
+        // get the progress bar
         progressBar = view.findViewById(R.id.notificationsProgressBar);
-        //init recycler view
+        // init recycler view
         recyclerView = view.findViewById(R.id.notificationsRecycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        //set adapter for recycle view
+        // set adapter for recycle view
         adapter = new NotificationsAdapter(notificationList, this::markNotificationAsRead);
         recyclerView.setAdapter(adapter);
-        //use viewmodel
+        // use viewmodel
         viewModel = new ViewModelProvider(requireActivity()).get(NotificationViewModel.class);
         viewModel.getNotifications().observe(getViewLifecycleOwner(), list -> {
             notificationList.clear();
@@ -78,11 +78,11 @@ public class NotificationFragment extends Fragment {
             adapter.notifyDataSetChanged();
             progressBar.setVisibility(View.GONE);
         });
-        //listen after everything is setup
+        // listen after everything is setup
         viewModel.startListening(repo.getCurrentUser().getUid());
     }
 
-    //update state if no notifs
+    // update state if no notifs
     private void updateEmptyState() {
         if (notificationList.isEmpty()) {
             view.findViewById(R.id.noNotificationsText).setVisibility(View.VISIBLE);
@@ -91,7 +91,7 @@ public class NotificationFragment extends Fragment {
         }
     }
 
-    //mark notif as read (delete)
+    // mark notif as read
     private void markNotificationAsRead(Notification notification) {
         String uid = repo.getCurrentUser().getUid();
         String notifId = notification.getNotifUid();
@@ -107,7 +107,7 @@ public class NotificationFragment extends Fragment {
                 });
     }
 
-    //redirect if user unauth, invalid
+    // redirect if user unauth, invalid
     private void redirectToLogin() {
         if (getActivity() == null) return;
         Toast.makeText(getContext(), "Please sign in again", Toast.LENGTH_SHORT).show();

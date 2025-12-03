@@ -53,6 +53,7 @@ public class StringFormatters {
         return "Jan"; // default, not reached
     }
 
+    /* gets label for key */
     public static String getLabelForKey(String key) {
         switch (key) {
             case "rescue":
@@ -74,7 +75,7 @@ public class StringFormatters {
         }
     }
 
-    /** Convert calendar day-of-week to "Monday", "Tuesday" ... */
+    /** calendar day of week to the string day */
     public static String dayNameForCalendar(Calendar cal) {
         switch (cal.get(Calendar.DAY_OF_WEEK)) {
             case Calendar.MONDAY:
@@ -95,6 +96,7 @@ public class StringFormatters {
         }
     }
 
+    /*Function returns day of week for scheduled days*/
     public static Set<DayOfWeek> extractScheduledDays(Map<String, Boolean> weeklySchedule) {
         Set<DayOfWeek> result = new HashSet<>();
         for (Map.Entry<String, Boolean> entry : weeklySchedule.entrySet()) {

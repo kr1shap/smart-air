@@ -28,7 +28,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     private final OnChildClickListener listener;
 
 
-    // Interface for handling clicks
+    // for handling clicks
     public interface OnChildClickListener {
         void onChildEdit(Child child);
         void onChildDelete(Child child);
@@ -131,7 +131,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             int age = today.get(java.util.Calendar.YEAR) - dobCal.get(java.util.Calendar.YEAR);
 
 
-            // Adjust if birthday hasn't occurred yet this year
+            // if birthday hasn't occurred yet this year
             if (today.get(java.util.Calendar.DAY_OF_YEAR) < dobCal.get(java.util.Calendar.DAY_OF_YEAR)) {
                 age--;
             }

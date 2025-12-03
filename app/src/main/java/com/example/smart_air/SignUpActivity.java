@@ -83,7 +83,6 @@ public class SignUpActivity extends AppCompatActivity implements AuthContract.Si
         emailTextView.setFilters(new InputFilter[] { spaceFilter });
 
         hideLoading();
-        //TODO: uncomment after finishing
         //nav to signin
         findViewById(R.id.signInStatement).setOnClickListener(v -> {
             startActivity(new Intent(this, SignInActivity.class));

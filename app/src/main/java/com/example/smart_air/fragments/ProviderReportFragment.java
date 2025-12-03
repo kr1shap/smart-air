@@ -63,7 +63,7 @@ public class ProviderReportFragment extends Fragment {
     private String childId;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private boolean allowRescue, allowController, allowPEF, allowSymptoms, allowTriage, allowCharts;
-    //Cache VM for data from dashboard onto here
+    // cache VM for data from dashboard onto here
     DashboardViewModel cacheVM;
     // list of rescue log documents
     List<DocumentSnapshot> rescueLogs;
@@ -71,9 +71,9 @@ public class ProviderReportFragment extends Fragment {
     List<DocumentSnapshot> pefLogs;
     // sharing toggle map
     Map<String, Boolean> childSharing;
-    //parent information such as name, etc
+    // parent information such as name, etc
     private String parentName, childName, childDob, monthString;
-    //Provider report data
+    // provider report data
     int[] rescueCounts;
     double rescuePercentage; // percentage of days with rescue
     List<TriageLog> incidents = new ArrayList<>();
@@ -884,7 +884,7 @@ public class ProviderReportFragment extends Fragment {
         int axisTop = top + 10;
         int axisRight = right - 10;
 
-        // Draw axes
+        // draw axes
         canvas.drawLine(axisLeft, axisTop, axisLeft, axisBottom, axisPaint);
         canvas.drawLine(axisLeft, axisBottom, axisRight, axisBottom, axisPaint);
 
@@ -892,7 +892,7 @@ public class ProviderReportFragment extends Fragment {
         int max = 1;
         for (int v : values) if (v > max) max = v;
 
-        // Calculate appropriate tick count based on max value
+        //  tick count based on max value
         int tickCount = Math.min(4, max);
         if (max <= 4) {
             tickCount = max; // Show each integer value
@@ -919,13 +919,13 @@ public class ProviderReportFragment extends Fragment {
         linePaint.setStrokeWidth(3f);
         linePaint.setAntiAlias(true);
 
-        // Paint for data points
+        //  for data points
         Paint pointPaint = new Paint();
         pointPaint.setColor(Color.parseColor("#3F51B5"));
         pointPaint.setStyle(Paint.Style.FILL);
         pointPaint.setAntiAlias(true);
 
-        // line segments connecting data points
+        //  segments connecting data points
         Path linePath = new Path();
 
         for (int i = 0; i < dataCount; i++) {
@@ -943,7 +943,7 @@ public class ProviderReportFragment extends Fragment {
             canvas.drawCircle(x, y, 4f, pointPaint);
         }
 
-        // month labels on X-axis
+        // month labels on x-axis
         LocalDate endDate = startDate.plusDays(dataCount - 1);
         LocalDate cursor = startDate.withDayOfMonth(1);
         if (cursor.isBefore(startDate)) {
@@ -995,14 +995,14 @@ public class ProviderReportFragment extends Fragment {
         // the actual max value in the data
         int dataMax = Math.max(Math.max(green, yellow), red);
 
-        // a nice rounded max for the Y-axis
+        // a nice rounded max for the y-axis
         int max = calculateNiceMax(dataMax);
         if (max < 1) max = 1;
 
-        // Calculate appropriate tick count based on max value
+        // appropriate tick count based on max value
         int tickCount = Math.min(5, max);
         if (max <= 5) {
-            tickCount = max; // Show each integer value
+            tickCount = max;
         }
 
         // y-axis with better tick distribution

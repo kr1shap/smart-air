@@ -18,7 +18,7 @@ import com.example.smart_air.R;
 import com.example.smart_air.viewmodel.SharedChildViewModel;
 
 public class MedicineTabFragment extends Fragment {
-    //Instantiate view model
+    // instantiate view model
     SharedChildViewModel childVM;
 
     public MedicineTabFragment() { }
@@ -29,9 +29,7 @@ public class MedicineTabFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_medicine, container, false);
-
-        return view;
+        return inflater.inflate(R.layout.fragment_medicine, container, false);
     }
 
     @Override
@@ -39,13 +37,13 @@ public class MedicineTabFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
 
-        // 1. Find the Log Dose button
+        // 1. find the Log Dose button
         Button logDoseButton = view.findViewById(R.id.btn_log_dose);
         Button btn_streaks = view.findViewById(R.id.btn_streaks);
         Button inventoryButton = view.findViewById(R.id.btn_inventory);
-        //child vm
+        // child vm
         childVM = new ViewModelProvider(requireActivity()).get(SharedChildViewModel.class);
-        //observe role in VM
+        // observe role in VM
         childVM.getCurrentRole().observe(
                 getViewLifecycleOwner(),
                 role -> {
@@ -57,7 +55,7 @@ public class MedicineTabFragment extends Fragment {
                         }
                     }
                 });
-        // 2. Wire click to open LogDoseFragment
+        // 2. wire click to open LogDoseFragment
         if (logDoseButton != null) {
             logDoseButton.setOnClickListener(v -> openLogDoseFragment());
         }
@@ -80,7 +78,6 @@ public class MedicineTabFragment extends Fragment {
     }
 
     private void openLogDoseFragment() {
-        // This uses the same container as MainActivity (fragment_container)
         requireActivity()
                 .getSupportFragmentManager()
                 .beginTransaction()
@@ -90,7 +87,6 @@ public class MedicineTabFragment extends Fragment {
     }
 
     private void openBadgeFragment() {
-        // This uses the same container as MainActivity (fragment_container)
         requireActivity()
                 .getSupportFragmentManager()
                 .beginTransaction()

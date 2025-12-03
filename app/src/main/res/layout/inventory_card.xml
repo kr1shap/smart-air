@@ -51,6 +51,17 @@
         android:paddingTop="8dp"
         android:paddingBottom="4dp" />
 
+        <TextView
+            style="@style/SmartAir.Text.body"
+            android:id="@+id/max_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Max: 300"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp" />
+
     <TextView
         style="@style/SmartAir.Text.body"
         android:id="@+id/text_controller_purchase_date"

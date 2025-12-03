@@ -36,10 +36,6 @@ public class OnboardingActivity extends AppCompatActivity {
 
         authRepository = new AuthRepository();
 
-//        //user passed from intent
-//        String userJson = getIntent().getStringExtra("user");
-//        user = new Gson().fromJson(userJson, User.class);
-
         //get all views
         viewPager = findViewById(R.id.viewPager);
         btnNext = findViewById(R.id.nextBtn);
