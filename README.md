@@ -1,12 +1,24 @@
-# SMART AIR 
+# SMART AIR ☁️
 
 SmartAir is a kid-friendly Android application designed to help children ages **6–16** understand and manage their asthma, while giving parents the tools to track medicine use, symptoms, PEF zones, and safety alerts. Parents can selectively share their child’s data with healthcare providers through a **consise, exportable PDF/CSV report**.
 
+This is a project for **CSCB07, FALL 2025**.
+
+[Watch our demo here!!](https://www.youtube.com/watch?v=NicjOoLmAgQ)
+
 ---
 
-## Our app provides the following features to these three roles: child, parent and provider
+## Screenshots 
 
-### Child Experience
+![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
+
+## Features 💨
+
+Features are personalized based on the user role; provider, parent and child!
+
+### Child
 - Sign in through username and password
 - Monitor patterns through daily check-ins 
 - Log **rescue** and **controller** medications 
@@ -18,7 +30,7 @@ SmartAir is a kid-friendly Android application designed to help children ages **
 
 ---
 
-### Parent Experience
+### Parent 
 - Create, link and manage multiple children
 - View a dashboard of information including:
   - Today’s asthma zone
@@ -34,14 +46,14 @@ SmartAir is a kid-friendly Android application designed to help children ages **
   - Rapid rescue repeats (≥3 uses in 3 hours)
   - “Worse after dose”
   - Inventory expired
-  - low canister (≤20%) from settable max amount of medication
+  - low canister (≤20%) from max 300
   - Triage escalation
 - Monitor each child's patterns through daily checkins and history
 - Manage toggle permissions for provider information accessiblity 
 
 ---
 
-### Provider Access (Read-Only)
+### Provider (Read-Only)
 - View children's data based on parent given permission
 Parents can share data with a healthcare provider through:
 - A **one-time 7-day invite code/link**
@@ -55,16 +67,21 @@ Providers can only view the following categories with parent's permission:
 - Peak-flow values
 - Triage incidents
 - Summary graphs and charts
+
+### Provider Report 🔖
+- Provider report contains a bar chart for zone values, and a line chart for PEF values 
+- Symptom Burden Day: A day with high activity values based on daily-checkin 
+- Rescue Frequency: The number of days where rescue inhaler was used / the total number of days in the period
+- Notable Triage Incident: Where 3+ red flags were chosen and alarming/high rescue usage values (i.e. >= 5)
   
 ---
 
 ## Team Members & Contributions 
 
 ### Krisha Patel (Scrum Master)
-- Sign-in & Firebase Authetication
+- Sign-in & Firebase Authentication
 - Account recovery
-- Role selection routing
-- Onboarding 
+- Role selection routing & Onboarding
 - Security features
 - Worse dose alert
 - Notification centre setup
@@ -94,7 +111,7 @@ Providers can only view the following categories with parent's permission:
 ### Tharjiha Suthekara (Team Member)
 - Daily check-in & triggers
 - History browser
-- Generateable CSV/PDF for History
+- Generate CSV/PDF for History
 - Child dropdown list
 - PEF, Personal Best and zone calculations
 - Incident log
@@ -102,6 +119,8 @@ Providers can only view the following categories with parent's permission:
 - Toolbar
 
 ### Zupaash Naveed (Team Member)
-- Medicine logs
+- Medicine logs (rescue & controller)
+- Medication home page
+- Rescue badge calculations
 - Pre/Post Check
 - Inventory UI

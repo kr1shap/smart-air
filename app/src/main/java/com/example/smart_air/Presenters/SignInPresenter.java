@@ -117,7 +117,7 @@ public class SignInPresenter implements AuthContract.SignInContract.Presenter {
         };
     }
 
-    //Helper function to check if valid email
+    //helper function to check if valid email
     public static boolean validEmail(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         return email.trim().matches(emailRegex);
