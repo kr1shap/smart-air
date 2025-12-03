@@ -29,9 +29,7 @@ public class MedicineTabFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_medicine, container, false);
-
-        return view;
+        return inflater.inflate(R.layout.fragment_medicine, container, false);
     }
 
     @Override

@@ -31,7 +31,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public class BadgeFragment extends Fragment {
-    private FirebaseFirestore db = FirebaseInitalizer.getDb();
     private AuthRepository repo;
     private ChildRepository childRepo;
     private SharedChildViewModel sharedModel;

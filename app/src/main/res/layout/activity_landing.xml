@@ -13,7 +13,7 @@
         tools:layout_editor_absoluteX="-252dp"
         tools:layout_editor_absoluteY="138dp" />
 
-<!-- Overlay content (buttons) -->
+<!-- overlay content (buttons) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

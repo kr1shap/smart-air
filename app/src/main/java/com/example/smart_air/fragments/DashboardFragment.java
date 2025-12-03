@@ -808,6 +808,7 @@ public class DashboardFragment extends Fragment {
         });
     }
 
+    /* Function updates the inventory UI */
     private void updateInventoryUI(InventoryData data) {
         //rescue
         if (data.rescueName != null || data.rescueAmount != null) {
@@ -848,8 +849,8 @@ public class DashboardFragment extends Fragment {
         }
     }
 
-    // TODO: when you press the dot it slides to next page, since swipe gets confusing
 
+    /* Function draws the dynamic chart */
     private void drawRescueChartDynamic(int[] counts, int days) {
         if (rescueChart == null) return;
         if ("provider".equals(userRole) && !allowRescue){ return; }
@@ -910,6 +911,7 @@ public class DashboardFragment extends Fragment {
         rescueChart.invalidate();
     }
 
+    /* Function updates line chart for PEF */
     private void drawPEFLineChart(int[] pefValues, int days) {
         if (pefChart == null) return;
 
